@@ -1,0 +1,10 @@
+- Created a github repo called "Boitumelo-Dev.github.io" for GitHub Pages purposes.
+- Configured git via the CLI to input my username and email
+- I cloned my repo into a local folder
+- Created the required files with the index.html file having all the required code and the <h1> tag.
+- Commit these changes and used the Special Commit Message then pushed this changes.
+- Created a branch called feature/student-details
+- Inserted all the information as required into each file in the brief under the student-details branch
+- Committed and pushed these changes under the commit message "added required information in files"
+- Since these changes are under the feature/student-details branch, I merged the two branches into main
+- Committed and pushed the changes then the GitHub Pages site was accessible
