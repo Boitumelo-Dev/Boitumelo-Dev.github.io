@@ -8,3 +8,26 @@
 - Committed and pushed these changes under the commit message "added required information in files"
 - Since these changes are under the feature/student-details branch, I merged the two branches into main
 - Committed and pushed the changes then the GitHub Pages site was accessible
+
+Commands used:
+
+git config --global user.email "Boitumelo-Dev"
+git config --global user.email "2559819@students.wits.ac.za"
+git clone https://github.com/Boitumelo-Dev/Boitumelo-Dev.github.io.git
+
+**created files and input html code into index.html
+
+git add .
+git commit -m "feat: Initial commit with student files"
+git push origin main
+
+git checkout -b feature/student-details
+
+**edited and added information into report.md and student-details.txt
+
+git commit -m "added required information in files"
+git push origin feature/student-details
+
+Then merged the two branches after making an additional edit in report.md
+
+git commit -m "merged main with feature/student-details"
