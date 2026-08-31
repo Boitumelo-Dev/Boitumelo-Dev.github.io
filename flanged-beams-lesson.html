@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flanged Sections &amp; Continuous Beams — CIVN 3011A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* colour encodes meaning — see the legend */
+  --comp:#E39A2B;        /* concrete in compression */
+  --comp-web:#B0621A;    /* area 1: the web strip of the stress block */
+  --comp-flg:#F3CE8B;    /* area 2: the flange overhangs */
+  --tens:#2E6FB7;        /* steel & tension force */
+  --na:#7C4DD6;          /* neutral axis + code geometric limits */
+  --ok:#2C7F5B;
+  --bad:#C3392E;
+  --concrete:#CFD5DC;
+  --concrete-2:#B9C1CA;
+
+  --ink:#161A20;
+  --ink-2:#4A535E;
+  --ink-3:#7C8792;
+  --paper:#E9ECEF;
+  --panel:#FFFFFF;
+  --line:#C3CAD2;
+  --line-soft:#E1E6EA;
+
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --disp:"Big Shoulders Display","Arial Narrow",sans-serif;
+  --body:"Source Sans 3",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:17px; line-height:1.62;
+  background-image:
+    linear-gradient(to right,rgba(120,135,150,.10) 1px,transparent 1px),
+    linear-gradient(to bottom,rgba(120,135,150,.10) 1px,transparent 1px);
+  background-size:28px 28px;
+}
+.wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+p{max-width:68ch}
+a{color:var(--tens)}
+
+/* ---------- signature: engineering dimension line ---------- */
+.dim{display:flex;align-items:center;gap:10px;margin:54px 0 26px}
+.dim .tick{width:1px;height:15px;background:var(--ink);flex:none}
+.dim .rule{flex:1;height:1px;background:var(--ink);position:relative}
+.dim .rule::before,.dim .rule::after{content:"";position:absolute;top:-2.5px;width:6px;height:6px;border-top:1px solid var(--ink);border-right:1px solid var(--ink)}
+.dim .rule::before{left:0;transform:rotate(-135deg)}
+.dim .rule::after{right:0;transform:rotate(45deg)}
+.dim .tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--ink-2);white-space:nowrap}
+
+/* ---------- header ---------- */
+header.sheet{background:#12212E;color:#EDF1F4;padding:0;border-bottom:3px solid var(--comp)}
+.sheet-inner{max-width:1000px;margin:0 auto;padding:34px 20px 30px}
+.stamp{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;color:#8FA6B8;display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:18px}
+h1{font-family:var(--disp);font-weight:800;font-size:clamp(40px,8vw,74px);line-height:.94;letter-spacing:-.01em;margin:0 0 14px}
+header.sheet .lede{font-size:19px;color:#C4D2DC;max-width:60ch;margin:0}
+.series{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#12212E;background:var(--comp);padding:3px 9px;margin-bottom:16px}
+
+/* ---------- sections ---------- */
+section{padding-bottom:12px}
+h2{font-family:var(--disp);font-weight:700;font-size:clamp(28px,5vw,42px);line-height:1.02;margin:0 0 6px;letter-spacing:.005em}
+h3{font-family:var(--disp);font-weight:700;font-size:25px;line-height:1.1;margin:34px 0 8px;letter-spacing:.01em}
+h4{font-family:var(--body);font-weight:600;font-size:16px;margin:20px 0 6px}
+.sec-no{font-family:var(--mono);font-size:12px;color:var(--comp-web);letter-spacing:.12em;display:block;margin-bottom:4px}
+
+/* ---------- panels ---------- */
+.panel{background:var(--panel);border:1px solid var(--line);padding:18px;margin:22px 0}
+.panel > svg{display:block;width:100%;height:auto}
+.notice{border-left:3px solid var(--na);background:var(--panel);border-top:1px solid var(--line-soft);border-right:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);padding:14px 18px;margin:22px 0}
+.notice h4{margin:0 0 4px;font-family:var(--disp);font-size:20px;font-weight:700;letter-spacing:.01em}
+.notice.warn{border-left-color:var(--bad)}
+.notice.key{border-left-color:var(--comp)}
+.notice p{margin:0;max-width:70ch}
+.hint{font-size:14.5px;color:var(--ink-2);margin:12px 0 0;padding-left:13px;border-left:2px solid var(--comp);max-width:72ch}
+.hint b{color:var(--ink);font-weight:600}
+
+/* ---------- controls ---------- */
+.ctrls{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px 20px;margin-bottom:16px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;color:var(--ink-2);gap:8px}
+.ctrl label b{font-family:var(--mono);font-size:14px;color:var(--ink);font-weight:500}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;background:transparent;margin:6px 0 0;height:20px}
+input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line);}
+input[type=range]::-moz-range-track{height:3px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;background:var(--ink);border-radius:50%;margin-top:-7px;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--ink)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;background:var(--ink);border:2px solid #fff;border-radius:50%;cursor:pointer}
+input[type=range]:focus-visible{outline:2px solid var(--na);outline-offset:3px}
+button{font-family:var(--body);font-size:14.5px;font-weight:600;background:var(--panel);color:var(--ink);border:1px solid var(--ink);padding:7px 14px;cursor:pointer}
+button:hover{background:var(--ink);color:#fff}
+button[aria-pressed=true],button.on{background:var(--ink);color:#fff}
+button:focus-visible,[tabindex]:focus-visible,summary:focus-visible{outline:2px solid var(--na);outline-offset:2px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+
+/* ---------- readouts ---------- */
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);margin-top:14px}
+.readout div{background:var(--panel);padding:8px 10px}
+.readout span{display:block;font-size:11.5px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.04em}
+.readout b{font-family:var(--mono);font-size:17px;font-weight:500;display:block;line-height:1.3}
+.verdict{padding:10px 14px;font-family:var(--mono);font-size:14px;margin-top:14px;border:1px solid}
+.verdict.a{background:#FDF4E4;border-color:var(--comp);color:#7A4A08}
+.verdict.b{background:#F3EDFC;border-color:var(--na);color:#4A2A8C}
+.verdict.bad{background:#FBECEA;border-color:var(--bad);color:#8E241B}
+.verdict.ok{background:#E9F5EF;border-color:var(--ok);color:#1E5A40}
+
+/* ---------- legend ---------- */
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-2);margin-top:12px}
+.legend i{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px}
+
+/* ---------- maths ---------- */
+.eq{font-family:var(--mono);font-size:15.5px;background:var(--panel);border:1px solid var(--line-soft);border-left:3px solid var(--ink);padding:11px 15px;margin:14px 0;overflow-x:auto;line-height:1.75}
+.eq .tag{float:right;color:var(--ink-3);font-size:12.5px}
+code{font-family:var(--mono);font-size:.92em;background:#E3E7EB;padding:1px 4px}
+var{font-family:var(--mono);font-style:normal;font-size:.95em}
+sub{font-size:.72em}
+
+/* ---------- tables ---------- */
+table{border-collapse:collapse;width:100%;font-size:14px;font-family:var(--mono)}
+th,td{border:1px solid var(--line-soft);padding:6px 8px;text-align:right}
+th:first-child,td:first-child{text-align:left;font-family:var(--body);font-size:14.5px}
+thead th{background:#F2F4F6;font-family:var(--mono);font-size:12.5px;font-weight:600}
+td.hit{background:#FDF4E4;font-weight:600}
+th.hit{background:var(--comp);color:#3A2405}
+.scroll{overflow-x:auto}
+
+/* ---------- steppers ---------- */
+.steps{border-top:1px solid var(--line-soft)}
+.step{border-bottom:1px solid var(--line-soft);padding:13px 0 13px 40px;position:relative;opacity:.32;transition:opacity .25s}
+.step.show{opacity:1}
+.step .n{position:absolute;left:0;top:13px;font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink);width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.step h5{margin:0 0 3px;font-size:15.5px;font-weight:600;font-family:var(--body)}
+.step p{margin:0;font-size:15px;color:var(--ink-2)}
+.step .eq{margin:8px 0 0}
+
+details{border:1px solid var(--line);background:var(--panel);margin:10px 0;padding:0}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:16px;list-style:none;display:flex;justify-content:space-between;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:var(--mono);color:var(--ink-3)}
+details[open] summary::after{content:"–"}
+details .body{padding:0 16px 16px;font-size:15.5px;color:var(--ink-2)}
+details .body p{margin:0 0 10px}
+
+footer{margin-top:60px;background:#12212E;color:#9FB2C1;font-size:14px}
+footer .wrap{padding:28px 20px}
+
+@media (max-width:620px){
+  body{font-size:16px}
+  .panel{padding:13px}
+  .readout b{font-size:15px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+
+<header class="sheet">
+  <div class="sheet-inner">
+    <div class="stamp"><span>CIVN 3011A — REINFORCED CONCRETE DESIGN</span><span>SHEET 4</span><span>SANS 51992-1-1</span></div>
+    <span class="series">Part 4 of the series</span>
+    <h1>Flanged sections<br>&amp; continuous beams</h1>
+    <p class="lede">A slab and the beam beneath it are cast as one piece of concrete. Once you accept that, a rectangular beam becomes a T-beam — and it gets dramatically stronger for free. This page is about the geometry that follows.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ HERO DEMO ============ -->
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">THE WHOLE TOPIC, IN ONE SLIDER</span><span class="rule"></span><span class="tick"></span></div>
+
+<p>Push the bending moment up on the T-beam below. Watch the orange compression block: it starts thin and wide, spread across the whole flange. Everything in this lecture depends on one question — <b>does that block stay inside the flange, or does it grow down into the web?</b></p>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="h-M">Design moment <i>M</i><b><span id="h-Mv">400</span> kNm</b></label>
+      <input type="range" id="h-M" min="100" max="650" step="5" value="400"></div>
+  </div>
+  <svg id="h-svg" viewBox="0 0 760 340" role="img" aria-label="T-beam cross-section with stress block that grows as the moment increases"></svg>
+  <div class="verdict a" id="h-verdict"></div>
+  <div class="readout">
+    <div><span>K = M/b<sub>f</sub>d²f<sub>ck</sub></span><b id="h-K">–</b></div>
+    <div><span>lever arm z</span><b id="h-z">–</b></div>
+    <div><span>block depth s</span><b id="h-s">–</b></div>
+    <div><span>N.A. depth x</span><b id="h-x">–</b></div>
+    <div><span>A<sub>s</sub> required</span><b id="h-As">–</b></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--comp)"></i>concrete in compression</span>
+    <span><i style="background:var(--tens)"></i>steel &amp; tension force</span>
+    <span><i style="background:var(--na)"></i>neutral axis / code limit</span>
+    <span><i style="background:var(--concrete)"></i>concrete carrying nothing</span>
+  </div>
+  <p class="hint"><b>What to notice:</b> the block gets deeper very slowly at first. A 700 mm wide flange only 100 mm thick swallows moments up to 476 kNm before the block even reaches the bottom of the flange. Past that point the section stops behaving like a wide rectangle, and the equations change. Past 577 kNm the concrete runs out entirely and you'd need compression steel.</p>
+</div>
+
+<p>Those three regimes are the whole map. The rest of this page fills them in: the section geometry that creates them, the two design routes, how wide the flange is actually allowed to be, and how all of it plays out along a continuous beam.</p>
+
+<!-- ============ 1. ANATOMY ============ -->
+<section id="s1">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">01</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION ONE</span>Where the T comes from</h2>
+
+<p>In a beam-and-slab floor the slab is cast monolithically with the beams. When the beam sags, the slab sitting on top of it is squashed along with the beam's own top fibres — so a strip of slab on each side genuinely acts as part of the beam. An interior beam picks up slab on both sides and becomes a <b>T-section</b>; an edge beam picks up slab on one side only and becomes an <b>L-section</b>.</p>
+
+<p>The good news is that you don't need two sets of equations. T- and L-sections with their flanges in compression are designed identically — everything below applies to both, with the only difference being how much flange width you're allowed to count.</p>
+
+<div class="panel">
+  <div class="btnrow">
+    <button id="an-T" aria-pressed="true">T-section (interior beam)</button>
+    <button id="an-L" aria-pressed="false">L-section (edge beam)</button>
+  </div>
+  <svg id="an-svg" viewBox="0 0 760 330" role="img" aria-label="Labelled T-beam and L-beam cross sections"></svg>
+  <div id="an-info" style="min-height:66px;border-top:1px solid var(--line-soft);padding-top:11px;font-size:15px;color:var(--ink-2)"></div>
+  <p class="hint"><b>What to notice:</b> click any labelled part. The steel <i>A</i><sub>s</sub> always sits at the bottom of the web, as far from the compression as it can get — that distance is the effective depth <i>d</i>. Note also the transverse bars running across the flange: the flange has to be stitched to the web, or it can't act with it.</p>
+</div>
+</section>
+
+<!-- ============ 2. SAGGING VS HOGGING ============ -->
+<section id="s2">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">02</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION TWO</span>The flange only helps half the time</h2>
+
+<p>Compression has to be at the top for the flange to be useful. In a sagging span it is, and you get the full T. Over a support the beam hogs: the top goes into <i>tension</i>, the slab cracks, and cracked concrete carries nothing. The flange is dead weight there.</p>
+
+<p>So the same physical beam is designed as two different sections along its length — a T-section in the spans, and a plain rectangle <var>b<sub>w</sub></var> × <var>h</var> over the supports. That single fact drives the reinforcement layout of every continuous beam in section 9.</p>
+
+<div class="panel">
+  <div class="btnrow">
+    <button id="sh-sag" aria-pressed="true">Sagging (midspan)</button>
+    <button id="sh-hog" aria-pressed="false">Hogging (over a support)</button>
+  </div>
+  <svg id="sh-svg" viewBox="0 0 760 400" role="img" aria-label="Deflected continuous beam showing where the flange is in compression and where it cracks"></svg>
+  <div class="verdict a" id="sh-verdict"></div>
+  <p class="hint"><b>What to notice:</b> the cracks in the deflected beam at the top of the diagram flip from the soffit at midspan to the top surface at the support. Watch the design section on the right lose its flange entirely when you switch to hogging — and watch the steel jump from the bottom of the web to the top of the slab.</p>
+</div>
+
+<div class="notice key">
+  <h4>The rule to memorise</h4>
+  <p>Sagging → slab in compression → design as T or L with breadth <var>b<sub>f</sub></var>. Hogging → slab in tension and cracked → design as a rectangle of width <var>b<sub>w</sub></var> and overall depth <var>h</var>.</p>
+</div>
+</section>
+
+<!-- ============ 3. NEUTRAL AXIS ============ -->
+<section id="s3">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">03</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION THREE</span>Two conditions, one question</h2>
+
+<p>The neutral axis of a T-beam can sit in the flange or down in the stem, depending purely on the proportions of the slab and the stem. For a singly reinforced flanged section that gives exactly two conditions to consider:</p>
+
+<div class="notice">
+  <h4>(a) The stress block lies within the flange — <var>s ≤ h<sub>f</sub></var></h4>
+  <p>All the compressed concrete is flange. The section behaves like a rectangle of breadth <var>b<sub>f</sub></var>.</p>
+</div>
+<div class="notice">
+  <h4>(b) The stress block extends below the flange — <var>s &gt; h<sub>f</sub></var></h4>
+  <p>Part of the compression comes from the narrow web. The section has to be treated as two pieces.</p>
+</div>
+
+<p>Be careful with the wording: the code's rectangular stress block has depth <var>s = 0.8x</var>, so the block and the neutral axis are not at the same level. It's the <i>block</i> we test against <var>h<sub>f</sub></var>, not <var>x</var>. Drag the sliders to see the two go out of step.</p>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="na-hf">Flange thickness <i>h</i><sub>f</sub><b><span id="na-hfv">100</span> mm</b></label><input type="range" id="na-hf" min="60" max="220" step="5" value="100"></div>
+    <div class="ctrl"><label for="na-bf">Flange width <i>b</i><sub>f</sub><b><span id="na-bfv">900</span> mm</b></label><input type="range" id="na-bf" min="300" max="1600" step="25" value="900"></div>
+    <div class="ctrl"><label for="na-M">Moment <i>M</i><b><span id="na-Mv">450</span> kNm</b></label><input type="range" id="na-M" min="100" max="900" step="10" value="450"></div>
+  </div>
+  <svg id="na-svg" viewBox="0 0 760 320" role="img" aria-label="Cross section showing neutral axis and stress block moving as proportions change"></svg>
+  <div class="verdict a" id="na-verdict"></div>
+  <div class="readout">
+    <div><span>x (neutral axis)</span><b id="na-x">–</b></div>
+    <div><span>s = 0.8x</span><b id="na-s">–</b></div>
+    <div><span>h<sub>f</sub> − s</span><b id="na-gap">–</b></div>
+    <div><span>x / d</span><b id="na-xd">–</b></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> widen the flange and the block gets shallower — you gain area sideways so you need less depth. Two consequences follow. First, condition (a) covers the great majority of real beams. Second, because the flange hands you such a large compressive area, <b>a flanged section almost never needs compression steel</b>, which is why we treat it as singly reinforced throughout.</p>
+</div>
+
+<div class="notice warn">
+  <h4>Watch <var>x/d</var>, not just the flange</h4>
+  <p>For concrete class 50/60 or lower, <var>x</var> may not exceed <var>0.45d</var> in a singly reinforced section. Push the moment high enough with a narrow flange and the violet line drops past that limit — the concrete is exhausted and you'd have to add compression steel. Section 7 gives the proper check for a flanged section.</p>
+</div>
+</section>
+
+<!-- ============ 4. CASE A ============ -->
+<section id="s4">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">04</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION FOUR</span>Case (a): the block stays in the flange</h2>
+
+<p>This is the easy one, and it's the reason T-beams are pleasant to design. If all the compressed concrete is inside the flange, then the concrete <i>below</i> the block is doing nothing structural — it's only there to hold the bars and carry shear. Delete it in your head. What's left is an ordinary rectangular beam of breadth <var>b<sub>f</sub></var>.</p>
+
+<div class="panel">
+  <div class="btnrow"><button id="mo-go">Delete the useless concrete</button></div>
+  <svg id="mo-svg" viewBox="0 0 760 300" role="img" aria-label="T-section morphing into an equivalent rectangular section of width b-f"></svg>
+  <p class="hint"><b>What to notice:</b> only the shaded top strip changes shape. The steel doesn't move, <i>d</i> doesn't change, and the compression force doesn't change — so the two sections have identical bending resistance. Nothing has been approximated here; it is genuinely the same problem.</p>
+</div>
+
+<p>So you use the rectangular-section equations from the previous lecture unchanged, just with <var>b<sub>f</sub></var> in place of <var>b</var>:</p>
+
+<div class="eq">K = M / (b<sub>f</sub> · d² · f<sub>ck</sub>)<span class="tag">step 1</span></div>
+<div class="eq">z = d [ 0.5 + √(0.25 − K/1.134) ]  ≤ 0.95d<span class="tag">eq. 3.4</span></div>
+<div class="eq">s = 2(d − z)   ⟺   z = d − s/2<span class="tag">step 3</span></div>
+<div class="eq">A<sub>s</sub> = M / (0.87 · f<sub>yk</sub> · z)<span class="tag">step 4</span></div>
+
+<p>The middle two deserve a moment. The lever arm <var>z</var> is the distance between the compression force <var>F<sub>cc</sub></var> (acting at the centroid of the block, i.e. <var>s</var>/2 down) and the tension force <var>F<sub>st</sub></var> in the steel. So <var>z = d − s/2</var> is not a formula to memorise, it's just geometry — and rearranging it gives you the block depth you need for the flange test.</p>
+
+<h3>The lever-arm curve</h3>
+<p>That square root is easier to trust once you've seen its shape. It maps how hard you're working the concrete (<var>K</var>) onto how much lever arm you keep.</p>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="la-K">K<b><span id="la-Kv">0.094</span></b></label><input type="range" id="la-K" min="0.01" max="0.167" step="0.001" value="0.094"></div>
+  </div>
+  <svg id="la-svg" viewBox="0 0 760 300" role="img" aria-label="Lever arm ratio z over d plotted against K"></svg>
+  <div class="readout">
+    <div><span>z / d</span><b id="la-zd">–</b></div>
+    <div><span>s / d</span><b id="la-sd">–</b></div>
+    <div><span>x / d</span><b id="la-xd">–</b></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> the curve is almost flat on the left. Doubling <var>K</var> from 0.04 to 0.08 costs you only about 2% of lever arm — a lightly loaded section is nearly free. The curve only bends sharply as <var>K</var> approaches the limit <var>K′ = 0.167</var>, which corresponds exactly to <var>x = 0.45d</var>. Beyond that the cap on <var>z</var> at 0.95<var>d</var> also matters at the low end: very small <var>K</var> would give an unrealistically long lever arm, so the code truncates it.</p>
+</div>
+</section>
+
+<!-- ============ 5. WORKED EXAMPLE A ============ -->
+<section id="s5">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">05</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">WORKED EXAMPLE A</span>Block inside the flange</h2>
+
+<p>A T-beam has <var>b<sub>f</sub></var> = 800 mm, <var>h<sub>f</sub></var> = 150 mm, <var>b<sub>w</sub></var> = 250 mm and <var>d</var> = 420 mm. Concrete is C30/37 (<var>f<sub>ck</sub></var> = 30 MPa), steel <var>f<sub>yk</sub></var> = 500 MPa. Find the tension steel for a sagging design moment of 300 kNm.</p>
+
+<div class="panel">
+  <div class="btnrow"><button id="exA-next">Work the next step</button><button id="exA-reset">Start over</button></div>
+  <div class="steps" id="exA-steps">
+    <div class="step" data-s="1"><span class="n">1</span><h5>Non-dimensionalise the moment</h5>
+      <p>Use the flange width, because that's the breadth resisting compression.</p>
+      <div class="eq">K = 300×10⁶ / (800 × 420² × 30) = 300×10⁶ / 4 233.6×10⁶ = <b>0.0709</b></div></div>
+    <div class="step" data-s="2"><span class="n">2</span><h5>Lever arm</h5>
+      <p>0.0709 is well under <var>K′</var> = 0.167, so no compression steel is in question.</p>
+      <div class="eq">z = 420[0.5 + √(0.25 − 0.0709/1.134)] = 420 × 0.9330 = <b>391.9 mm</b>  (&lt; 0.95d = 399 mm ✓)</div></div>
+    <div class="step" data-s="3"><span class="n">3</span><h5>Depth of stress block, and the flange test</h5>
+      <div class="eq">s = 2(420 − 391.9) = <b>56.3 mm</b>   →   s = 56.3 &lt; h<sub>f</sub> = 150 mm ✓ <b>Case (a)</b></div>
+      <p>The block is comfortably inside the flange, so the whole section is just a 800 mm wide rectangle. Note <var>x = s/0.8</var> = 70 mm, also inside the flange.</p></div>
+    <div class="step" data-s="4"><span class="n">4</span><h5>Area of tension steel</h5>
+      <div class="eq">A<sub>s</sub> = 300×10⁶ / (0.87 × 500 × 391.9) = 300×10⁶ / 170 464 = <b>1 760 mm²</b></div></div>
+    <div class="step" data-s="5"><span class="n">5</span><h5>Choose bars</h5>
+      <p>4 H25 gives 4 × 490.9 = <b>1 963 mm²</b> ≥ 1 760 mm². In a 250 mm web that is two bars per layer over two layers, or four in one layer if the web is widened — check bar spacing and cover before you commit.</p></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> the flange test in step 3 happens <i>after</i> you've already computed <var>K</var> and <var>z</var>. You always start by assuming case (a) and let the arithmetic tell you whether that assumption held.</p>
+</div>
+
+<div class="notice key">
+  <h4>A shortcut worth knowing</h4>
+  <p>Testing <var>s ≤ h<sub>f</sub></var> is mathematically identical to testing <var>M ≤ M<sub>f</sub></var>, where <var>M<sub>f</sub> = 0.567 f<sub>ck</sub> b<sub>f</sub> h<sub>f</sub> (d − h<sub>f</sub>/2)</var> is the moment the flange alone can resist. Setting <var>s = h<sub>f</sub></var> in the stress block gives a compression force <var>0.567 f<sub>ck</sub> b<sub>f</sub> h<sub>f</sub></var> at a lever arm of <var>d − h<sub>f</sub>/2</var> — which is exactly that expression. Either test is fine; use whichever you have to hand.</p>
+</div>
+</section>
+
+<!-- ============ 6. THE GATE ============ -->
+<section id="s6">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">06</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION SIX</span>The gate: is <var>M<sub>d</sub></var> bigger than <var>M<sub>f</sub></var>?</h2>
+
+<p>Before designing anything, check the design moment against the flange's own moment of resistance. If <var>M<sub>d</sub> &gt; M<sub>f</sub></var>, the flange alone cannot do the job, the block must reach below it, and <var>s &gt; h<sub>f</sub></var>.</p>
+
+<div class="eq">M<sub>f</sub> = 0.567 f<sub>ck</sub> · b<sub>f</sub> h<sub>f</sub> · (d − h<sub>f</sub>/2)<span class="tag">flange moment resistance</span></div>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="g-M">Design moment <i>M</i><sub>d</sub><b><span id="g-Mv">450</span> kNm</b></label><input type="range" id="g-M" min="100" max="1000" step="10" value="450"></div>
+    <div class="ctrl"><label for="g-hf">Flange thickness <i>h</i><sub>f</sub><b><span id="g-hfv">100</span> mm</b></label><input type="range" id="g-hf" min="60" max="200" step="5" value="100"></div>
+    <div class="ctrl"><label for="g-bf">Flange width <i>b</i><sub>f</sub><b><span id="g-bfv">700</span> mm</b></label><input type="range" id="g-bf" min="350" max="1500" step="25" value="700"></div>
+  </div>
+  <svg id="g-svg" viewBox="0 0 760 200" role="img" aria-label="Bar comparison of design moment against flange moment resistance"></svg>
+  <div class="verdict a" id="g-verdict"></div>
+  <p class="hint"><b>What to notice:</b> <var>M<sub>f</sub></var> scales linearly with both <var>b<sub>f</sub></var> and <var>h<sub>f</sub></var>, but thickening the flange also shortens the lever arm <var>d − h<sub>f</sub>/2</var> — so width is the cheaper way to buy capacity. This is why wide, thin flanges are so effective and why case (a) is the common outcome.</p>
+</div>
+
+<p>When the gate says "below the flange", the code offers two routes:</p>
+<ol>
+<li><b>The exact method</b> — solve for the true depth of the neutral axis. More work, less steel.</li>
+<li><b>The conservative condition</b> <var>x = 0.45d</var> — assume the neutral axis sits at the deepest the code allows. One formula, slightly more steel, no algebra.</li>
+</ol>
+<p>We'll build the conservative route first because its derivation teaches the mechanics, then do the exact one and compare.</p>
+</section>
+
+<!-- ============ 7. CASE B ============ -->
+<section id="s7">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">07</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION SEVEN</span>Case (b): designing at <var>x = 0.45d</var></h2>
+
+<p>Fix the neutral axis at the deepest position the code permits for a singly reinforced section in concrete of class 50/60 or below. That single assumption pins the geometry completely:</p>
+
+<div class="eq">s = 0.8x = 0.8(0.45d) = <b>0.36d</b><span class="tag">block depth is now known</span></div>
+
+<p>With <var>s</var> known, the compressed concrete is a fixed shape, and we can split it into two rectangles that are easy to reason about separately.</p>
+
+<h3>Split the block in two</h3>
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="sp-bf">b<sub>f</sub><b><span id="sp-bfv">800</span> mm</b></label><input type="range" id="sp-bf" min="350" max="1400" step="25" value="800"></div>
+    <div class="ctrl"><label for="sp-bw">b<sub>w</sub><b><span id="sp-bwv">300</span> mm</b></label><input type="range" id="sp-bw" min="200" max="450" step="10" value="300"></div>
+    <div class="ctrl"><label for="sp-hf">h<sub>f</sub><b><span id="sp-hfv">100</span> mm</b></label><input type="range" id="sp-hf" min="50" max="200" step="5" value="100"></div>
+    <div class="ctrl"><label for="sp-d">d<b><span id="sp-dv">420</span> mm</b></label><input type="range" id="sp-d" min="300" max="700" step="10" value="420"></div>
+  </div>
+  <svg id="sp-svg" viewBox="0 0 760 340" role="img" aria-label="Compression zone split into area 1 the web strip and area 2 the flange overhangs, with forces and lever arms"></svg>
+  <div class="readout">
+    <div><span>s = 0.36d</span><b id="sp-s">–</b></div>
+    <div><span>Area 1 = b<sub>w</sub>s</span><b id="sp-a1">–</b></div>
+    <div><span>Area 2 = (b<sub>f</sub>−b<sub>w</sub>)h<sub>f</sub></span><b id="sp-a2">–</b></div>
+    <div><span>F<sub>c1</sub></span><b id="sp-f1">–</b></div>
+    <div><span>F<sub>c2</sub></span><b id="sp-f2">–</b></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> area 1 is the full-depth strip over the web width; area 2 is the two overhangs, only as deep as the flange. They have different centroids — area 1's force acts at <var>s</var>/2 below the top, area 2's at <var>h<sub>f</sub></var>/2 — which is precisely why they must be handled separately.</p>
+</div>
+
+<p>Each area carries the design concrete stress of <var>0.567f<sub>ck</sub></var>:</p>
+<div class="eq">Area 1 = b<sub>w</sub>s = 0.36 b<sub>w</sub> d      Area 2 = (b<sub>f</sub> − b<sub>w</sub>) h<sub>f</sub></div>
+<div class="eq">F<sub>c1</sub> = 0.567 f<sub>ck</sub> (0.36 b<sub>w</sub> d) ≈ <b>0.2 f<sub>ck</sub> b<sub>w</sub> d</b><span class="tag">0.567 × 0.36 = 0.204</span></div>
+<div class="eq">F<sub>c2</sub> = 0.567 f<sub>ck</sub> h<sub>f</sub> (b<sub>f</sub> − b<sub>w</sub>)</div>
+
+<h3>Where equation 4.1 comes from</h3>
+<p>Now take moments. The trick is <i>which point</i> to take them about: choose the centroid of the flange, where <var>F<sub>c2</sub></var> acts, and that force vanishes from the equation. Only two terms survive.</p>
+
+<div class="panel">
+  <div class="btnrow"><button id="d41-next">Next line</button><button id="d41-reset">Start over</button></div>
+  <div class="steps" id="d41-steps">
+    <div class="step" data-s="1"><span class="n">1</span><h5>Take moments about F<sub>c2</sub></h5>
+      <p><var>F<sub>st</sub></var> is a distance <var>d − h<sub>f</sub>/2</var> below that point; <var>F<sub>c1</sub></var>'s centroid is <var>s/2 − h<sub>f</sub>/2</var> below it, and pushes the other way.</p>
+      <div class="eq">M = F<sub>st</sub>(d − h<sub>f</sub>/2) − F<sub>c1</sub>(s/2 − h<sub>f</sub>/2)</div></div>
+    <div class="step" data-s="2"><span class="n">2</span><h5>Substitute the two forces</h5>
+      <div class="eq">M = 0.87 f<sub>yk</sub> A<sub>s</sub> (d − h<sub>f</sub>/2) − 0.2 f<sub>ck</sub> b<sub>w</sub> d (s/2 − h<sub>f</sub>/2)</div></div>
+    <div class="step" data-s="3"><span class="n">3</span><h5>Put in s = 0.36d and factor the ½</h5>
+      <div class="eq">s/2 − h<sub>f</sub>/2 = ½(0.36d − h<sub>f</sub>)   so   0.2 f<sub>ck</sub> b<sub>w</sub> d × ½(0.36d − h<sub>f</sub>) = 0.1 f<sub>ck</sub> b<sub>w</sub> d (0.36d − h<sub>f</sub>)</div></div>
+    <div class="step" data-s="4"><span class="n">4</span><h5>Rearrange for the steel</h5>
+      <div class="eq"><b>A<sub>s</sub> = [ M + 0.1 f<sub>ck</sub> b<sub>w</sub> d (0.36d − h<sub>f</sub>) ] / [ 0.87 f<sub>yk</sub> (d − 0.5h<sub>f</sub>) ]</b><span class="tag">eq. 4.1</span></div></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> that 0.1 in the numerator is not a code factor — it is 0.2 divided by 2, and the 2 came from the ½ in step 3. Every constant in equation 4.1 is traceable to geometry.</p>
+</div>
+
+<div class="notice warn">
+  <h4>Equation 4.1 is invalid when <var>h<sub>f</sub> &gt; 0.36d</var></h4>
+  <p>Look at the term <var>(0.36d − h<sub>f</sub>)</var>. If the flange is thicker than <var>0.36d</var> it goes negative — which is the algebra telling you the block never reached below the flange in the first place. If <var>h<sub>f</sub> &gt; 0.36d</var> you are not in case (b) at <var>x = 0.45d</var>, so don't use this formula. Drag the flange slider below to watch the sign flip.</p>
+</div>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="v-hf">h<sub>f</sub><b><span id="v-hfv">100</span> mm</b></label><input type="range" id="v-hf" min="50" max="280" step="5" value="100"></div>
+    <div class="ctrl"><label for="v-d">d<b><span id="v-dv">420</span> mm</b></label><input type="range" id="v-d" min="300" max="700" step="10" value="420"></div>
+  </div>
+  <svg id="v-svg" viewBox="0 0 760 170" role="img" aria-label="Comparison of flange thickness against 0.36d showing when equation 4.1 is valid"></svg>
+  <div class="verdict ok" id="v-verdict"></div>
+  <p class="hint"><b>What to notice:</b> the boundary is <var>h<sub>f</sub> = 0.36d</var>, the depth of the stress block itself. A "thick flange, shallow beam" section is really just a wide rectangle — and should be designed as one.</p>
+</div>
+
+<h3>Before you use 4.1: check the concrete isn't exhausted</h3>
+<p>Equation 4.1 assumes the section is singly reinforced. To confirm that, compare the design moment against the maximum moment the concrete can supply at <var>x = 0.45d</var>. This one is derived by taking moments about <var>A<sub>s</sub></var>, so both concrete forces contribute:</p>
+
+<div class="eq">M<sub>bal</sub> = F<sub>c1</sub>·z<sub>1</sub> + F<sub>c2</sub>·z<sub>2</sub></div>
+<div class="eq">M<sub>bal</sub> = 0.167 f<sub>ck</sub> b<sub>w</sub> d² + 0.567 f<sub>ck</sub> h<sub>f</sub> (b<sub>f</sub> − b<sub>w</sub>)(d − 0.5h<sub>f</sub>)<span class="tag">eq. 4.2</span></div>
+
+<p>The first term is where the familiar 0.167 comes from: <var>F<sub>c1</sub>z<sub>1</sub> = 0.204 f<sub>ck</sub>b<sub>w</sub>d × 0.82d = 0.167 f<sub>ck</sub>b<sub>w</sub>d²</var>, since <var>z<sub>1</sub> = d − s/2 = d − 0.18d</var>. It is the same <var>K′</var> limit you met for rectangular beams, applied to the web. The second term is the bonus the overhangs add.</p>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="mb-M">M<b><span id="mb-Mv">550</span> kNm</b></label><input type="range" id="mb-M" min="200" max="1100" step="10" value="550"></div>
+    <div class="ctrl"><label for="mb-bf">b<sub>f</sub><b><span id="mb-bfv">800</span> mm</b></label><input type="range" id="mb-bf" min="350" max="1400" step="25" value="800"></div>
+    <div class="ctrl"><label for="mb-bw">b<sub>w</sub><b><span id="mb-bwv">300</span> mm</b></label><input type="range" id="mb-bw" min="200" max="450" step="10" value="300"></div>
+    <div class="ctrl"><label for="mb-hf">h<sub>f</sub><b><span id="mb-hfv">100</span> mm</b></label><input type="range" id="mb-hf" min="50" max="200" step="5" value="100"></div>
+  </div>
+  <svg id="mb-svg" viewBox="0 0 760 210" role="img" aria-label="Stacked bar showing the web and flange contributions to the balanced moment against the design moment"></svg>
+  <div class="verdict ok" id="mb-verdict"></div>
+  <div class="readout">
+    <div><span>web term</span><b id="mb-w">–</b></div>
+    <div><span>overhang term</span><b id="mb-f">–</b></div>
+    <div><span>M<sub>bal</sub></span><b id="mb-t">–</b></div>
+    <div><span>M<sub>f</sub></span><b id="mb-mf">–</b></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> three moments now bracket the design. Below <var>M<sub>f</sub></var> you're in case (a). Between <var>M<sub>f</sub></var> and <var>M<sub>bal</sub></var> you're in case (b), singly reinforced, and equation 4.1 applies. Above <var>M<sub>bal</sub></var> the concrete is spent and you need compression steel or a bigger web.</p>
+</div>
+</section>
+
+<!-- ============ 8. WORKED EXAMPLE B ============ -->
+<section id="s8">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">08</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">WORKED EXAMPLE B</span>Block below the flange</h2>
+
+<p>Same materials, deeper demand. <var>b<sub>f</sub></var> = 800 mm, <var>h<sub>f</sub></var> = 100 mm, <var>b<sub>w</sub></var> = 300 mm, <var>d</var> = 420 mm, C30/37, <var>f<sub>yk</sub></var> = 500 MPa, sagging moment <var>M</var> = 550 kNm.</p>
+
+<div class="panel">
+  <div class="btnrow"><button id="exB-next">Work the next step</button><button id="exB-reset">Start over</button></div>
+  <div class="steps" id="exB-steps">
+    <div class="step" data-s="1"><span class="n">1</span><h5>Try case (a) first</h5>
+      <div class="eq">K = 550×10⁶/(800 × 420² × 30) = 0.1299 → z = 420 × 0.8680 = 364.6 mm → s = 2(420 − 364.6) = <b>110.9 mm</b></div>
+      <p><var>s</var> = 110.9 &gt; <var>h<sub>f</sub></var> = 100 mm, so the block breaks out of the flange. Case (b).</p></div>
+    <div class="step" data-s="2"><span class="n">2</span><h5>Confirm with the flange moment</h5>
+      <div class="eq">M<sub>f</sub> = 0.567 × 30 × 800 × 100 × (420 − 50) = <b>503.5 kNm</b> &lt; 550 kNm ✓</div>
+      <p>Same verdict, as it must be — the two tests are equivalent.</p></div>
+    <div class="step" data-s="3"><span class="n">3</span><h5>Check equation 4.1 is applicable</h5>
+      <div class="eq">0.36d = 0.36 × 420 = 151.2 mm  →  h<sub>f</sub> = 100 &lt; 151.2 mm ✓</div></div>
+    <div class="step" data-s="4"><span class="n">4</span><h5>Check no compression steel is needed</h5>
+      <div class="eq">M<sub>bal</sub> = 0.167×30×300×420² + 0.567×30×100×500×370</div>
+      <div class="eq">M<sub>bal</sub> = 265.1 + 314.7 = <b>579.8 kNm</b> &gt; 550 kNm ✓ singly reinforced</div></div>
+    <div class="step" data-s="5"><span class="n">5</span><h5>Apply equation 4.1</h5>
+      <div class="eq">A<sub>s</sub> = [550×10⁶ + 0.1×30×300×420×(151.2 − 100)] / [0.87×500×(420 − 50)]</div>
+      <div class="eq">A<sub>s</sub> = [550×10⁶ + 19.35×10⁶] / 160 950 = 569.35×10⁶ / 160 950 = <b>3 537 mm²</b></div></div>
+    <div class="step" data-s="6"><span class="n">6</span><h5>Choose bars</h5>
+      <p>8 H25 gives <b>3 927 mm²</b>, in two layers of four. With 25 mm cover and 10 mm links the clear width available is 300 − 2(35) = 230 mm; four 25 mm bars leave gaps of (230 − 100)/3 ≈ 43 mm, comfortably above the 25 mm minimum clear spacing.</p></div>
+  </div>
+  <p class="hint"><b>What to notice:</b> steps 3 and 4 are gates, not calculations — they exist to stop you applying equation 4.1 outside its domain. Skipping them is the classic exam error, because 4.1 will happily return a plausible-looking number for a section that actually needs compression steel.</p>
+</div>
+</section>
+
+<!-- ============ 9. EXACT METHOD ============ -->
+<section id="s9">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">09</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION NINE</span>The exact method, and what conservatism costs</h2>
+
+<p>The conservative route forces <var>x = 0.45d</var> whether the section needs it or not. The exact route asks instead: what depth of neutral axis actually balances this moment? Take moments about the steel, with the flange overhangs contributing a known amount and the web contributing an amount that depends on <var>x</var>:</p>
+
+<div class="eq">M = 0.567 f<sub>ck</sub> h<sub>f</sub>(b<sub>f</sub> − b<sub>w</sub>)(d − h<sub>f</sub>/2)  +  0.567 f<sub>ck</sub> (0.8x) b<sub>w</sub> (d − 0.4x)</div>
+
+<p>Only <var>x</var> is unknown, and it appears squared — so this is a quadratic. Solve it, take the smaller root, then get the steel straight from horizontal equilibrium:</p>
+
+<div class="eq">0.87 f<sub>yk</sub> A<sub>s</sub> = 0.567 f<sub>ck</sub> [ h<sub>f</sub>(b<sub>f</sub> − b<sub>w</sub>) + 0.8x·b<sub>w</sub> ]</div>
+
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="ex-M">M<b><span id="ex-Mv">550</span> kNm</b></label><input type="range" id="ex-M" min="500" max="580" step="5" value="550"></div>
+    <div class="ctrl"><label for="ex-hf">h<sub>f</sub><b><span id="ex-hfv">100</span> mm</b></label><input type="range" id="ex-hf" min="70" max="150" step="5" value="100"></div>
+  </div>
+  <svg id="ex-svg" viewBox="0 0 760 300" role="img" aria-label="Side by side comparison of the exact neutral axis depth and the conservative assumption"></svg>
+  <div class="readout">
+    <div><span>x exact</span><b id="ex-x">–</b></div>
+    <div><span>x/d exact</span><b id="ex-xd">–</b></div>
+    <div><span>A<sub>s</sub> exact</span><b id="ex-as1">–</b></div>
+    <div><span>A<sub>s</sub> eq. 4.1</span><b id="ex-as2">–</b></div>
+    <div><span>extra steel</span><b id="ex-diff">–</b></div>
+  </div>
+  <div class="verdict ok" id="ex-verdict"></div>
+  <p class="hint"><b>What to notice:</b> at the example's 550 kNm the true neutral axis sits at 162 mm, or <var>0.387d</var> — noticeably shallower than the assumed <var>0.45d</var>. The exact method returns 3 479 mm² against 3 537 mm² from equation 4.1: the conservative route costs under 2% more steel. Push the moment towards <var>M<sub>bal</sub></var> and the two converge, because the assumption stops being an assumption.</p>
+</div>
+
+<div class="notice key">
+  <h4>Why the conservative answer is safe</h4>
+  <p>Equation 4.1 takes moments while holding <var>s</var> fixed at 0.36<var>d</var>, so it does not enforce horizontal equilibrium — the resulting steel force doesn't match the assumed concrete force. That mismatch is deliberate and always in the safe direction: it overstates how deep the compression zone needs to be, which understates the lever arm, which asks for more steel than strictly necessary. You get a valid design with one line of arithmetic instead of a quadratic.</p>
+</div>
+</section>
+
+<!-- ============ 10. EFFECTIVE FLANGE WIDTH ============ -->
+<section id="s10">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">10</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION TEN</span>How wide is the flange, really?</h2>
+
+<p>We've been using <var>b<sub>f</sub></var> as if it were obvious. It isn't. Compression doesn't spread instantly across the slab — it diffuses out from the web through shear, so the parts of the slab far from the web are less stressed than the parts near it. Rather than model that, the code replaces the real varying stress with a uniform stress acting over a reduced <b>effective width</b> <var>b<sub>eff</sub></var> that carries the same total force.</p>
+
+<div class="eq">b<sub>eff</sub> = b<sub>w</sub> + Σ b<sub>eff,i</sub></div>
+<div class="eq">b<sub>eff,i</sub> = 0.2b<sub>i</sub> + 0.1l<sub>0</sub>   subject to   b<sub>eff,i</sub> ≤ 0.2l<sub>0</sub>   and   b<sub>eff,i</sub> ≤ b<sub>i</sub></div>
+
+<p>where <var>2b<sub>i</sub></var> is the clear distance between the webs of adjacent beams — so <var>b<sub>i</sub></var> is your half-share of the slab on that side — and <var>l<sub>0</sub></var> is the distance between points of contraflexure, the length over which the moment keeps one sign.</p>
+
+<h3>Reading <var>l<sub>0</sub></var> off the span</h3>
+<p><var>l<sub>0</sub></var> is not the span. Because a continuous beam changes the sign of its moment near each support, the effective width shrinks there. The code gives you these values directly:</p>
+
+<div class="panel">
+  <svg id="l0-svg" viewBox="0 0 760 250" role="img" aria-label="Three span beam showing the code values of l-zero in each region"></svg>
+  <div class="btnrow" style="margin:14px 0 0">
+    <button data-l0="1" aria-pressed="true">End span</button>
+    <button data-l0="2" aria-pressed="false">Interior support</button>
+    <button data-l0="3" aria-pressed="false">Interior span</button>
+    <button data-l0="4" aria-pressed="false">Cantilever</button>
+  </div>
+  <div class="verdict a" id="l0-verdict"></div>
+  <p class="hint"><b>What to notice:</b> at an interior support <var>l<sub>0</sub> = 0.15(l<sub>1</sub>+l<sub>2</sub>)</var> — a fraction of the span, so <var>b<sub>eff</sub></var> collapses there. That's fine: over a support the beam is hogging and you design it as a rectangle of width <var>b<sub>w</sub></var> anyway, so the narrow flange never gets used.</p>
+</div>
+
+<div class="notice">
+  <h4>Two conditions on the layout</h4>
+  <p>These <var>l<sub>0</sub></var> values are only valid if the cantilever is shorter than half its adjacent span, and if the ratio of adjacent span lengths stays between 0.67 and 1.50. Outside that, the contraflexure points move enough that you need a real analysis.</p>
+</div>
+
+<h3>Work out <var>b<sub>eff</sub></var> for yourself</h3>
+<div class="panel">
+  <div class="ctrls">
+    <div class="ctrl"><label for="be-l1">End span l<sub>1</sub><b><span id="be-l1v">6.0</span> m</b></label><input type="range" id="be-l1" min="3" max="12" step="0.5" value="6"></div>
+    <div class="ctrl"><label for="be-l2">Interior span l<sub>2</sub><b><span id="be-l2v">8.0</span> m</b></label><input type="range" id="be-l2" min="3" max="12" step="0.5" value="8"></div>
+    <div class="ctrl"><label for="be-sp">Beam spacing (centres)<b><span id="be-spv">4.0</span> m</b></label><input type="range" id="be-sp" min="1.5" max="8" step="0.1" value="4"></div>
+    <div class="ctrl"><label for="be-bw">Web width b<sub>w</sub><b><span id="be-bwv">300</span> mm</b></label><input type="range" id="be-bw" min="200" max="600" step="10" value="300"></div>
+  </div>
+  <div class="btnrow">
+    <button data-be="1" aria-pressed="true">End span</button>
+    <button data-be="2" aria-pressed="false">Interior support</button>
+    <button data-be="3" aria-pressed="false">Interior span</button>
+  </div>
+  <svg id="be-svg" viewBox="0 0 760 260" role="img" aria-label="Plan of slab and beams showing the effective flange width and the three limits"></svg>
+  <div class="readout">
+    <div><span>l<sub>0</sub></span><b id="be-l0">–</b></div>
+    <div><span>b<sub>i</sub></span><b id="be-bi">–</b></div>
+    <div><span>0.2b<sub>i</sub>+0.1l<sub>0</sub></span><b id="be-c1">–</b></div>
+    <div><span>0.2l<sub>0</sub></span><b id="be-c2">–</b></div>
+    <div><span>b<sub>i</sub> cap</span><b id="be-c3">–</b></div>
+    <div><span>b<sub>eff</sub></span><b id="be-tot">–</b></div>
+  </div>
+  <div class="verdict a" id="be-verdict"></div>
+  <div class="verdict bad" id="be-warn" style="display:none"></div>
+  <p class="hint"><b>What to notice:</b> which of the three limits governs changes as you drag. Long spans and closely spaced beams make <var>b<sub>i</sub></var> the binding cap — you simply run out of slab to share. Short spans make <var>0.2l<sub>0</sub></var> bite, because compression hasn't had length to spread sideways.</p>
+</div>
+
+<div class="notice key">
+  <h4>The symmetric interior span, in one line</h4>
+  <p>For an interior span of a symmetrical T-beam with <var>b<sub>1</sub> = b<sub>2</sub> = b′</var> and <var>l<sub>0</sub> = 0.7l</var>, substituting straight into the formula gives</p>
+  <div class="eq" style="margin:10px 0 0">b<sub>eff</sub> = b<sub>w</sub> + 2(0.2b′ + 0.07l)  ≤  b<sub>w</sub> + 2(0.14l)</div>
+</div>
+
+<div class="notice key">
+  <h4>Usually you never leave case (a)</h4>
+  <p>For sagging moments the flange gives such a large compressive area that the stress block almost always falls inside the flange thickness. In practice that means most flanged beams get designed as an equivalent rectangle of breadth <var>b<sub>f</sub> = b<sub>eff</sub></var>, and case (b) is the exception you check for rather than the norm.</p>
+</div>
+</section>
+
+<!-- ============ 11. TRANSVERSE STEEL ============ -->
+<section id="s11">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">11</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION ELEVEN</span>Stitching the flange to the web</h2>
+
+<p>None of this works unless the flange and web act as one. The compression that the flange carries has to be delivered <i>into</i> it from the web, and it crosses the web–flange junction as horizontal shear. Without steel across that plane the overhangs peel away and you're left with a rectangular beam of width <var>b<sub>w</sub></var>.</p>
+
+<div class="panel">
+  <div class="btnrow"><button id="tv-toggle" aria-pressed="false">Remove the transverse steel</button></div>
+  <svg id="tv-svg" viewBox="0 0 760 272" role="img" aria-label="Transverse reinforcement across the flange resisting shear between web and flange"></svg>
+  <div class="verdict ok" id="tv-verdict"></div>
+  <p class="hint"><b>What to notice:</b> the arrows show force flowing sideways out of the web into the overhangs. Transverse reinforcement must be placed across the full width of the flange to carry it. In practice you rarely add bars for this — the top steel of the slab's own bending reinforcement usually runs in the right direction and is already adequate.</p>
+</div>
+</section>
+
+<!-- ============ 12. FIRE ============ -->
+<section id="s12">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">12</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION TWELVE</span>Fire sets a floor on your dimensions</h2>
+
+<p>Strength isn't the only thing sizing a flanged floor. Concrete cover insulates the steel from a fire, and thin members lose that protection quickly, so the code prescribes minimum dimensions for a required fire resistance period. Pick a period and the governing numbers light up.</p>
+
+<div class="panel">
+  <div class="btnrow" id="fr-btns"></div>
+  <div class="scroll"><table id="fr-table"></table></div>
+  <p style="font-size:13px;color:var(--ink-3);margin-top:10px">Table 4.1 — Fire resistance of reinforced concrete floors, siliceous or calcareous aggregate (SANS 51992-1-1-1, Table 13). <sup>a</sup> Non-combustible screeds and floor finishes may be included in these dimensions. <sup>b</sup> Supplementary reinforcement may be necessary to hold the concrete cover in position.</p>
+  <p class="hint"><b>What to notice:</b> the upright T-section row is the one that matters for this lecture, and it is far more demanding than a solid slab — 65 mm bottom cover at 4 hours against 25 mm. A downstanding web is exposed on three sides, so it heats from three directions at once. Also note the flange thickness requirement: at 4 hours you need 150 mm of flange whatever the bending calculation said.</p>
+</div>
+</section>
+
+<!-- ============ 13. PROCEDURE ============ -->
+<section id="s13">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">13</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION THIRTEEN</span>The procedure, end to end</h2>
+
+<p>Everything so far collapses into five steps for a flanged beam under a sagging moment. Walk through them and the branch will light up as you go.</p>
+
+<div class="panel">
+  <div class="btnrow"><button id="fl-next">Advance</button><button id="fl-reset">Start over</button></div>
+  <svg id="fl-svg" viewBox="0 0 760 430" role="img" aria-label="Flow chart of the five design steps for a flanged beam"></svg>
+  <div class="verdict a" id="fl-verdict"></div>
+  <p class="hint"><b>What to notice:</b> the decision sits at step 4, after three steps of ordinary rectangular-beam arithmetic. There is no separate "T-beam method" to learn — you do the rectangular design, then check one inequality, and only branch if it fails.</p>
+</div>
+</section>
+
+<!-- ============ 14. CONTINUOUS BEAMS ============ -->
+<section id="s14">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">14</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION FOURTEEN</span>Continuous beams: the same design, moved along the span</h2>
+
+<p>Designing a continuous beam uses exactly the procedures above — nothing new is added. What changes is that the moment varies along the length and changes sign, so you're really doing the design several times at different sections and then working out how to make one set of bars satisfy all of them.</p>
+
+<p>The tool for that is the <b>bending-moment envelope</b>: the outer boundary of all the moment diagrams produced by every load arrangement you have to consider. Reinforcement is then arranged with reference to that envelope, following the rules for anchorage and curtailment.</p>
+
+<div class="panel">
+  <svg id="cb-svg" viewBox="0 0 760 400" role="img" aria-label="Bending moment envelope and bar arrangement for a two span continuous beam"></svg>
+  <div class="btnrow" style="margin-top:12px">
+    <button data-cb="A" aria-pressed="true">Support A</button>
+    <button data-cb="AB" aria-pressed="false">Span A–B</button>
+    <button data-cb="B" aria-pressed="false">Support B</button>
+    <button data-cb="BC" aria-pressed="false">Span B–C</button>
+    <button data-cb="C" aria-pressed="false">Support C</button>
+  </div>
+  <div class="verdict a" id="cb-verdict"></div>
+  <p class="hint"><b>What to notice:</b> the top steel is heaviest over B, where the hogging peak is, and the bottom steel is heaviest in the longer 6.0 m span. Bars aren't run full length — each one starts and stops where the envelope says it is needed, plus an anchorage allowance. Also notice the top steel at A and C: the analysis may have called those simple supports, but monolithic construction never really is.</p>
+</div>
+
+<div class="notice key">
+  <h4>Allow for the fixity you pretended not to have</h4>
+  <p>In monolithic construction, where the structural analysis assumed a simple support, you must still design for partial fixity of at least <b>25 per cent of the span moment</b> at that support. That's the 2 H16 sitting over support A in the drawing above.</p>
+</div>
+
+<h3>Shear along the same beam</h3>
+<p>The shear-force envelope is built the same way. Mark on it the shear resistance provided by the minimum links, and wherever the envelope pokes above that line you need designed shear reinforcement — which tells you directly how much of the beam's length needs closer link spacing.</p>
+
+<div class="panel">
+  <svg id="sv-svg" viewBox="0 0 760 380" role="img" aria-label="Shear force envelope with nominal link resistance marked and the resulting link spacing"></svg>
+  <div class="btnrow" style="margin-top:12px"><button id="sv-toggle" aria-pressed="true">Show nominal-link resistance</button></div>
+  <p class="hint"><b>What to notice:</b> the shaded regions where the envelope exceeds the nominal-link line are exactly the regions with H10 links at 150–200 mm; the middle of each span, where the envelope dips inside, gets the wider H8 at 250 mm. Link spacing is not uniform because shear isn't.</p>
+</div>
+
+<div class="notice warn">
+  <h4>The tension bars have to be long enough to count</h4>
+  <p>The concrete shear resistance <var>V<sub>Rd,c</sub></var> depends on the longitudinal tension steel ratio at the section — dowel action and aggregate interlock both rely on those bars being present and anchored. So when you design links, cross-check the bending reinforcement drawing: the tension bars used to establish <var>V<sub>Rd,c</sub></var> must extend at least <var>d + l<sub>bd</sub></var> beyond the section being considered. A bar that stops just past the section doesn't count.</p>
+</div>
+</section>
+
+<!-- ============ 15. DETAILING ============ -->
+<section id="s15">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">15</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">SECTION FIFTEEN</span>Four things that bite in detailing</h2>
+
+<p>These are the practical items that turn a correct calculation into a buildable beam. None of them changes <var>A<sub>s</sub></var>; all of them can change your section.</p>
+
+<details><summary>Anchorage into an exterior column</summary><div class="body">
+<p>At an exterior column the beam bars resisting the hogging design moment have to develop their full force, and there is no beam continuing past the column to develop it in. The anchorage bond length must therefore be accommodated <i>within the column</i> — usually as a bend down into the column, or a full-depth L-bar.</p>
+<p>Practically: check the column is deep enough to contain <var>l<sub>bd</sub></var> before you finalise the bar diameter. Using fewer, larger bars is what usually breaks this.</p>
+</div></details>
+
+<details><summary>Partial fixity at "simple" supports</summary><div class="body">
+<p>Structural analysis often idealises an end support as a pin. Cast monolithically, it isn't — the beam and column are continuous through the joint and hogging moment develops there. If you provide no top steel, that moment cracks the top of the beam.</p>
+<p>The rule: design for at least 25% of the span moment as hogging at any support you assumed to be simple.</p>
+</div></details>
+
+<details><summary>Slab steel passes over the beam steel</summary><div class="body">
+<p>At a support, the slab's top reinforcement runs across the beam and must sit <i>above</i> the beam's top bars while still keeping its own cover. The beam's top steel therefore sits lower than you might have drawn it.</p>
+<p>The consequence is on <var>d</var>: the effective depth of the beam at the support section is reduced by the diameter of the slab bars plus their cover. Decide this before you compute <var>d</var> at the support, not after.</p>
+</div></details>
+
+<details><summary>Bars have to physically pass through the joint</summary><div class="body">
+<p>Column bars run vertically through the beam–column junction while beam bars from two directions run horizontally through the same volume. All three sets have to miss each other, and each still needs its cover and its bend radius.</p>
+<p>This is resolved on the drawing, not in the calculation: set out the bar layers at the junction and check clearances. Congestion here is the most common reason a design has to be revised on site.</p>
+</div></details>
+</section>
+
+<!-- ============ 16. SUMMARY ============ -->
+<section id="s16">
+<div class="dim"><span class="tick"></span><span class="rule"></span><span class="tag">16</span><span class="rule"></span><span class="tick"></span></div>
+<h2><span class="sec-no">DECISION GUIDE</span>What to do, given what you have</h2>
+
+<div class="panel">
+  <svg id="sum-svg" viewBox="0 0 760 300" role="img" aria-label="Summary map of the moment ranges and which method applies in each"></svg>
+  <p class="hint"><b>What to notice:</b> the three regions are separated by two moments you can compute before designing anything: <var>M<sub>f</sub></var> and <var>M<sub>bal</sub></var>. Calculate both at the start and you know your route immediately.</p>
+</div>
+
+<div class="scroll"><table>
+<thead><tr><th>Situation</th><th style="text-align:left">What to do</th></tr></thead>
+<tbody>
+<tr><td>Sagging moment</td><td style="text-align:left;font-family:var(--body)">Flange in compression — design as T or L with <var>b<sub>f</sub> = b<sub>eff</sub></var></td></tr>
+<tr><td>Hogging moment</td><td style="text-align:left;font-family:var(--body)">Slab cracked — design as a rectangle <var>b<sub>w</sub> × h</var></td></tr>
+<tr><td>s ≤ h<sub>f</sub>  (M ≤ M<sub>f</sub>)</td><td style="text-align:left;font-family:var(--body)">Case (a): equivalent rectangle of breadth <var>b<sub>f</sub></var>, <var>A<sub>s</sub> = M/0.87f<sub>yk</sub>z</var></td></tr>
+<tr><td>M<sub>f</sub> &lt; M ≤ M<sub>bal</sub></td><td style="text-align:left;font-family:var(--body)">Case (b) singly reinforced: equation 4.1, or the exact quadratic for less steel</td></tr>
+<tr><td>M &gt; M<sub>bal</sub></td><td style="text-align:left;font-family:var(--body)">Concrete exhausted at <var>x = 0.45d</var> — add compression steel or enlarge the web</td></tr>
+<tr><td>h<sub>f</sub> &gt; 0.36d</td><td style="text-align:left;font-family:var(--body)">Equation 4.1 does not apply — you are not in case (b) at <var>x = 0.45d</var></td></tr>
+<tr><td>Flange width unknown</td><td style="text-align:left;font-family:var(--body)"><var>b<sub>eff</sub> = b<sub>w</sub> + Σb<sub>eff,i</sub></var>, with <var>l<sub>0</sub></var> read from the span position</td></tr>
+<tr><td>Continuous beam</td><td style="text-align:left;font-family:var(--body)">Design at envelope peaks; T-section in spans, rectangle over supports</td></tr>
+</tbody></table></div>
+
+<div class="notice key">
+  <h4>If you remember five things</h4>
+  <p>1. A flange only helps when it's in compression, so sagging gets a T and hogging gets a rectangle. 2. Test the block depth, not the neutral axis, against <var>h<sub>f</sub></var>. 3. Case (a) is genuinely just a wide rectangular beam — no approximation. 4. Case (b) splits the compression into a web strip and two overhangs with different lever arms, and equation 4.1 is that split with moments taken about the flange centroid. 5. <var>b<sub>eff</sub></var> is not the beam spacing; it depends on where along the span you are.</p>
+</div>
+
+<p style="margin-top:26px">Next: work Tutorials 2 and 3, which apply exactly this sequence to full sections.</p>
+</section>
+
+</main>
+
+<footer><div class="wrap">
+CIVN 3011A Reinforced Concrete Design — Design of T, L Sections and Continuous Beams. Interactive study page built from the lecture material of Prof. Amjad Khabaz, School of Civil and Environmental Engineering, University of the Witwatersrand. Notation and coefficients follow SANS 51992-1-1.
+</div></footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+const C = {comp:"#E39A2B",c1:"#B0621A",c2:"#F3CE8B",tens:"#2E6FB7",na:"#7C4DD6",
+           ok:"#2C7F5B",bad:"#C3392E",con:"#CFD5DC",con2:"#B9C1CA",ink:"#161A20",
+           ink2:"#4A535E",ink3:"#7C8792",line:"#C3CAD2"};
+const n = (v,dp=0)=>v.toLocaleString("en-GB",{minimumFractionDigits:dp,maximumFractionDigits:dp});
+
+/* ---- the one piece of structural maths everything else uses ---- */
+function solve(o){
+  const M=o.M*1e6, bf=o.bf, bw=o.bw, hf=o.hf, d=o.d, fck=o.fck, fyk=o.fyk;
+  const K   = M/(bf*d*d*fck);
+  const Mf  = 0.567*fck*bf*hf*(d-hf/2);
+  const Mbal= 0.167*fck*bw*d*d + 0.567*fck*hf*(bf-bw)*(d-0.5*hf);
+  const r={K:K, Mf:Mf/1e6, Mbal:Mbal/1e6, over:M>Mbal};
+  if(M<=Mf){                                  /* case (a) — exact */
+    const inner=Math.max(0.25-K/1.134,0);
+    const z=Math.min(d*(0.5+Math.sqrt(inner)),0.95*d);
+    r.case="a"; r.z=z; r.s=2*(d-z); r.x=r.s/0.8;
+    r.As=M/(0.87*fyk*z);
+  }else{                                      /* case (b) — exact quadratic */
+    const Mfl=0.567*fck*hf*(bf-bw)*(d-hf/2);
+    const A=0.18144*fck*bw, B=0.4536*fck*bw*d, Cc=M-Mfl;
+    const disc=B*B-4*A*Cc;
+    const x = disc>0 ? (B-Math.sqrt(disc))/(2*A) : 0.45*d;
+    r.case="b"; r.x=x; r.s=0.8*x; r.z=null;
+    r.As=0.567*fck*(hf*(bf-bw)+0.8*x*bw)/(0.87*fyk);
+  }
+  r.As41=(M+0.1*fck*bw*d*(0.36*d-hf))/(0.87*fyk*(d-0.5*hf));
+  return r;
+}
+function setVerdict(el,cls,html){el.className="verdict "+cls;el.innerHTML=html;}
+function pressGroup(nodes,active){nodes.forEach(b=>b.setAttribute("aria-pressed",b===active?"true":"false"));}
+
+/* reusable: outline path of a T (or L) section */
+function tPath(cx,top,k,bf,bw,hf,h,L){
+  const hw=bf*k/2, ww=bw*k/2, fh=hf*k, hh=h*k;
+  if(!L) return `M${cx-hw},${top} H${cx+hw} V${top+fh} H${cx+ww} V${top+hh} H${cx-ww} V${top+fh} H${cx-hw} Z`;
+  const l=cx-ww;                       /* L-section: web flush with left edge */
+  return `M${l},${top} H${l+bf*k} V${top+fh} H${l+bw*k} V${top+hh} H${l} Z`;
+}
+function reb(x,y,r,f){return `<circle cx="${x}" cy="${y}" r="${r}" fill="${f}"/>`;}
+
+/* =========================================================
+   HERO
+   ========================================================= */
+(function(){
+  const P={bf:700,bw:300,hf:100,d:450,h:520,fck:30,fyk:500};
+  const svg=$("h-svg");
+  function draw(){
+    const M=+$("h-M").value; $("h-Mv").textContent=n(M);
+    const r=solve(Object.assign({M:M},P));
+    const k=0.40, top=46, cx=210;
+    const hw=P.bf*k/2, ww=P.bw*k/2, fh=P.hf*k, hh=P.h*k, dp=P.d*k;
+    const sPx=Math.min(r.s*k,hh), xPx=Math.min(r.x*k,hh);
+    const stY=top+dp;
+    let blocks;
+    if(r.case==="a"){
+      blocks=`<rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${sPx}" fill="${C.comp}"/>`;
+    }else{
+      blocks=`<rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${fh}" fill="${C.comp}"/>`+
+             `<rect x="${cx-ww}" y="${top+fh}" width="${ww*2}" height="${sPx-fh}" fill="${C.comp}"/>`;
+    }
+    /* stress block diagram */
+    const ax=470, bwid=64, sbY=top;
+    const fccY=top+sPx/2;
+    const zTop=fccY, zBot=stY;
+    svg.innerHTML=`
+      <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <path d="${tPath(cx,top,k,P.bf,P.bw,P.hf,P.h,false)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.4"/>
+      ${blocks}
+      <path d="${tPath(cx,top,k,P.bf,P.bw,P.hf,P.h,false)}" fill="none" stroke="${C.ink}" stroke-width="1.4"/>
+      <line x1="${cx-hw-14}" y1="${top+xPx}" x2="${cx+hw+14}" y2="${top+xPx}" stroke="${C.na}" stroke-width="1.6" stroke-dasharray="7 4"/>
+      <text x="${cx+hw+18}" y="${top+xPx+4}" fill="${C.na}">x</text>
+      ${reb(cx-ww+16,stY,6,C.tens)}${reb(cx,stY,6,C.tens)}${reb(cx+ww-16,stY,6,C.tens)}
+      <text x="${cx+ww+8}" y="${stY+4}" fill="${C.tens}">A s</text>
+      <line x1="${cx-hw}" y1="${top-16}" x2="${cx+hw}" y2="${top-16}" stroke="${C.ink}"/>
+      <text x="${cx}" y="${top-21}" text-anchor="middle" fill="${C.ink}">b f = 700</text>
+      <line x1="${cx-hw-24}" y1="${top}" x2="${cx-hw-24}" y2="${top+fh}" stroke="${C.ink}"/>
+      <text x="${cx-hw-30}" y="${top+fh/2+4}" text-anchor="end" fill="${C.ink}">h f =100</text>
+      <text x="${cx}" y="${top+hh+18}" text-anchor="middle">b w = 300      d = 450 mm</text>
+
+      <text x="${ax+bwid/2}" y="${sbY-21}" text-anchor="middle" fill="${C.comp}">0.567 f ck</text>
+      <line x1="${ax}" y1="${sbY-8}" x2="${ax}" y2="${top+hh}" stroke="${C.ink3}" stroke-dasharray="3 3"/>
+      <rect x="${ax}" y="${sbY}" width="${bwid}" height="${sPx}" fill="${C.comp}" stroke="${C.ink}" stroke-width="1.2"/>
+      <line x1="${ax+bwid}" y1="${fccY}" x2="${ax+bwid+52}" y2="${fccY}" stroke="${C.comp}" stroke-width="2.4" marker-end="url(#ar-c)"/>
+      <text x="${ax+bwid+56}" y="${fccY+4}" fill="${C.c1}">F cc</text>
+      <line x1="${ax+40}" y1="${stY}" x2="${ax-46}" y2="${stY}" stroke="${C.tens}" stroke-width="2.4" marker-end="url(#ar-t)"/>
+      <text x="${ax+44}" y="${stY+4}" fill="${C.tens}">F st</text>
+      <line x1="${ax+bwid+34}" y1="${zTop}" x2="${ax+bwid+34}" y2="${zBot}" stroke="${C.ink}"/>
+      <line x1="${ax+bwid+29}" y1="${zTop}" x2="${ax+bwid+39}" y2="${zTop}" stroke="${C.ink}"/>
+      <line x1="${ax+bwid+29}" y1="${zBot}" x2="${ax+bwid+39}" y2="${zBot}" stroke="${C.ink}"/>
+      <text x="${ax+bwid+44}" y="${(zTop+zBot)/2+4}" fill="${C.ink}">z</text>
+      <text x="${ax-6}" y="${top+sPx+16}" text-anchor="end" fill="${C.c1}">s = ${n(r.s,0)}</text>
+      </g>
+      <defs>
+        <marker id="ar-c" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.comp}"/></marker>
+        <marker id="ar-t" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.tens}"/></marker>
+      </defs>`;
+    $("h-K").textContent=n(r.K,3);
+    $("h-z").textContent=r.z?n(r.z,0)+" mm":"—";
+    $("h-s").textContent=n(r.s,0)+" mm";
+    $("h-x").textContent=n(r.x,0)+" mm";
+    $("h-As").textContent=n(r.As,0)+" mm²";
+    if(r.over) setVerdict($("h-verdict"),"bad",
+      `M = ${n(M)} > M<sub>bal</sub> = 577 kNm — the concrete is exhausted at x = 0.45d. This section needs compression steel or a wider web.`);
+    else if(r.case==="a") setVerdict($("h-verdict"),"a",
+      `<b>Case (a)</b> — s = ${n(r.s,0)} mm ≤ h<sub>f</sub> = 100 mm. All compression is flange; design as a 700 mm wide rectangle.`);
+    else setVerdict($("h-verdict"),"b",
+      `<b>Case (b)</b> — s = ${n(r.s,0)} mm &gt; h<sub>f</sub> = 100 mm. The block has broken into the web; the section must be split in two.`);
+  }
+  $("h-M").addEventListener("input",draw); draw();
+})();
+
+/* =========================================================
+   1. ANATOMY
+   ========================================================= */
+(function(){
+  const svg=$("an-svg"), info=$("an-info");
+  let isL=false;
+  const notes={
+    bf:["Effective flange width b<sub>eff</sub>","The width of slab you are allowed to count as beam. Not the beam spacing — section 10 shows how it is calculated, and it changes along the span."],
+    bw:["Web (stem) width b<sub>w</sub>","The downstanding rib. It carries the shear, houses the links, and is the only width available once the block drops below the flange."],
+    hf:["Flange thickness h<sub>f</sub>","Usually just the slab depth. It sets the boundary between case (a) and case (b)."],
+    d:["Effective depth d","From the compression face to the centroid of the tension steel. The single most valuable dimension in the section."],
+    h:["Overall depth h","Used when the beam is designed as a rectangle over a support, and for fire and deflection checks."],
+    as:["Tension reinforcement A<sub>s</sub>","In the bottom of the web, where the sagging tension is. This is what all the design equations solve for."],
+    tv:["Transverse steel in the flange","Runs across the flange to carry horizontal shear between web and flange. Usually the slab's own top steel does the job — see section 11."],
+    st:["Links (stirrups)","Carry shear and hold the compression face together. Their bar size eats into the effective depth, so include them when you compute d."]
+  };
+  function say(kk){const t=notes[kk];info.innerHTML=`<b style="color:${C.ink}">${t[0]}</b> — ${t[1]}`;}
+  function draw(){
+    const k=0.30, top=54, cx=300;
+    const bf=1100,bw=300,hf=130,h=600,d=530;
+    const hw=bf*k/2, ww=bw*k/2, fh=hf*k, hh=h*k, dp=d*k;
+    const left = isL? cx-ww : cx-hw;
+    const stY=top+dp;
+    const hot=(id,x,y,w,ht)=>`<rect class="hz" data-k="${id}" x="${x}" y="${y}" width="${w}" height="${ht}" fill="transparent" style="cursor:pointer" tabindex="0" role="button" aria-label="${notes[id][0]}"/>`;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+      <rect x="${left-70}" y="${top}" width="70" height="${fh}" fill="${C.con2}" opacity=".55"/>
+      ${isL?"":`<rect x="${cx+hw}" y="${top}" width="70" height="${fh}" fill="${C.con2}" opacity=".55"/>`}
+      <text x="${left-74}" y="${top+fh+16}" text-anchor="end" font-size="11">slab continues</text>
+      <path d="${tPath(cx,top,k,bf,bw,hf,h,isL)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.6"/>
+      ${reb(left+(isL?ww:hw)-26,stY,7,C.tens)}${reb(left+(isL?ww:hw),stY,7,C.tens)}${reb(left+(isL?ww:hw)+26,stY,7,C.tens)}
+      <path d="M${left+(isL?ww:hw)-ww+9},${stY+13} v-${dp-fh-4} h${ww*2-18} v${dp-fh-4}" fill="none" stroke="${C.ink2}" stroke-width="1.5"/>
+      <g stroke="${C.c1}" stroke-width="2.4">
+        <line x1="${left+8}" y1="${top+11}" x2="${left+bf*k-8}" y2="${top+11}"/>
+        <line x1="${left+8}" y1="${top+fh-11}" x2="${left+bf*k-8}" y2="${top+fh-11}"/>
+      </g>
+      <line x1="${left}" y1="${top-22}" x2="${left+bf*k}" y2="${top-22}" stroke="${C.ink}"/>
+      <text x="${left+bf*k/2}" y="${top-28}" text-anchor="middle" fill="${C.ink}">b eff</text>
+      <line x1="${left+(isL?ww:hw)-ww}" y1="${top+hh+16}" x2="${left+(isL?ww:hw)+ww}" y2="${top+hh+16}" stroke="${C.ink}"/>
+      <text x="${left+(isL?ww:hw)}" y="${top+hh+30}" text-anchor="middle" fill="${C.ink}">b w</text>
+      <line x1="${left-34}" y1="${top}" x2="${left-34}" y2="${top+fh}" stroke="${C.ink}"/>
+      <text x="${left-40}" y="${top+fh/2+4}" text-anchor="end" fill="${C.ink}">h f</text>
+      <line x1="${left+bf*k+22}" y1="${top}" x2="${left+bf*k+22}" y2="${stY}" stroke="${C.ink}"/>
+      <text x="${left+bf*k+28}" y="${(top+stY)/2+4}" fill="${C.ink}">d</text>
+      <line x1="${left+bf*k+58}" y1="${top}" x2="${left+bf*k+58}" y2="${top+hh}" stroke="${C.ink}"/>
+      <text x="${left+bf*k+64}" y="${top+hh/2+4}" fill="${C.ink}">h</text>
+      <text x="${left+(isL?ww:hw)+40}" y="${stY+5}" fill="${C.tens}">A s</text>
+      <text x="${left+bf*k-10}" y="${top+fh+22}" text-anchor="end" font-size="11" fill="${C.c1}">transverse steel</text>
+      ${hot("bf",left,top-34,bf*k,20)}
+      ${hot("hf",left,top,bf*k,fh)}
+      ${hot("bw",left+(isL?0:hw-ww),top+fh,ww*2,hh-fh-24)}
+      ${hot("as",left+(isL?ww:hw)-46,stY-14,92,28)}
+      ${hot("d",left+bf*k+14,top,18,dp)}
+      ${hot("h",left+bf*k+50,top,18,hh)}
+      ${hot("tv",left+8,top+4,bf*k-16,16)}
+      ${hot("st",left+(isL?0:hw-ww)+2,top+fh+4,10,hh-fh-30)}
+    </g>`;
+    svg.querySelectorAll(".hz").forEach(el=>{
+      el.addEventListener("click",()=>say(el.dataset.k));
+      el.addEventListener("focus",()=>say(el.dataset.k));
+      el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();say(el.dataset.k);}});
+      el.addEventListener("mouseenter",()=>say(el.dataset.k));
+    });
+    info.innerHTML=isL
+      ? "An edge beam catches slab on one side only, so it gets one <i>b</i><sub>eff,i</sub> term instead of two. Everything else is identical. Click or tab to any labelled part."
+      : "An interior beam catches slab from both sides. Click or tab to any labelled part of the section.";
+  }
+  $("an-T").addEventListener("click",()=>{isL=false;pressGroup([$("an-T"),$("an-L")],$("an-T"));draw();});
+  $("an-L").addEventListener("click",()=>{isL=true;pressGroup([$("an-T"),$("an-L")],$("an-L"));draw();});
+  draw();
+})();
+
+/* =========================================================
+   2. SAGGING vs HOGGING
+   ========================================================= */
+(function(){
+  const svg=$("sh-svg");let sag=true;
+  function draw(){
+    const y0=95, x0=50, x1=710, mid=(x0+x1)/2;
+    /* deflected two-span beam */
+    const beam=`M${x0},${y0} C${x0+90},${y0+62} ${mid-90},${y0+62} ${mid},${y0}
+                C${mid+90},${y0-58} ${x1-90},${y0-58} ${x1},${y0}`;
+    let cracks="";
+    for(let i=1;i<8;i++){const t=i/8;const x=x0+(mid-x0)*t;
+      const yy=y0+62*3*t*(1-t)*(1-t)+62*3*t*t*(1-t);
+      cracks+=`<line x1="${x}" y1="${yy+16}" x2="${x}" y2="${yy+30}" stroke="${sag?C.bad:C.ink3}" stroke-width="${sag?1.8:1}" opacity="${sag?1:.35}"/>`;}
+    for(let i=-2;i<=2;i++){const x=mid+i*13;
+      cracks+=`<line x1="${x}" y1="${y0-16}" x2="${x}" y2="${y0-30}" stroke="${sag?C.ink3:C.bad}" stroke-width="${sag?1:1.8}" opacity="${sag?.35:1}"/>`;}
+    /* section on the right */
+    const k=0.26, top=190, cx=560, bf=1100,bw=320,hf=140,h=620,d=550;
+    const hw=bf*k/2, ww=bw*k/2, fh=hf*k, hh=h*k, dp=d*k;
+    let sect;
+    if(sag){
+      sect=`<path d="${tPath(cx,top,k,bf,bw,hf,h,false)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.5"/>
+        <rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${fh*0.62}" fill="${C.comp}"/>
+        ${reb(cx-24,top+dp,6,C.tens)}${reb(cx,top+dp,6,C.tens)}${reb(cx+24,top+dp,6,C.tens)}
+        <text x="${cx}" y="${top+hh+22}" text-anchor="middle" font-size="12" fill="${C.ink2}">T-section, breadth b f</text>`;
+    }else{
+      sect=`<rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${fh}" fill="none" stroke="${C.ink3}" stroke-width="1.2" stroke-dasharray="5 4"/>
+        <g stroke="${C.bad}" stroke-width="1.3" opacity=".85">
+        ${[-4,-3,-2,-1,0,1,2,3,4].map(i=>`<line x1="${cx+i*26}" y1="${top+2}" x2="${cx+i*26-6}" y2="${top+fh-2}"/>`).join("")}
+        </g>
+        <rect x="${cx-ww}" y="${top}" width="${ww*2}" height="${hh}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.5"/>
+        <rect x="${cx-ww}" y="${top+hh-fh*0.8}" width="${ww*2}" height="${fh*0.8}" fill="${C.comp}"/>
+        ${reb(cx-24,top+12,6,C.tens)}${reb(cx,top+12,6,C.tens)}${reb(cx+24,top+12,6,C.tens)}
+        <text x="${cx}" y="${top+hh+22}" text-anchor="middle" font-size="12" fill="${C.ink2}">rectangle b w × h</text>`;
+    }
+    const zoneX = sag? (x0+mid)/2 : mid;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+      <path d="${beam}" fill="none" stroke="${C.ink}" stroke-width="9" stroke-linecap="round" opacity=".18"/>
+      <path d="${beam}" fill="none" stroke="${C.ink}" stroke-width="1.6"/>
+      ${cracks}
+      <circle cx="${zoneX}" cy="${y0+(sag?42:-8)}" r="26" fill="${C.comp}" opacity=".22"/>
+      <text x="${x0}" y="${y0+52}" font-size="11">A</text>
+      <text x="${mid}" y="${y0+52}" text-anchor="middle" font-size="11">B</text>
+      <text x="${x1}" y="${y0+52}" text-anchor="end" font-size="11">C</text>
+      <text x="${x0}" y="30" font-size="12" fill="${C.ink}">${sag?"Midspan — the beam sags, cracks open at the soffit":"Over the support — the beam hogs, cracks open at the top surface"}</text>
+      <line x1="${zoneX}" y1="${y0+(sag?68:-34)}" x2="${zoneX}" y2="160" stroke="${C.ink3}" stroke-dasharray="4 4"/>
+      <text x="${zoneX+8}" y="152" font-size="11">design section here</text>
+      ${sect}
+      <text x="60" y="215" font-size="13" fill="${C.ink}">${sag?"Slab squashed → counts":"Slab cracked → ignored"}</text>
+      <text x="60" y="235" font-size="12">${sag?"compression sits in the flange, so the":"the top of the slab is in tension, so all"}</text>
+      <text x="60" y="252" font-size="12">${sag?"whole width b f resists it.":"of it is written off. Only the web is left."}</text>
+      <text x="60" y="278" font-size="12" fill="${sag?C.comp:C.bad}">${sag?"steel: bottom of the web":"steel: top of the slab and beam"}</text>
+    </g>`;
+    setVerdict($("sh-verdict"),sag?"a":"bad",sag
+      ? "Sagging: compression is at the top where the flange is. Design as a T- or L-beam of breadth <b>b<sub>f</sub></b>."
+      : "Hogging: the flange is in tension and assumed cracked. Design as a rectangular section of width <b>b<sub>w</sub></b> and overall depth <b>h</b>.");
+  }
+  $("sh-sag").addEventListener("click",()=>{sag=true;pressGroup([$("sh-sag"),$("sh-hog")],$("sh-sag"));draw();});
+  $("sh-hog").addEventListener("click",()=>{sag=false;pressGroup([$("sh-sag"),$("sh-hog")],$("sh-hog"));draw();});
+  draw();
+})();
+
+/* =========================================================
+   3. NEUTRAL AXIS LOCATOR
+   ========================================================= */
+(function(){
+  const svg=$("na-svg");
+  function draw(){
+    const hf=+$("na-hf").value, bf=+$("na-bf").value, M=+$("na-M").value;
+    $("na-hfv").textContent=hf; $("na-bfv").textContent=n(bf); $("na-Mv").textContent=n(M);
+    const P={bf:bf,bw:300,hf:hf,d:450,h:520,fck:30,fyk:500,M:M};
+    const r=solve(P);
+    const k=Math.min(330/bf,0.36), top=48, cx=300;
+    const hw=bf*k/2, ww=P.bw*k/2, fh=hf*k, hh=P.h*k, dp=P.d*k;
+    const sPx=Math.min(r.s*k,hh), xPx=Math.min(r.x*k,hh), lim=0.45*P.d*k;
+    let blocks;
+    if(r.case==="a") blocks=`<rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${sPx}" fill="${C.comp}"/>`;
+    else blocks=`<rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${fh}" fill="${C.comp}"/>`+
+                `<rect x="${cx-ww}" y="${top+fh}" width="${ww*2}" height="${Math.max(sPx-fh,0)}" fill="${C.comp}"/>`;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <path d="${tPath(cx,top,k,bf,P.bw,hf,P.h,false)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.5"/>
+      ${blocks}
+      <path d="${tPath(cx,top,k,bf,P.bw,hf,P.h,false)}" fill="none" stroke="${C.ink}" stroke-width="1.5"/>
+      <line x1="${cx-hw}" y1="${top+fh}" x2="${cx+hw}" y2="${top+fh}" stroke="${C.ink}" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>
+      <line x1="60" y1="${top+lim}" x2="700" y2="${top+lim}" stroke="${C.na}" stroke-width="1" stroke-dasharray="2 5" opacity=".8"/>
+      <text x="64" y="${top+lim-5}" fill="${C.na}" font-size="11">x = 0.45d limit</text>
+      <line x1="${cx-hw-20}" y1="${top+xPx}" x2="${cx+hw+20}" y2="${top+xPx}" stroke="${C.na}" stroke-width="2"/>
+      <text x="${cx+hw+24}" y="${top+xPx+4}" fill="${C.na}">N.A.</text>
+      <line x1="${cx-hw-46}" y1="${top}" x2="${cx-hw-46}" y2="${top+sPx}" stroke="${C.c1}" stroke-width="2.4"/>
+      <text x="${cx-hw-52}" y="${top+sPx/2+4}" text-anchor="end" fill="${C.c1}">s</text>
+      <line x1="${cx-hw-14}" y1="${top}" x2="${cx-hw-14}" y2="${top+fh}" stroke="${C.ink}"/>
+      <text x="${cx-hw-18}" y="${top+fh/2+4}" text-anchor="end">h f</text>
+      ${reb(cx-20,top+dp,5.5,C.tens)}${reb(cx,top+dp,5.5,C.tens)}${reb(cx+20,top+dp,5.5,C.tens)}
+      <line x1="${cx-hw}" y1="${top-14}" x2="${cx+hw}" y2="${top-14}" stroke="${C.ink}"/>
+      <text x="${cx}" y="${top-19}" text-anchor="middle" fill="${C.ink}">b f = ${n(bf)}</text>
+      <text x="${cx}" y="${top+hh+18}" text-anchor="middle">b w = 300, d = 450 mm, C30/37</text>
+    </g>`;
+    $("na-x").textContent=n(r.x,1)+" mm";
+    $("na-s").textContent=n(r.s,1)+" mm";
+    $("na-gap").textContent=n(hf-r.s,1)+" mm";
+    $("na-xd").textContent=n(r.x/P.d,3);
+    if(r.x>0.45*P.d) setVerdict($("na-verdict"),"bad",
+      `x/d = ${n(r.x/P.d,3)} &gt; 0.45 — the neutral axis is deeper than the code allows for a singly reinforced section. Compression steel or a bigger section is needed.`);
+    else if(r.case==="a") setVerdict($("na-verdict"),"a",
+      `<b>Condition (a)</b> — the block (s = ${n(r.s,1)} mm) sits inside the flange with ${n(hf-r.s,1)} mm to spare. The neutral axis is at ${n(r.x,1)} mm, also in the flange.`);
+    else setVerdict($("na-verdict"),"b",
+      `<b>Condition (b)</b> — the block is ${n(r.s-hf,1)} mm deeper than the flange, so the web contributes compression too.`);
+  }
+  ["na-hf","na-bf","na-M"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+</script>
+
+<script>
+"use strict";
+/* =========================================================
+   4a. T → EQUIVALENT RECTANGLE MORPH
+   ========================================================= */
+(function(){
+  const svg=$("mo-svg"), btn=$("mo-go");
+  let t=0, target=0, raf=null;
+  const bf=900,bw=300,hf=120,h=560,d=490,k=0.31;
+  function frame(){
+    const step=RM?1:0.075;
+    t += (target-t)*0.18;
+    if(Math.abs(target-t)<0.004||RM){t=target;} else raf=requestAnimationFrame(frame);
+    render();
+  }
+  function render(){
+    const top=42, cx=270;
+    const hw=bf*k/2, fh=hf*k, hh=h*k, dp=d*k;
+    const wNow=(bw+(bf-bw)*t)*k/2;
+    const path=`M${cx-hw},${top} H${cx+hw} V${top+fh} H${cx+wNow} V${top+hh} H${cx-wNow} V${top+fh} H${cx-hw} Z`;
+    const sPx=0.62*fh;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+      <path d="${path}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.6"/>
+      <path d="M${cx-hw},${top+fh} H${cx-wNow} V${top+hh} H${cx+wNow} V${top+fh} H${cx+hw} V${top+hh} H${cx-hw} Z" fill="${C.ink3}" opacity="${0.10+0.10*t}"/>
+      <rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${sPx}" fill="${C.comp}"/>
+      <path d="${path}" fill="none" stroke="${C.ink}" stroke-width="1.6"/>
+      ${reb(cx-26,top+dp,6,C.tens)}${reb(cx,top+dp,6,C.tens)}${reb(cx+26,top+dp,6,C.tens)}
+      <line x1="${cx-hw}" y1="${top-16}" x2="${cx+hw}" y2="${top-16}" stroke="${C.ink}"/>
+      <text x="${cx}" y="${top-21}" text-anchor="middle" fill="${C.ink}">b f</text>
+      <text x="${cx}" y="${top+fh+22}" text-anchor="middle" font-size="11" fill="${C.ink3}">this concrete is below the block — it resists nothing</text>
+      <text x="${cx}" y="${top+hh+20}" text-anchor="middle" font-size="11">${t>0.5?"equivalent rectangle, breadth b f":"T-section"}</text>
+      <g transform="translate(560,${top})">
+        <text y="6" font-size="12" fill="${C.ink}">unchanged by the morph:</text>
+        <text y="30" font-size="12" fill="${C.comp}">F cc = 0.567 f ck · b f · s</text>
+        <text y="52" font-size="12" fill="${C.tens}">F st = 0.87 f yk · A s</text>
+        <text y="74" font-size="12" fill="${C.ink2}">z = d − s/2</text>
+        <text y="104" font-size="12" fill="${C.ink3}">so M = F st · z is identical</text>
+        <text y="122" font-size="12" fill="${C.ink3}">for both shapes.</text>
+      </g>
+    </g>`;
+  }
+  btn.addEventListener("click",()=>{
+    target = target>0.5?0:1;
+    btn.textContent = target>0.5?"Put the T-section back":"Show the equivalent rectangle";
+    if(RM){t=target;render();} else {cancelAnimationFrame(raf);raf=requestAnimationFrame(frame);}
+  });
+  btn.textContent="Show the equivalent rectangle";
+  render();
+})();
+
+/* =========================================================
+   4b. LEVER-ARM CURVE
+   ========================================================= */
+(function(){
+  const svg=$("la-svg");
+  const X0=90,X1=680,Y0=250,Y1=40, KMAX=0.18, ZMIN=0.78, ZMAX=1.0;
+  const px=K=>X0+(K/KMAX)*(X1-X0);
+  const py=z=>Y0+((z-ZMIN)/(ZMAX-ZMIN))*(Y1-Y0);
+  function zd(K){return Math.min(0.5+Math.sqrt(Math.max(0.25-K/1.134,0)),0.95);}
+  function draw(){
+    const K=+$("la-K").value; $("la-Kv").textContent=K.toFixed(3);
+    const z=zd(K);
+    let path="";
+    for(let i=0;i<=120;i++){const kk=(i/120)*0.167; path+=(i?"L":"M")+px(kk)+","+py(zd(kk));}
+    let ticks="";
+    [0,0.04,0.08,0.12,0.167].forEach(v=>{ticks+=`<line x1="${px(v)}" y1="${Y0}" x2="${px(v)}" y2="${Y0+5}" stroke="${C.ink3}"/><text x="${px(v)}" y="${Y0+19}" text-anchor="middle" font-size="11" fill="${C.ink3}">${v}</text>`;});
+    [0.80,0.85,0.90,0.95,1.00].forEach(v=>{ticks+=`<line x1="${X0-5}" y1="${py(v)}" x2="${X0}" y2="${py(v)}" stroke="${C.ink3}"/><text x="${X0-9}" y="${py(v)+4}" text-anchor="end" font-size="11" fill="${C.ink3}">${v.toFixed(2)}</text>`;});
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace">
+      <rect x="${X0}" y="${Y1}" width="${X1-X0}" height="${Y0-Y1}" fill="#FAFBFC"/>
+      <line x1="${X0}" y1="${py(0.95)}" x2="${X1}" y2="${py(0.95)}" stroke="${C.ink3}" stroke-dasharray="4 4"/>
+      <text x="${X1}" y="${py(0.95)-6}" text-anchor="end" font-size="11" fill="${C.ink3}">cap z = 0.95d</text>
+      <line x1="${px(0.167)}" y1="${Y0}" x2="${px(0.167)}" y2="${Y1}" stroke="${C.na}" stroke-dasharray="4 4"/>
+      <text x="${px(0.167)+6}" y="${Y1+14}" font-size="11" fill="${C.na}">K′ = 0.167 (x = 0.45d)</text>
+      <rect x="${px(0.167)}" y="${Y1}" width="${X1-px(0.167)}" height="${Y0-Y1}" fill="${C.bad}" opacity=".07"/>
+      <path d="${path}" fill="none" stroke="${C.ink}" stroke-width="2.4"/>
+      <line x1="${X0}" y1="${Y0}" x2="${X1}" y2="${Y0}" stroke="${C.ink}"/>
+      <line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="${C.ink}"/>
+      ${ticks}
+      <line x1="${px(K)}" y1="${Y0}" x2="${px(K)}" y2="${py(z)}" stroke="${C.comp}" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <line x1="${X0}" y1="${py(z)}" x2="${px(K)}" y2="${py(z)}" stroke="${C.comp}" stroke-width="1.4" stroke-dasharray="3 3"/>
+      <circle cx="${px(K)}" cy="${py(z)}" r="6" fill="${C.comp}" stroke="${C.ink}" stroke-width="1.4"/>
+      <text x="${(X0+X1)/2}" y="${Y0+38}" text-anchor="middle" font-size="12" fill="${C.ink2}">K = M / b f d² f ck</text>
+      <text x="26" y="${(Y0+Y1)/2}" font-size="12" fill="${C.ink2}" transform="rotate(-90,26,${(Y0+Y1)/2})" text-anchor="middle">lever arm ratio z/d</text>
+    </g>`;
+    $("la-zd").textContent=z.toFixed(3);
+    $("la-sd").textContent=(2*(1-z)).toFixed(3);
+    $("la-xd").textContent=(2.5*(1-z)).toFixed(3);
+  }
+  $("la-K").addEventListener("input",draw); draw();
+})();
+
+/* =========================================================
+   generic step-reveal
+   ========================================================= */
+function stepper(wrapId,nextId,resetId,label,nextLabel){
+  nextLabel=nextLabel||"Work the next step";
+  const wrap=$(wrapId), steps=[...wrap.querySelectorAll(".step")];
+  let i=0;
+  const nb=$(nextId);
+  function upd(){
+    steps.forEach((s,j)=>s.classList.toggle("show",j<i));
+    nb.textContent = i>=steps.length? "All steps shown" : (i===0?label:nextLabel);
+    nb.disabled = i>=steps.length;
+  }
+  nb.addEventListener("click",()=>{if(i<steps.length){i++;upd();}});
+  $(resetId).addEventListener("click",()=>{i=0;upd();});
+  upd();
+}
+stepper("exA-steps","exA-next","exA-reset","Start the calculation");
+stepper("exB-steps","exB-next","exB-reset","Start the calculation");
+stepper("d41-steps","d41-next","d41-reset","Show the first line","Next line");
+
+/* =========================================================
+   6. THE Mf GATE
+   ========================================================= */
+(function(){
+  const svg=$("g-svg");
+  function draw(){
+    const M=+$("g-M").value, hf=+$("g-hf").value, bf=+$("g-bf").value, d=450;
+    $("g-Mv").textContent=n(M); $("g-hfv").textContent=hf; $("g-bfv").textContent=n(bf);
+    const Mf=0.567*30*bf*hf*(d-hf/2)/1e6;
+    const scale=v=>Math.min(v/1200,1)*590;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+      <text x="60" y="46" fill="${C.ink}">M d</text>
+      <rect x="120" y="30" width="${scale(M)}" height="26" fill="${C.tens}"/>
+      ${scale(M)>430?`<text x="${114+scale(M)}" y="49" text-anchor="end" fill="#fff">${n(M)} kNm</text>`
+                     :`<text x="${126+scale(M)}" y="49" fill="${C.tens}">${n(M)} kNm</text>`}
+      <text x="60" y="106" fill="${C.ink}">M f</text>
+      <rect x="120" y="90" width="${scale(Mf)}" height="26" fill="${C.comp}"/>
+      ${scale(Mf)>430?`<text x="${114+scale(Mf)}" y="109" text-anchor="end" fill="#fff">${n(Mf,0)} kNm</text>`
+                      :`<text x="${126+scale(Mf)}" y="109" fill="${C.comp}">${n(Mf,0)} kNm</text>`}
+      <line x1="${120+scale(Mf)}" y1="20" x2="${120+scale(Mf)}" y2="130" stroke="${C.comp}" stroke-dasharray="4 3"/>
+      <text x="120" y="160" font-size="12">M f = 0.567 × 30 × ${n(bf)} × ${hf} × (450 − ${hf/2}) = ${n(Mf,0)} kNm</text>
+      <text x="120" y="182" font-size="11" fill="${C.ink3}">b f = ${n(bf)} mm, h f = ${hf} mm, d = 450 mm, C30/37</text>
+    </g>`;
+    if(M>Mf) setVerdict($("g-verdict"),"b",
+      `M<sub>d</sub> &gt; M<sub>f</sub> by ${n(M-Mf,0)} kNm — the flange alone cannot carry it. The stress block must extend below the flange: <b>case (b)</b>.`);
+    else setVerdict($("g-verdict"),"a",
+      `M<sub>d</sub> ≤ M<sub>f</sub> with ${n(Mf-M,0)} kNm of flange capacity unused — the block stays inside the flange: <b>case (a)</b>.`);
+  }
+  ["g-M","g-hf","g-bf"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+
+/* =========================================================
+   7a. AREA SPLIT
+   ========================================================= */
+(function(){
+  const svg=$("sp-svg");
+  function draw(){
+    const bf=+$("sp-bf").value,bwR=+$("sp-bw").value,hf=+$("sp-hf").value,d=+$("sp-d").value;
+    const bw=Math.min(bwR,bf-100);
+    $("sp-bfv").textContent=n(bf);$("sp-bwv").textContent=bw;$("sp-hfv").textContent=hf;$("sp-dv").textContent=d;
+    const s=0.36*d, h=d+70, bad=hf>s;
+    const k=Math.min(320/bf,150/h), top=52, cx=250;
+    const hw=bf*k/2, ww=bw*k/2, fh=hf*k, hh=h*k, dp=d*k, sp=s*k;
+    const A1=bw*s, A2=(bf-bw)*hf;
+    const F1=0.2*30*bw*d/1000, F2=0.567*30*hf*(bf-bw)/1000;
+    const z1=d-s/2, z2=d-hf/2;
+    const ax=520,bwid=48;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <path d="${tPath(cx,top,k,bf,bw,hf,h,false)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.5"/>
+      <rect x="${cx-hw}" y="${top}" width="${(hw-ww)}" height="${fh}" fill="${C.c2}"/>
+      <rect x="${cx+ww}" y="${top}" width="${(hw-ww)}" height="${fh}" fill="${C.c2}"/>
+      <rect x="${cx-ww}" y="${top}" width="${ww*2}" height="${sp}" fill="${C.c1}"/>
+      <path d="${tPath(cx,top,k,bf,bw,hf,h,false)}" fill="none" stroke="${C.ink}" stroke-width="1.5"/>
+      <text x="${cx}" y="${top+sp/2+5}" text-anchor="middle" fill="#fff" font-size="13">1</text>
+      <text x="${cx-(hw+ww)/2}" y="${top+fh/2+5}" text-anchor="middle" fill="${C.ink}" font-size="13">2</text>
+      <text x="${cx+(hw+ww)/2}" y="${top+fh/2+5}" text-anchor="middle" fill="${C.ink}" font-size="13">2</text>
+      <line x1="${cx+hw+10}" y1="${top}" x2="${cx+hw+10}" y2="${top+sp}" stroke="${C.c1}" stroke-width="2.2"/>
+      <text x="${cx+hw+16}" y="${top+sp/2+4}" fill="${C.c1}">s = 0.36d</text>
+      <line x1="${cx-hw-12}" y1="${top}" x2="${cx-hw-12}" y2="${top+fh}" stroke="${C.ink}"/>
+      <text x="${cx-hw-16}" y="${top+fh/2+4}" text-anchor="end">h f</text>
+      <line x1="${cx-hw-40}" y1="${top+0.45*dp}" x2="${cx+hw+40}" y2="${top+0.45*dp}" stroke="${C.na}" stroke-width="1.6" stroke-dasharray="6 4"/>
+      <text x="${cx-hw-44}" y="${top+0.45*dp+4}" text-anchor="end" fill="${C.na}">x = 0.45d</text>
+      ${reb(cx-18,top+dp,5.5,C.tens)}${reb(cx,top+dp,5.5,C.tens)}${reb(cx+18,top+dp,5.5,C.tens)}
+      <text x="${cx+ww+6}" y="${top+dp+4}" fill="${C.tens}">A s</text>
+
+      <text x="${ax+bwid/2}" y="${top-22}" text-anchor="middle" fill="${C.comp}" font-size="11">0.567 f ck</text>
+      <rect x="${ax}" y="${top}" width="${bwid}" height="${fh}" fill="${C.c2}" stroke="${C.ink}" stroke-width="1"/>
+      <rect x="${ax}" y="${top+fh}" width="${bwid}" height="${Math.max(sp-fh,0)}" fill="${C.c1}" stroke="${C.ink}" stroke-width="1"/>
+      <line x1="${ax+bwid}" y1="${top+fh/2}" x2="${ax+bwid+42}" y2="${top+fh/2}" stroke="${C.c2}" stroke-width="3" marker-end="url(#a2)"/>
+      <text x="${ax+bwid+46}" y="${top+fh/2+4}" fill="${C.c1}">F c2</text>
+      <line x1="${ax+bwid}" y1="${top+sp/2}" x2="${ax+bwid+22}" y2="${top+sp/2}" stroke="${C.c1}" stroke-width="3" marker-end="url(#a1)"/>
+      <text x="${ax+bwid+26}" y="${top+sp/2+16}" fill="${C.c1}">F c1</text>
+      <line x1="${ax-14}" y1="${top+dp}" x2="${ax-56}" y2="${top+dp}" stroke="${C.tens}" stroke-width="3" marker-end="url(#at)"/>
+      <text x="${ax-10}" y="${top+dp+4}" fill="${C.tens}">F st</text>
+      <line x1="${ax+bwid+78}" y1="${top+sp/2}" x2="${ax+bwid+78}" y2="${top+dp}" stroke="${C.ink}"/>
+      <text x="${ax+bwid+82}" y="${(top+sp/2+top+dp)/2}" fill="${C.ink}">z1 = ${n(z1,0)}</text>
+      <line x1="${ax+bwid+134}" y1="${top+fh/2}" x2="${ax+bwid+134}" y2="${top+dp}" stroke="${C.ink}"/>
+      <text x="${ax+bwid+130}" y="${(top+fh/2+top+dp)/2+18}" text-anchor="end" fill="${C.ink}">z2 = ${n(z2,0)}</text>
+      ${bad?`<text x="60" y="${top+hh+34}" fill="${C.bad}" font-size="12">h f = ${hf} mm exceeds s = ${n(s,0)} mm — this split is not valid here (see the rule below).</text>`:""}
+    </g>
+    <defs>
+      <marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.c1}"/></marker>
+      <marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.c2}"/></marker>
+      <marker id="at" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.tens}"/></marker>
+    </defs>`;
+    $("sp-s").textContent=n(s,0)+" mm";
+    $("sp-a1").textContent=n(A1/1000,0)+"×10³ mm²";
+    $("sp-a2").textContent=n(A2/1000,0)+"×10³ mm²";
+    $("sp-f1").textContent=n(F1,0)+" kN";
+    $("sp-f2").textContent=n(F2,0)+" kN";
+  }
+  ["sp-bf","sp-bw","sp-hf","sp-d"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+
+/* =========================================================
+   7b. VALIDITY  hf vs 0.36d
+   ========================================================= */
+(function(){
+  const svg=$("v-svg");
+  function draw(){
+    const hf=+$("v-hf").value, d=+$("v-d").value;
+    $("v-hfv").textContent=hf; $("v-dv").textContent=d;
+    const lim=0.36*d, term=lim-hf, ok=hf<=lim;
+    const sc=v=>Math.min(v/300,1)*520;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+      <text x="50" y="44" fill="${C.ink}">h f</text>
+      <rect x="110" y="28" width="${sc(hf)}" height="24" fill="${C.con2}" stroke="${C.ink}" stroke-width="1"/>
+      <text x="${116+sc(hf)}" y="46">${hf} mm</text>
+      <text x="50" y="94" fill="${C.ink}">0.36d</text>
+      <rect x="110" y="78" width="${sc(lim)}" height="24" fill="${C.c1}"/>
+      <text x="${116+sc(lim)}" y="96" fill="${C.c1}">${n(lim,1)} mm</text>
+      <line x1="${110+sc(lim)}" y1="18" x2="${110+sc(lim)}" y2="112" stroke="${C.c1}" stroke-dasharray="4 3"/>
+      <text x="110" y="140" font-size="13" fill="${ok?C.ok:C.bad}">(0.36d − h f) = ${n(term,1)} mm  ${ok?"positive ✓":"negative ✗"}</text>
+    </g>`;
+    setVerdict($("v-verdict"),ok?"ok":"bad", ok
+      ? `h<sub>f</sub> ≤ 0.36d, so the assumed stress block really does reach below the flange and equation 4.1 is valid.`
+      : `h<sub>f</sub> &gt; 0.36d. The term (0.36d − h<sub>f</sub>) has gone negative, which would wrongly <i>reduce</i> the steel. Equation 4.1 must not be used — with a flange this thick relative to the depth, the block never leaves the flange, so design it as a rectangle of breadth b<sub>f</sub>.`);
+  }
+  ["v-hf","v-d"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+
+/* =========================================================
+   7c. Mbal CHECK
+   ========================================================= */
+(function(){
+  const svg=$("mb-svg"), d=420;
+  function draw(){
+    const M=+$("mb-M").value,bf=+$("mb-bf").value,bwR=+$("mb-bw").value,hf=+$("mb-hf").value;
+    const bw=Math.min(bwR,bf-100);
+    $("mb-Mv").textContent=n(M);$("mb-bfv").textContent=n(bf);$("mb-bwv").textContent=bw;$("mb-hfv").textContent=hf;
+    const web=0.167*30*bw*d*d/1e6, ovh=0.567*30*hf*(bf-bw)*(d-0.5*hf)/1e6;
+    const Mbal=web+ovh, Mf=0.567*30*bf*hf*(d-hf/2)/1e6;
+    const sc=v=>Math.min(v/1200,1)*560;
+    const state = M>Mbal?"bad":(M>Mf?"b":"a");
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+      <text x="46" y="46" fill="${C.ink}">M bal</text>
+      <rect x="118" y="30" width="${sc(web)}" height="28" fill="${C.c1}"/>
+      <rect x="${118+sc(web)}" y="30" width="${sc(ovh)}" height="28" fill="${C.c2}"/>
+      <text x="${118+sc(web)/2}" y="49" text-anchor="middle" fill="#fff" font-size="11">web</text>
+      <text x="${118+sc(web)+sc(ovh)/2}" y="49" text-anchor="middle" fill="${C.ink}" font-size="11">overhangs</text>
+      <text x="${124+sc(Mbal)}" y="49" fill="${C.c1}">${n(Mbal,0)}</text>
+      <text x="46" y="106" fill="${C.ink}">M</text>
+      <rect x="118" y="90" width="${sc(M)}" height="28" fill="${C.tens}"/>
+      <text x="${124+sc(M)}" y="109" fill="${C.tens}">${n(M)} kNm</text>
+      <line x1="${118+sc(Mf)}" y1="20" x2="${118+sc(Mf)}" y2="130" stroke="${C.comp}" stroke-dasharray="4 3"/>
+      <text x="${118+sc(Mf)}" y="148" text-anchor="middle" font-size="11" fill="${C.comp}">M f = ${n(Mf,0)}</text>
+      <line x1="${118+sc(Mbal)}" y1="20" x2="${118+sc(Mbal)}" y2="130" stroke="${C.c1}" stroke-dasharray="4 3"/>
+      <text x="${118+sc(Mbal)}" y="168" text-anchor="middle" font-size="11" fill="${C.c1}">M bal = ${n(Mbal,0)}</text>
+      <text x="118" y="196" font-size="11" fill="${C.ink3}">d = 420 mm, C30/37 — drag any slider to move the two thresholds</text>
+    </g>`;
+    $("mb-w").textContent=n(web,0)+" kNm";
+    $("mb-f").textContent=n(ovh,0)+" kNm";
+    $("mb-t").textContent=n(Mbal,0)+" kNm";
+    $("mb-mf").textContent=n(Mf,0)+" kNm";
+    if(state==="bad") setVerdict($("mb-verdict"),"bad",
+      `M &gt; M<sub>bal</sub> — at x = 0.45d the concrete cannot supply this moment. Add compression steel, deepen the beam, or widen the web.`);
+    else if(state==="b") setVerdict($("mb-verdict"),"b",
+      `M<sub>f</sub> &lt; M ≤ M<sub>bal</sub> — case (b), singly reinforced. Equation 4.1 applies (provided h<sub>f</sub> ≤ 0.36d = ${n(0.36*d,1)} mm).`);
+    else setVerdict($("mb-verdict"),"a",
+      `M ≤ M<sub>f</sub> — you never left case (a). Design as an equivalent rectangle of breadth b<sub>f</sub>; equation 4.1 is not needed.`);
+  }
+  ["mb-M","mb-bf","mb-bw","mb-hf"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+
+/* =========================================================
+   9. EXACT vs CONSERVATIVE
+   ========================================================= */
+(function(){
+  const svg=$("ex-svg"), bf=800,bw=300,d=420,fck=30,fyk=500;
+  function draw(){
+    const M=+$("ex-M").value, hf=+$("ex-hf").value;
+    $("ex-Mv").textContent=n(M); $("ex-hfv").textContent=hf;
+    const r=solve({M:M,bf:bf,bw:bw,hf:hf,d:d,fck:fck,fyk:fyk});
+    const As1=r.As, As2=r.As41;
+    const k=0.30, top=48, h=d+70;
+    const draws=(cx,x,label,col)=>{
+      const hw=bf*k/2, ww=bw*k/2, fh=hf*k, hh=h*k, dp=d*k, sp=0.8*x*k;
+      return `<path d="${tPath(cx,top,k,bf,bw,hf,h,false)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.4"/>
+      <rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${fh}" fill="${C.comp}"/>
+      <rect x="${cx-ww}" y="${top+fh}" width="${ww*2}" height="${Math.max(sp-fh,0)}" fill="${C.comp}"/>
+      <path d="${tPath(cx,top,k,bf,bw,hf,h,false)}" fill="none" stroke="${C.ink}" stroke-width="1.4"/>
+      <line x1="${cx-hw-16}" y1="${top+x*k}" x2="${cx+hw+16}" y2="${top+x*k}" stroke="${col}" stroke-width="2" stroke-dasharray="6 4"/>
+      <text x="${cx+hw+20}" y="${top+x*k+4}" fill="${col}" font-size="11">x</text>
+      ${reb(cx-16,top+dp,5,C.tens)}${reb(cx,top+dp,5,C.tens)}${reb(cx+16,top+dp,5,C.tens)}
+      <text x="${cx}" y="${top+hh+20}" text-anchor="middle" font-size="12" fill="${C.ink}">${label}</text>
+      <text x="${cx}" y="${top+hh+38}" text-anchor="middle" font-size="12" fill="${col}">x = ${n(x,1)} mm  (${n(x/d,3)}d)</text>`;
+    };
+    const valid = r.case==="b" && M<=r.Mbal;
+    svg.innerHTML=`<g font-family="IBM Plex Mono, monospace">
+      ${draws(200,r.case==="b"?r.x:r.x,"exact method",C.na)}
+      ${draws(560,0.45*d,"conservative, x = 0.45d",C.c1)}
+      <line x1="380" y1="30" x2="380" y2="250" stroke="${C.line}" stroke-dasharray="3 4"/>
+    </g>`;
+    $("ex-x").textContent=n(r.x,1)+" mm";
+    $("ex-xd").textContent=n(r.x/d,3);
+    $("ex-as1").textContent=n(As1,0)+" mm²";
+    $("ex-as2").textContent=valid?n(As2,0)+" mm²":"n/a";
+    $("ex-diff").textContent=valid?"+"+n(100*(As2-As1)/As1,1)+"%":"—";
+    if(r.case==="a") setVerdict($("ex-verdict"),"a",
+      `At M = ${n(M)} kNm with h<sub>f</sub> = ${hf} mm the block is still inside the flange (M<sub>f</sub> = ${n(r.Mf,0)} kNm). No case (b) comparison to make — drag the moment up.`);
+    else if(M>r.Mbal) setVerdict($("ex-verdict"),"bad",
+      `M = ${n(M)} kNm exceeds M<sub>bal</sub> = ${n(r.Mbal,0)} kNm, so neither singly reinforced route is valid here.`);
+    else setVerdict($("ex-verdict"),"ok",
+      `Both routes are valid. The exact method needs ${n(As1,0)} mm²; equation 4.1 asks for ${n(As2,0)} mm² — ${n(100*(As2-As1)/As1,1)}% more steel for one line of arithmetic instead of a quadratic.`);
+  }
+  ["ex-M","ex-hf"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+</script>
+
+<script>
+"use strict";
+/* =========================================================
+   10a. l0 REGIONS
+   ========================================================= */
+(function(){
+  const svg=$("l0-svg"), btns=[...document.querySelectorAll("[data-l0]")];
+  let sel="1";
+  const txt={
+    "1":["l<sub>0</sub> = 0.85 l<sub>1</sub>","End span. One end is (nearly) pinned and one is continuous, so the sagging region runs most of the span — 85% of it."],
+    "2":["l<sub>0</sub> = 0.15(l<sub>1</sub> + l<sub>2</sub>)","Interior support. The hogging region is short, so the effective flange collapses. It doesn't matter: the beam is designed as a rectangle b<sub>w</sub> × h here anyway."],
+    "3":["l<sub>0</sub> = 0.70 l<sub>2</sub>","Interior span. Continuous at both ends, so contraflexure points move further in and only 70% of the span sags."],
+    "4":["l<sub>0</sub> = 0.15 l<sub>2</sub> + l<sub>3</sub>","Cantilever. The whole cantilever hogs, plus a share of the back span. Valid only if l<sub>3</sub> is less than half of l<sub>2</sub>."]
+  };
+  const seg={"1":[60,264],"2":[258,342],"3":[348,572],"4":[572,700]};
+  function draw(){
+    const y=70, sup=[60,300,620];
+    let bars="";
+    Object.keys(seg).forEach(k=>{
+      const [a,b]=seg[k], on=k===sel, yy=120+(k==="2"?26:0)+(k==="4"?26:0);
+      bars+=`<line x1="${a}" y1="${yy}" x2="${b}" y2="${yy}" stroke="${on?C.comp:C.line}" stroke-width="${on?4:2.5}"/>
+      <line x1="${a}" y1="${yy-6}" x2="${a}" y2="${yy+6}" stroke="${on?C.comp:C.line}" stroke-width="1.5"/>
+      <line x1="${b}" y1="${yy-6}" x2="${b}" y2="${yy+6}" stroke="${on?C.comp:C.line}" stroke-width="1.5"/>
+      <text x="${(a+b)/2}" y="${yy+20}" text-anchor="middle" font-size="11" fill="${on?C.c1:C.ink3}">${["","0.85l₁","0.15(l₁+l₂)","0.70l₂","0.15l₂+l₃"][+k]}</text>`;
+    });
+    let sups=sup.map(x=>`<path d="M${x},${y+12} l-9,15 h18 Z" fill="none" stroke="${C.ink}" stroke-width="1.3"/>`).join("");
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <rect x="60" y="${y-10}" width="640" height="22" fill="${C.con}" stroke="${C.ink}" stroke-width="1.3"/>
+      ${sups}
+      <line x1="60" y1="34" x2="300" y2="34" stroke="${C.ink}"/><text x="180" y="28" text-anchor="middle">l₁ = 6.0 m</text>
+      <line x1="300" y1="34" x2="620" y2="34" stroke="${C.ink}"/><text x="460" y="28" text-anchor="middle">l₂ = 8.0 m</text>
+      <line x1="620" y1="34" x2="700" y2="34" stroke="${C.ink}"/><text x="660" y="28" text-anchor="middle">l₃</text>
+      ${[60,300,620,700].map(x=>`<line x1="${x}" y1="30" x2="${x}" y2="38" stroke="${C.ink}"/>`).join("")}
+      ${bars}
+      <text x="60" y="222" font-size="11" fill="${C.ink3}">l₀ is the distance between points of contraflexure — the length over which the bending moment keeps one sign.</text>
+    </g>`;
+    setVerdict($("l0-verdict"),"a",`<b>${txt[sel][0]}</b> — ${txt[sel][1]}`);
+  }
+  btns.forEach(b=>b.addEventListener("click",()=>{sel=b.dataset.l0;pressGroup(btns,b);draw();}));
+  draw();
+})();
+
+/* =========================================================
+   10b. b_eff CALCULATOR
+   ========================================================= */
+(function(){
+  const svg=$("be-svg"), btns=[...document.querySelectorAll("[data-be]")];
+  let reg="1";
+  function draw(){
+    const l1=+$("be-l1").value, l2=+$("be-l2").value, sp=+$("be-sp").value, bw=+$("be-bw").value;
+    $("be-l1v").textContent=l1.toFixed(1);$("be-l2v").textContent=l2.toFixed(1);
+    $("be-spv").textContent=sp.toFixed(1);$("be-bwv").textContent=bw;
+    const bi=Math.max((sp*1000-bw)/2,0);
+    const l0 = reg==="1"? 0.85*l1*1000 : reg==="2"? 0.15*(l1+l2)*1000 : 0.70*l2*1000;
+    const c1=0.2*bi+0.1*l0, c2=0.2*l0, c3=bi;
+    const beffi=Math.min(c1,c2,c3);
+    const gov = beffi===c3&&c3<c1 ? 3 : (beffi===c2&&c2<c1 ? 2 : 1);
+    const beff=bw+2*beffi;
+    /* plan strip */
+    const k=Math.min(620/(sp*2000+bw), 0.09), cx=380, top=40, sy=44;
+    const w=v=>v*k;
+    const webs=[-1,0,1].map(i=>{const x=cx+i*sp*1000*k;
+      return `<rect x="${x-w(bw)/2}" y="${top}" width="${w(bw)}" height="${sy}" fill="${C.con2}" stroke="${C.ink}" stroke-width="1.1"/>`;}).join("");
+    const bar=(y,val,lab,col,on)=>`
+      <line x1="120" y1="${y}" x2="${120+Math.min(val,2600)/2600*520}" y2="${y}" stroke="${col}" stroke-width="${on?6:3}"/>
+      <text x="${126+Math.min(val,2600)/2600*520}" y="${y+4}" font-size="11" fill="${on?C.ink:C.ink3}">${n(val,0)} mm</text>
+      <text x="112" y="${y+4}" text-anchor="end" font-size="11" fill="${on?C.ink:C.ink3}">${lab}</text>`;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <rect x="40" y="${top}" width="680" height="16" fill="${C.con}" stroke="${C.ink}" stroke-width="1.1"/>
+      ${webs}
+      <rect x="${cx-w(beff)/2}" y="${top}" width="${w(beff)}" height="16" fill="${C.comp}"/>
+      <rect x="${cx-w(bw)/2}" y="${top}" width="${w(bw)}" height="16" fill="${C.c1}"/>
+      <line x1="${cx-w(beff)/2}" y1="${top-14}" x2="${cx+w(beff)/2}" y2="${top-14}" stroke="${C.c1}" stroke-width="1.6"/>
+      <text x="${cx}" y="${top-19}" text-anchor="middle" fill="${C.c1}">b eff = ${n(beff,0)} mm</text>
+      <line x1="${cx+w(bw)/2}" y1="${top+sy+16}" x2="${cx+w(bw)/2+w(bi)}" y2="${top+sy+16}" stroke="${C.ink}"/>
+      <text x="${cx+w(bw)/2+w(bi)/2}" y="${top+sy+30}" text-anchor="middle">b i = ${n(bi,0)}</text>
+      <text x="40" y="${top+sy+30}" font-size="11" fill="${C.ink3}">plan on the slab — webs shown at ${sp.toFixed(1)} m centres</text>
+      ${bar(160,c1,"0.2b i + 0.1l₀",gov===1?C.comp:C.line,gov===1)}
+      ${bar(186,c2,"cap 0.2l₀",gov===2?C.comp:C.line,gov===2)}
+      ${bar(212,c3,"cap b i",gov===3?C.comp:C.line,gov===3)}
+      <text x="120" y="240" font-size="11" fill="${C.ink3}">b eff,i = ${n(beffi,0)} mm  →  b eff = b w + 2 b eff,i = ${bw} + 2(${n(beffi,0)}) = ${n(beff,0)} mm</text>
+    </g>`;
+    $("be-l0").textContent=n(l0,0)+" mm";
+    $("be-bi").textContent=n(bi,0)+" mm";
+    $("be-c1").textContent=n(c1,0)+" mm";
+    $("be-c2").textContent=n(c2,0)+" mm";
+    $("be-c3").textContent=n(c3,0)+" mm";
+    $("be-tot").textContent=n(beff,0)+" mm";
+    const govtxt=[,"the formula itself — neither cap bites","the 0.2l₀ cap — the span is too short for compression to spread further","the b i cap — there is no more slab to share"][gov];
+    setVerdict($("be-verdict"),"a",
+      `${reg==="1"?"End span":reg==="2"?"Interior support":"Interior span"}: l<sub>0</sub> = ${n(l0,0)} mm, and the governing limit is <b>${govtxt}</b>. So b<sub>eff</sub> = ${n(beff,0)} mm.`);
+    const ratio=Math.min(l1,l2)/Math.max(l1,l2);
+    const wn=$("be-warn");
+    if(ratio<0.67){wn.style.display="block";wn.innerHTML=`Adjacent span ratio is ${ratio.toFixed(2)}, outside the permitted 0.67–1.50. These l<sub>0</sub> values no longer apply — you would need to locate the contraflexure points from a real analysis.`;}
+    else wn.style.display="none";
+  }
+  btns.forEach(b=>b.addEventListener("click",()=>{reg=b.dataset.be;pressGroup(btns,b);draw();}));
+  ["be-l1","be-l2","be-sp","be-bw"].forEach(i=>$(i).addEventListener("input",draw)); draw();
+})();
+
+/* =========================================================
+   11. TRANSVERSE STEEL
+   ========================================================= */
+(function(){
+  const svg=$("tv-svg"), btn=$("tv-toggle"); let on=true;
+  function draw(){
+    const k=0.30, top=48, cx=380, bf=1200,bw=320,hf=140,h=560,d=490;
+    const hw=bf*k/2, ww=bw*k/2, fh=hf*k, hh=h*k, dp=d*k;
+    const shear=[-1,1].map(s=>`
+      <line x1="${cx+s*ww}" y1="${top+8}" x2="${cx+s*(ww+56)}" y2="${top+8}" stroke="${C.comp}" stroke-width="2.6" marker-end="url(#tvA)"/>
+      <line x1="${cx+s*ww}" y1="${top+fh-8}" x2="${cx+s*(ww+56)}" y2="${top+fh-8}" stroke="${C.comp}" stroke-width="2.6" marker-end="url(#tvA)"/>`).join("");
+    const bars=on?`<g stroke="${C.c1}" stroke-width="3">
+        <line x1="${cx-hw+10}" y1="${top+12}" x2="${cx+hw-10}" y2="${top+12}"/>
+        <line x1="${cx-hw+10}" y1="${top+fh-12}" x2="${cx+hw-10}" y2="${top+fh-12}"/></g>
+        <text x="${cx+hw+8}" y="${top+12+4}" font-size="11" fill="${C.c1}">transverse bars</text>`
+      : `<g stroke="${C.bad}" stroke-width="2" stroke-dasharray="7 5">
+         <line x1="${cx-ww}" y1="${top}" x2="${cx-ww}" y2="${top+fh}"/>
+         <line x1="${cx+ww}" y1="${top}" x2="${cx+ww}" y2="${top+fh}"/></g>
+         <text x="${cx+ww+10}" y="${top+fh+16}" font-size="11" fill="${C.bad}">shear plane fails — overhangs peel off</text>`;
+    const ghost=on?"":`<g opacity=".35">
+        <rect x="${cx-hw}" y="${top-6}" width="${hw-ww}" height="${fh}" fill="${C.bad}" opacity=".25"/>
+        <rect x="${cx+ww}" y="${top-6}" width="${hw-ww}" height="${fh}" fill="${C.bad}" opacity=".25"/></g>`;
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      ${ghost}
+      <path d="${tPath(cx,top,k,bf,bw,hf,h,false)}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.5"/>
+      <rect x="${cx-hw}" y="${top}" width="${hw*2}" height="${fh*0.55}" fill="${C.comp}" opacity=".55"/>
+      ${shear}
+      ${bars}
+      ${reb(cx-24,top+dp,6,C.tens)}${reb(cx,top+dp,6,C.tens)}${reb(cx+24,top+dp,6,C.tens)}
+      <text x="${cx}" y="${top+hh+24}" text-anchor="middle">compression is generated in the web and must flow sideways into the overhangs</text>
+      <text x="${cx}" y="${top+hh+42}" text-anchor="middle" font-size="11" fill="${C.ink3}">it crosses the web–flange junction as horizontal shear</text>
+    </g>
+    <defs><marker id="tvA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.comp}"/></marker></defs>`;
+    setVerdict($("tv-verdict"),on?"ok":"bad", on
+      ? "Transverse reinforcement runs across the <b>full width</b> of the flange, so web and flange act as one section of breadth b<sub>eff</sub>."
+      : "Without steel across the junction the overhangs cannot be engaged. The usable section shrinks to a rectangle of width b<sub>w</sub> — most of the capacity you designed for is gone.");
+    btn.textContent = on? "Remove the transverse steel":"Put the transverse steel back";
+    btn.setAttribute("aria-pressed",on?"false":"true");
+  }
+  btn.addEventListener("click",()=>{on=!on;draw();}); draw();
+})();
+
+/* =========================================================
+   12. FIRE TABLE
+   ========================================================= */
+(function(){
+  const periods=["4","3","2","1,5","1","0,5"];
+  const rows=[
+    ["Solid slab",[["Average cover to reinforcement",[25,25,20,20,15,15]],["Depth, overall ᵃ",[150,150,125,125,100,100]]]],
+    ["Cored slabs, cores no higher than wide",[["Average cover to reinforcement",[25,25,20,20,15,15]],["Thickness under cores",[50,40,40,30,25,20]],["Depth, overall ᵃ",[190,175,160,140,110,100]]]],
+    ["Hollow box sections, cavities wider than high",[["Average cover to reinforcement",[25,25,20,20,15,15]],["Thickness of bottom flange",[50,40,40,30,25,20]],["Depth, overall ᵃ",[230,205,180,155,130,105]]]],
+    ["Ribbed floors with hollow infill / inverted T",[["Average cover to reinforcement",[25,25,20,20,15,15]],["Width of rib, or beam at soffit",[125,100,90,80,70,50]],["Depth, overall ᵃ",[190,175,160,140,110,100]]]],
+    ["Upright T-sections",[["Average bottom cover ᵇ",[65,55,45,35,25,15]],["Side cover to reinforcement ᵇ",[65,55,45,35,25,15]],["Least width of downstanding leg",[150,140,115,90,75,60]],["Thickness of flange ᵃ",[150,150,125,125,100,90]]]],
+    ["Inverted channel, top of leg ≤ depth of section",[["Average bottom cover ᵇ",[65,55,45,35,25,15]],["Side cover to reinforcement ᵇ",[40,30,25,20,15,10]],["Least width of each downstanding leg",[75,70,60,50,40,30]],["Thickness at crown ᵃ",[150,150,125,125,100,90]]]],
+    ["Inverted channel or U-section, top of leg > depth",[["Average bottom cover ᵇ",[65,55,45,35,25,15]],["Side cover to reinforcement ᵇ",[40,30,25,20,15,10]],["Least width of each downstanding leg",[70,60,50,40,35,25]],["Thickness at crown ᵃ",[150,150,125,100,75,65]]]]
+  ];
+  let sel=2; /* default: 2 hours */
+  const wrap=$("fr-btns"), tbl=$("fr-table");
+  periods.forEach((p,i)=>{
+    const b=document.createElement("button");
+    b.textContent=p.replace(",",".")+(p==="1"?" hour":" hours");
+    b.setAttribute("aria-pressed",i===sel?"true":"false");
+    b.addEventListener("click",()=>{sel=i;[...wrap.children].forEach((x,j)=>x.setAttribute("aria-pressed",j===i?"true":"false"));render();});
+    wrap.appendChild(b);
+  });
+  function render(){
+    let h=`<thead><tr><th>Floor construction</th><th style="text-align:left">Dimension</th>`;
+    periods.forEach((p,i)=>h+=`<th class="${i===sel?"hit":""}">${p.replace(",",".")} h</th>`);
+    h+=`</tr></thead><tbody>`;
+    rows.forEach(([name,dims])=>{
+      dims.forEach(([dn,vals],j)=>{
+        h+=`<tr>`;
+        if(j===0) h+=`<td rowspan="${dims.length}" style="${name.startsWith("Upright")?"font-weight:600":""}">${name}</td>`;
+        h+=`<td style="text-align:left;font-family:var(--body);font-size:14px">${dn}</td>`;
+        vals.forEach((v,i)=>h+=`<td class="${i===sel?"hit":""}">${v}</td>`);
+        h+=`</tr>`;
+      });
+    });
+    tbl.innerHTML=h+"</tbody>";
+  }
+  render();
+})();
+
+/* =========================================================
+   13. DESIGN FLOWCHART
+   ========================================================= */
+(function(){
+  const svg=$("fl-svg");let i=0;
+  const boxes=[
+    ["1","Calculate K = M / (b f d² f ck)","use the flange width b f"],
+    ["2","Get l a from the lever-arm curve or equation 3.4","l a = z/d"],
+    ["3","z = l a · d   and   s = 2(d − z)","the depth of the stress block"],
+    ["4","Is s ≤ h f ?","the only decision in the procedure"],
+    ["5a","Case (a): design as a rectangle of breadth b f","A s = M / 0.87 f yk z"],
+    ["5b","Case (b): exact neutral axis, or x = 0.45d","equation 4.1, after checking M ≤ M bal"]
+  ];
+  function draw(){
+    const bx=(x,y,w,hh,idx,txt,sub,shape)=>{
+      const on=i>idx, col=on?C.ink:C.line, fill=on?"#fff":"#F7F8F9";
+      const body = shape==="d"
+        ? `<path d="M${x+w/2},${y} L${x+w},${y+hh/2} L${x+w/2},${y+hh} L${x},${y+hh/2} Z" fill="${on?"#F3EDFC":fill}" stroke="${on?C.na:C.line}" stroke-width="1.6"/>`
+        : `<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="${fill}" stroke="${col}" stroke-width="1.6"/>`;
+      return `${body}
+        <text x="${x+w/2}" y="${y+hh/2+(sub?-2:5)}" text-anchor="middle" font-size="13" fill="${on?C.ink:C.ink3}" font-family="Source Sans 3, sans-serif">${txt}</text>
+        ${sub?`<text x="${x+w/2}" y="${y+hh/2+16}" text-anchor="middle" font-size="11" fill="${on?C.ink3:"#C7CDD3"}">${sub}</text>`:""}`;
+    };
+    const arr=(x,y1,y2,on)=>`<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="${on?C.ink:C.line}" stroke-width="1.4" marker-end="url(#flA)"/>`;
+    const arrH=(x1,x2,y,on,col)=>`<path d="M${x1},${y} H${x2}" stroke="${on?(col||C.ink):C.line}" stroke-width="1.4" fill="none" marker-end="url(#flA)"/>`;
+    svg.innerHTML=`<g font-family="IBM Plex Mono, monospace">
+      ${bx(230,10,300,46,0,boxes[0][1],boxes[0][2])}
+      ${arr(380,56,72,i>1)}
+      ${bx(230,74,300,46,1,boxes[1][1],boxes[1][2])}
+      ${arr(380,120,136,i>2)}
+      ${bx(230,138,300,46,2,boxes[2][1],boxes[2][2])}
+      ${arr(380,184,200,i>3)}
+      ${bx(250,202,260,76,3,boxes[3][1],boxes[3][2],"d")}
+      ${i>4?`<path d="M250,240 H120 V300" stroke="${C.comp}" stroke-width="1.6" fill="none" marker-end="url(#flA2)"/><text x="176" y="234" text-anchor="middle" font-size="12" fill="${C.comp}">yes</text>`:`<path d="M250,240 H120 V300" stroke="${C.line}" stroke-width="1.4" fill="none"/>`}
+      ${i>5?`<path d="M510,240 H640 V300" stroke="${C.na}" stroke-width="1.6" fill="none" marker-end="url(#flA3)"/><text x="584" y="234" text-anchor="middle" font-size="12" fill="${C.na}">no</text>`:`<path d="M510,240 H640 V300" stroke="${C.line}" stroke-width="1.4" fill="none"/>`}
+      ${bx(20,302,200,64,4,"Case (a)","rectangle of breadth b f")}
+      ${bx(540,302,200,64,5,"Case (b)","split the block; eq. 4.1 or exact")}
+      <text x="120" y="392" text-anchor="middle" font-size="11" fill="${i>4?C.ink2:"#C7CDD3"}">A s = M / 0.87 f yk z</text>
+      <text x="640" y="386" text-anchor="middle" font-size="11" fill="${i>5?C.ink2:"#C7CDD3"}">check h f ≤ 0.36d and M ≤ M bal</text>
+      <text x="640" y="402" text-anchor="middle" font-size="11" fill="${i>5?C.ink2:"#C7CDD3"}">then apply equation 4.1</text>
+    </g>
+    <defs>
+      <marker id="flA" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.ink}"/></marker>
+      <marker id="flA2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.comp}"/></marker>
+      <marker id="flA3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="${C.na}"/></marker>
+    </defs>`;
+    const msgs=["Press advance to walk the procedure.",
+      "Step 1 — non-dimensionalise the moment using b f, not b w.",
+      "Step 2 — read the lever-arm ratio l a from the curve, or compute it from equation 3.4.",
+      "Step 3 — turn the lever arm back into a block depth: s = 2(d − z).",
+      "Step 4 — the decision. Compare the block depth with the flange thickness.",
+      "Case (a): s ≤ h f. The section is an equivalent rectangle of breadth b f, and the ordinary formula for A s applies.",
+      "Case (b): s > h f. Split the compression zone, verify h f ≤ 0.36d and M ≤ M bal, then use equation 4.1 — or solve the exact quadratic for less steel."];
+    setVerdict($("fl-verdict"), i>=6?(i===6?"a":"b"):"a", msgs[Math.min(i,6)]);
+    $("fl-next").disabled = i>=6;
+    $("fl-next").textContent = i>=6? "Procedure complete" : (i===0?"Start":"Advance");
+  }
+  $("fl-next").addEventListener("click",()=>{if(i<6){i++;draw();}});
+  $("fl-reset").addEventListener("click",()=>{i=0;draw();});
+  draw();
+})();
+
+/* =========================================================
+   14a. CONTINUOUS BEAM — BENDING
+   ========================================================= */
+(function(){
+  const svg=$("cb-svg"), btns=[...document.querySelectorAll("[data-cb]")];
+  let sel="A";
+  const A=60,B=334,Cx=700,base=150;
+  const info={
+    A:["Support A — 2 H16 top","Hogging. The slab is in tension so the flange is ignored: design as a rectangle b<sub>w</sub> × h. The analysis called this a simple support, but monolithic construction gives partial fixity, so at least 25% of the span moment is reinforced for."],
+    AB:["Span A–B — 2 H20 bottom","Sagging over a 4.5 m span. The slab is in compression, so this is a T-section of breadth b<sub>eff</sub> with l<sub>0</sub> = 0.85 l<sub>1</sub>. Almost certainly case (a)."],
+    B:["Support B — 2 H25 + 2 H20 top","The hogging peak of the whole beam, and the heaviest steel. Rectangular section b<sub>w</sub> × h. Note the bars run into both spans past the contraflexure points."],
+    BC:["Span B–C — 1 H20 + 1 H25 bottom","Sagging over the longer 6.0 m span, so more bottom steel than A–B. T-section again, with l<sub>0</sub> = 0.70 l<sub>2</sub> for an interior span."],
+    C:["Support C — 2 H25 + 1 H20 top","Hogging at the far end column. The bars must develop their anchorage bond length within the column itself, since no beam continues past it."]
+  };
+  const zones={A:[A,A+70],AB:[A+70,B-60],B:[B-60,B+70],BC:[B+70,Cx-70],C:[Cx-70,Cx]};
+  function draw(){
+    /* envelope */
+    const hog=`M${A},${base-30} C${A+50},${base} ${A+70},${base} ${A+110},${base}
+               L${B-90},${base} C${B-50},${base} ${B-24},${base-96} ${B},${base-96}
+               C${B+26},${base-96} ${B+66},${base} ${B+110},${base}
+               L${Cx-120},${base} C${Cx-60},${base} ${Cx-40},${base-62} ${Cx},${base-62}`;
+    const sag=`M${A},${base} C${A+80},${base+62} ${B-80},${base+62} ${B},${base}
+               C${B+110},${base+80} ${Cx-110},${base+80} ${Cx},${base}`;
+    const z=zones[sel];
+    /* beam elevation */
+    const by=250,bh=44;
+    const bar=(x1,x2,y,lab,key,lift)=>{
+      const on=sel===key;
+      return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${on?C.tens:C.ink2}" stroke-width="${on?4:2.2}"/>
+        <text x="${(x1+x2)/2}" y="${y+(lift||-8)}" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="${on?C.tens:C.ink3}">${lab}</text>`;
+    };
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <rect x="${z[0]}" y="30" width="${z[1]-z[0]}" height="${by+bh+40-30}" fill="${C.comp}" opacity=".13"/>
+      <line x1="${A}" y1="${base}" x2="${Cx}" y2="${base}" stroke="${C.ink}" stroke-width="1.2"/>
+      <path d="${hog}" fill="none" stroke="${C.na}" stroke-width="2"/>
+      <path d="${sag}" fill="none" stroke="${C.comp}" stroke-width="2"/>
+      <text x="${A}" y="26" font-size="12" fill="${C.ink}">bending-moment envelope</text>
+      <text x="${B+8}" y="${base-88}" font-size="11" fill="${C.na}">hogging (slab in tension)</text>
+      <text x="${B+120}" y="${base+74}" font-size="11" fill="${C.comp}">sagging (slab in compression)</text>
+
+      <rect x="${A}" y="${by}" width="${Cx-A}" height="${bh}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.3"/>
+      ${[A,B,Cx].map(x=>`<rect x="${x-9}" y="${by+bh}" width="18" height="34" fill="${C.con2}" stroke="${C.ink}" stroke-width="1.1"/>
+                          <rect x="${x-9}" y="${by-34}" width="18" height="34" fill="${C.con2}" stroke="${C.ink}" stroke-width="1.1"/>`).join("")}
+      ${bar(A+4,A+120,by+9,"2 H16","A")}
+      ${bar(B-120,B+150,by+9,"2 H25 + 2 H20","B",-8)}
+      ${bar(Cx-150,Cx-4,by+9,"2 H25 + 1 H20","C",-8)}
+      ${bar(A+4,B+20,by+bh-9,"2 H20","AB",22)}
+      ${bar(B-20,Cx-4,by+bh-9,"1 H20 – 1 H25","BC",38)}
+      <line x1="${A}" y1="${by+bh+58}" x2="${B}" y2="${by+bh+58}" stroke="${C.ink}"/>
+      <text x="${(A+B)/2}" y="${by+bh+74}" text-anchor="middle">4.5 m</text>
+      <line x1="${B}" y1="${by+bh+58}" x2="${Cx}" y2="${by+bh+58}" stroke="${C.ink}"/>
+      <text x="${(B+Cx)/2}" y="${by+bh+74}" text-anchor="middle">6.0 m</text>
+      <text x="${A-4}" y="${by+bh+96}" font-size="12" fill="${C.ink}">A</text>
+      <text x="${B}" y="${by+bh+96}" text-anchor="middle" font-size="12" fill="${C.ink}">B</text>
+      <text x="${Cx}" y="${by+bh+96}" text-anchor="end" font-size="12" fill="${C.ink}">C</text>
+    </g>`;
+    setVerdict($("cb-verdict"),sel==="AB"||sel==="BC"?"a":"b",`<b>${info[sel][0]}</b> — ${info[sel][1]}`);
+  }
+  btns.forEach(b=>b.addEventListener("click",()=>{sel=b.dataset.cb;pressGroup(btns,b);draw();}));
+  draw();
+})();
+
+/* =========================================================
+   14b. SHEAR ENVELOPE
+   ========================================================= */
+(function(){
+  const svg=$("sv-svg"), btn=$("sv-toggle"); let show=true;
+  const A=60,B=334,Cx=700,base=110,NOM=26;
+  function draw(){
+    const env=`M${A},${base-58} L${B},${base+62} M${B},${base-70} L${Cx},${base+54}`;
+    const fill1=`M${A},${base} L${A},${base-58} L${B},${base+62} L${B},${base} Z`;
+    const fill2=`M${B},${base} L${B},${base-70} L${Cx},${base+54} L${Cx},${base} Z`;
+    const zones=[[A,130,"H8 @ 200",true],[130,265,"H8 @ 250",false],[265,B,"H10 @ 200",true],
+                 [B,470,"H10 @ 150",true],[470,620,"H8 @ 250",false],[620,Cx,"H10 @ 150",true]];
+    const by=230,bh=46;
+    let links="";
+    zones.forEach(([x1,x2,lab,heavy])=>{
+      const step=heavy?13:22;
+      for(let x=x1+6;x<x2-4;x+=step) links+=`<line x1="${x}" y1="${by+5}" x2="${x}" y2="${by+bh-5}" stroke="${heavy?C.tens:C.ink3}" stroke-width="${heavy?1.8:1.1}"/>`;
+      links+=`<line x1="${x1}" y1="${by+bh+12}" x2="${x2}" y2="${by+bh+12}" stroke="${C.ink}"/>
+              <line x1="${x1}" y1="${by+bh+7}" x2="${x1}" y2="${by+bh+17}" stroke="${C.ink}"/>
+              <line x1="${x2}" y1="${by+bh+7}" x2="${x2}" y2="${by+bh+17}" stroke="${C.ink}"/>
+              <text x="${(x1+x2)/2}" y="${by+bh+30}" text-anchor="middle" font-size="10.5" fill="${heavy?C.tens:C.ink3}">${lab}</text>`;
+    });
+    svg.innerHTML=`
+    <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="${C.ink2}">
+      <path d="${fill1}" fill="${C.tens}" opacity=".13"/><path d="${fill2}" fill="${C.tens}" opacity=".13"/>
+      <path d="${env}" stroke="${C.tens}" stroke-width="2" fill="none"/>
+      <line x1="${A}" y1="${base}" x2="${Cx}" y2="${base}" stroke="${C.ink}" stroke-width="1.2"/>
+      ${show?`<line x1="${A}" y1="${base-NOM}" x2="${Cx}" y2="${base-NOM}" stroke="${C.ok}" stroke-width="1.6" stroke-dasharray="6 4"/>
+              <line x1="${A}" y1="${base+NOM}" x2="${Cx}" y2="${base+NOM}" stroke="${C.ok}" stroke-width="1.6" stroke-dasharray="6 4"/>
+              <text x="${Cx}" y="${base-NOM-6}" text-anchor="end" font-size="11" fill="${C.ok}">resistance of the minimum links</text>`:""}
+      <text x="${A}" y="26" font-size="12" fill="${C.ink}">shear-force envelope</text>
+      <rect x="${A}" y="${by}" width="${Cx-A}" height="${bh}" fill="${C.con}" stroke="${C.ink}" stroke-width="1.3"/>
+      ${[A,B,Cx].map(x=>`<rect x="${x-9}" y="${by+bh}" width="18" height="26" fill="${C.con2}" stroke="${C.ink}" stroke-width="1.1"/>`).join("")}
+      ${links}
+      <text x="${A}" y="${by+bh+52}" font-size="11" fill="${C.ink3}">closer links where the envelope pokes outside the nominal-link line; wider links where it doesn't</text>
+    </g>`;
+    btn.textContent=show?"Hide the nominal-link resistance":"Show the nominal-link resistance";
+    btn.setAttribute("aria-pressed",show?"true":"false");
+  }
+  btn.addEventListener("click",()=>{show=!show;draw();}); draw();
+})();
+
+/* =========================================================
+   16. SUMMARY MAP
+   ========================================================= */
+(function(){
+  const svg=$("sum-svg");
+  const X0=70,X1=700,y=110, mf=0.42, mb=0.72;
+  const p=t=>X0+t*(X1-X0);
+  svg.innerHTML=`<g font-family="IBM Plex Mono, monospace" font-size="12" fill="${C.ink2}">
+    <rect x="${X0}" y="${y-26}" width="${p(mf)-X0}" height="52" fill="${C.comp}" opacity=".22"/>
+    <rect x="${p(mf)}" y="${y-26}" width="${p(mb)-p(mf)}" height="52" fill="${C.na}" opacity=".18"/>
+    <rect x="${p(mb)}" y="${y-26}" width="${X1-p(mb)}" height="52" fill="${C.bad}" opacity=".14"/>
+    <line x1="${X0}" y1="${y+26}" x2="${X1}" y2="${y+26}" stroke="${C.ink}" stroke-width="1.4" marker-end="url(#sumA)"/>
+    <text x="${X1}" y="${y+48}" text-anchor="end" font-size="12">design moment M</text>
+    <line x1="${p(mf)}" y1="${y-40}" x2="${p(mf)}" y2="${y+34}" stroke="${C.comp}" stroke-width="1.6"/>
+    <text x="${p(mf)}" y="${y-48}" text-anchor="middle" fill="${C.c1}">M f</text>
+    <text x="${p(mf)}" y="${y-64}" text-anchor="middle" font-size="11" fill="${C.ink3}">0.567f ck b f h f (d − h f /2)</text>
+    <line x1="${p(mb)}" y1="${y-40}" x2="${p(mb)}" y2="${y+34}" stroke="${C.bad}" stroke-width="1.6"/>
+    <text x="${p(mb)}" y="${y-48}" text-anchor="middle" fill="${C.bad}">M bal</text>
+    <text x="${p(mb)}" y="${y-64}" text-anchor="middle" font-size="11" fill="${C.ink3}">equation 4.2</text>
+    <text x="${(X0+p(mf))/2}" y="${y-2}" text-anchor="middle" font-size="13" fill="${C.ink}">Case (a)</text>
+    <text x="${(X0+p(mf))/2}" y="${y+16}" text-anchor="middle" font-size="11">rectangle, breadth b f</text>
+    <text x="${(p(mf)+p(mb))/2}" y="${y-2}" text-anchor="middle" font-size="13" fill="${C.ink}">Case (b)</text>
+    <text x="${(p(mf)+p(mb))/2}" y="${y+16}" text-anchor="middle" font-size="11">eq. 4.1 or exact</text>
+    <text x="${(p(mb)+X1)/2}" y="${y-2}" text-anchor="middle" font-size="13" fill="${C.bad}">Not singly reinforced</text>
+    <text x="${(p(mb)+X1)/2}" y="${y+16}" text-anchor="middle" font-size="11">compression steel or bigger web</text>
+    <text x="${X0}" y="${y+80}" font-size="12">Also check before using equation 4.1:  h f ≤ 0.36d</text>
+    <text x="${X0}" y="${y+102}" font-size="12">And remember: over a support the beam hogs, so none of this map applies —</text>
+    <text x="${X0}" y="${y+122}" font-size="12">design a rectangle b w × h instead.</text>
+  </g>
+  <defs><marker id="sumA" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="${C.ink}"/></marker></defs>`;
+})();
+</script>
+</body>
+</html>
