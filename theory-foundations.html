@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundations — Asymptotics, Correctness & Optimality · COMS3005A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eceef2; --paper-2:#e3e6ec; --card:#ffffff;
+  --panel:#0e1420; --panel-2:#161e2e; --grid:#26304a;
+  --ink:#171d2b; --ink-soft:#586074; --ink-faint:#8990a0; --line:#d3d8e1;
+  --f:#e0952b;      /* the function f(n) under study            */
+  --g:#12a7a3;      /* the bound g(n) / c·g(n)                   */
+  --hold:#3fa96a;   /* holds / correct / optimal                */
+  --fail:#db4a55;   /* violated / incorrect                     */
+  --n0:#6c63e0;     /* the n0 "eventually" threshold            */
+  --c2:#c77dff;     /* second theta constant                    */
+  --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.65;
+  -webkit-font-smoothing:antialiased;font-size:17px}
+.wrap{max-width:920px;margin:0 auto;padding:0 22px}
+h1,h2,h3{font-family:var(--disp);line-height:1.12;letter-spacing:-.02em;font-weight:600}
+code,.mono,.k{font-family:var(--mono)}
+a{color:var(--n0)}
+
+/* ---------- eyebrow / part marker ---------- */
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--ink-soft);font-weight:500}
+
+/* ---------- hero ---------- */
+header{padding:64px 0 26px;border-bottom:1px solid var(--line)}
+.partpill{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--n0);border:1px solid var(--n0);
+  padding:5px 11px;border-radius:100px}
+.partpill b{color:var(--ink)}
+h1{font-size:clamp(34px,6vw,58px);margin:20px 0 8px;font-weight:700}
+.sub{font-size:clamp(17px,2.4vw,20px);color:var(--ink-soft);max-width:640px;margin:0}
+.course{margin-top:18px;font-family:var(--mono);font-size:12.5px;color:var(--ink-faint)}
+
+/* ---------- sections ---------- */
+section{padding:52px 0;border-bottom:1px solid var(--line)}
+.snum{font-family:var(--mono);font-size:13px;color:var(--n0);font-weight:500;letter-spacing:.08em}
+h2{font-size:clamp(24px,4vw,34px);margin:6px 0 10px}
+h3{font-size:20px;margin:26px 0 6px}
+p{margin:12px 0}
+.lead{font-size:18.5px}
+.muted{color:var(--ink-soft)}
+
+/* ---------- widgets ---------- */
+.widget{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:22px 0;
+  box-shadow:0 1px 0 rgba(20,28,50,.03),0 12px 30px -22px rgba(20,28,50,.35)}
+.panelwrap{background:var(--panel);border-radius:12px;padding:10px;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:auto}
+.controls{display:flex;flex-wrap:wrap;gap:18px 26px;align-items:center;margin-top:16px}
+.ctrl{display:flex;flex-direction:column;gap:6px;min-width:150px;flex:1}
+.ctrl label{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:10px}
+.ctrl label .val{color:var(--ink);font-weight:500}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;background:var(--paper-2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:var(--n0);cursor:pointer;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--n0);cursor:pointer;border:3px solid #fff}
+input[type=range]:focus-visible{box-shadow:0 0 0 3px rgba(108,99,224,.4)}
+.verdict{font-family:var(--mono);font-size:14px;padding:10px 14px;border-radius:10px;margin-top:14px;
+  display:flex;align-items:center;gap:10px;border:1px solid transparent;line-height:1.4}
+.verdict.ok{background:rgba(63,169,106,.12);color:#1f7a45;border-color:rgba(63,169,106,.35)}
+.verdict.bad{background:rgba(219,74,85,.1);color:#b5313c;border-color:rgba(219,74,85,.3)}
+.verdict .tag{font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.dot{width:11px;height:3px;border-radius:2px;display:inline-block}
+.dot.sq{width:11px;height:11px;border-radius:3px}
+.notice{font-size:14.5px;color:var(--ink-soft);border-left:3px solid var(--n0);padding:2px 0 2px 14px;margin:14px 0 2px}
+.notice b{color:var(--ink);font-weight:600}
+button.seg,.btnrow button{font-family:var(--mono);font-size:13px;padding:8px 13px;border-radius:9px;border:1px solid var(--line);
+  background:#fff;color:var(--ink-soft);cursor:pointer;transition:.15s}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.btnrow button[aria-pressed=true]{background:var(--n0);border-color:var(--n0);color:#fff}
+button:focus-visible,.seg:focus-visible,[tabindex]:focus-visible{outline:3px solid rgba(108,99,224,.45);outline-offset:2px}
+.readout{font-family:var(--mono);font-size:15px;color:var(--ink);background:var(--paper);border-radius:8px;padding:8px 12px;display:inline-block;margin-top:12px}
+.readout b{color:var(--g)}
+
+/* ---------- callouts ---------- */
+.callout{border-radius:14px;padding:16px 18px;margin:22px 0;border:1px solid var(--line);background:#fff}
+.callout .lab{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+.callout.def{border-left:4px solid var(--n0)} .callout.def .lab{color:var(--n0)}
+.callout.aha{border-left:4px solid var(--f)} .callout.aha .lab{color:#b06f13}
+.callout.watch{border-left:4px solid var(--fail)} .callout.watch .lab{color:var(--fail)}
+.eq{font-family:var(--mono);background:var(--panel);color:#e7eaf2;border-radius:10px;padding:13px 16px;margin:12px 0;
+  font-size:14.5px;overflow-x:auto;line-height:1.9}
+.eq .cf{color:var(--f)} .eq .cg{color:#4fd6d1} .eq .cn0{color:#a49bff} .eq .ch{color:#68d798} .eq .cx{color:#ef7b83}
+.eq .dim{color:#6b7590}
+
+/* worked examples */
+.stepper{background:var(--panel);border-radius:12px;padding:16px;color:#e7eaf2;font-family:var(--mono);font-size:14.5px}
+.stepper .step{opacity:.22;transition:.35s;padding:5px 0;line-height:1.85}
+.stepper .step.on{opacity:1}
+.stepper .step .van{color:#7a8398;transition:.35s}
+.stepper .step.on .van{color:#ef7b83}
+.exhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.exhead .tag{font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:6px;background:var(--paper);color:var(--ink-soft)}
+.exres{margin-top:12px;font-family:var(--mono);font-size:14px}
+
+/* family map */
+.map{display:grid;grid-template-columns:1fr;gap:10px}
+.rel{border:1px solid var(--line);border-radius:11px;padding:12px 14px;cursor:pointer;background:#fff;transition:.18s}
+.rel:hover{border-color:var(--n0)}
+.rel .rname{font-family:var(--mono);font-weight:700;font-size:15px}
+.rel .rlim{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+.rel.active{background:rgba(108,99,224,.08);border-color:var(--n0)}
+.rel .rmean{font-size:14px;color:var(--ink-soft);margin-top:4px;display:none}
+.rel.active .rmean{display:block}
+
+/* correctness gates */
+.gates{display:flex;gap:14px;flex-wrap:wrap;align-items:stretch}
+.gate{flex:1;min-width:170px;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.gate .gt{font-family:var(--mono);font-size:13px;color:var(--ink-soft)}
+.toggle{margin-top:10px;display:inline-flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+.switch{width:46px;height:26px;border-radius:20px;background:var(--fail);position:relative;transition:.2s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.on .switch{background:var(--hold)}
+.toggle.on .switch::after{left:23px}
+.gateverdict{margin-top:16px;text-align:center;font-family:var(--disp);font-weight:600;font-size:22px}
+
+/* best/worst bars */
+.bars{display:flex;align-items:flex-end;gap:8px;height:180px;background:var(--panel);border-radius:12px;padding:14px 14px 34px;position:relative}
+.bar{flex:1;border-radius:5px 5px 0 0;background:#38445f;position:relative;transition:height .3s, background .2s;min-width:14px}
+.bar .cap{position:absolute;bottom:-24px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.bar .tv{position:absolute;top:-19px;left:0;right:0;text-align:center;font-family:var(--mono);font-size:11px;color:#c4cadb}
+
+/* takeaways */
+.cards3{display:grid;grid-template-columns:1fr;gap:14px}
+.tcard{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff}
+.tcard h4{font-family:var(--disp);margin:0 0 4px;font-size:17px}
+.tcard .tk{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.next{background:var(--panel);color:#e7eaf2;border-radius:16px;padding:26px;margin:26px 0 8px}
+.next .eyebrow{color:#9aa2b8}
+.next h3{color:#fff;font-size:24px;margin:8px 0}
+.next p{color:#b7bdcd}
+footer{padding:40px 0 70px;color:var(--ink-faint);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+@media(min-width:680px){ .map{grid-template-columns:1fr 1fr} .cards3{grid-template-columns:1fr 1fr 1fr} }
+@media(max-width:520px){ body{font-size:16px} .ctrl{min-width:120px} }
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} .stepper .step{transition:none} .bar{transition:none} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="partpill">Part <b>1</b> of 2 · Foundations</span>
+    <h1>Bound it, eventually.</h1>
+    <p class="sub">Asymptotic notation, and the three questions we ask of every algorithm — is it <em>correct</em>, how <em>costly</em> is it, and is it <em>optimal</em>. Learn the language here; in Part&nbsp;2 we watch it decide between two real search algorithms.</p>
+    <div class="course">COMS3005A — Advanced Analysis of Algorithms · Theory Introduction</div>
+  </div>
+</header>
+
+<!-- ================= HERO / BIG O ================= -->
+<section id="bigo">
+  <div class="wrap">
+    <div class="snum">01 — The core move</div>
+    <h2>Big&nbsp;O: one function bounds another, past a point, up to a constant</h2>
+    <p class="lead">Take a messy running-time function and a clean simple one. Big&nbsp;O says: the messy one never rises above a <em>scaled copy</em> of the simple one — not forever from the start, but <b>eventually</b>, once <span class="k">n</span> is large enough. You get to choose the scale <span class="k" style="color:#0e8f8b">c</span> and the starting point <span class="k" style="color:var(--n0)">n₀</span>.</p>
+
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-bigo" height="300"></canvas></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>scale&nbsp;<span class="k">c</span> <span class="val" id="v-c">5.0</span></label>
+          <input id="s-c" type="range" min="1" max="12" step="0.1" value="5">
+        </div>
+        <div class="ctrl">
+          <label>threshold&nbsp;<span class="k">n₀</span> <span class="val" id="v-n0">5</span></label>
+          <input id="s-n0" type="range" min="1" max="40" step="1" value="5">
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> f(n) = 4n² + 2n + 10</span>
+        <span><i class="dot" style="background:var(--g)"></i> c·g(n) = c·n²</span>
+        <span><i class="dot sq" style="background:rgba(108,99,224,.4)"></i> region n ≥ n₀</span>
+      </div>
+      <div class="verdict ok" id="verd-bigo"><span class="tag">holds</span> f(n) ≤ c·g(n) everywhere in the shaded region.</div>
+      <div class="readout" id="ro-bigo"></div>
+      <p class="notice"><b>What to notice:</b> slide <span class="k">c</span> down toward <b>4</b> and the smallest valid <span class="k">n₀</span> races off to infinity; at <span class="k">c = 4</span> or below, <em>no</em> threshold works. That "4" is exactly the limit of f(n)/g(n) — the boundary between constants that can bound f and constants that can't.</p>
+    </div>
+
+    <div class="callout def">
+      <div class="lab">Definition · Big O</div>
+      <p style="margin:4px 0">f(n) = O(g(n)) if there exist positive constants <span class="k">c</span> and <span class="k">n₀</span> such that</p>
+      <div class="eq"><span class="cf">f(n)</span> &le; <span class="cg">c·g(n)</span> &nbsp;for all&nbsp; <span class="cn0">n &ge; n₀</span>.</div>
+      <p style="margin:4px 0">Two escape hatches make it forgiving: a constant <span class="k">c</span> (ignore multiplicative factors) and a threshold <span class="k">n₀</span> (ignore small-<span class="k">n</span> noise). Big O is a <em>ceiling</em> on growth rate.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ANATOMY / LIMIT MASTER KEY ================= -->
+<section id="limit">
+  <div class="wrap">
+    <div class="snum">02 — The master key</div>
+    <h2>Every relation is really a statement about one limit</h2>
+    <p class="lead">Chasing constants is fiddly. The notes give a shortcut that unlocks all five symbols at once: divide f by g and see where the ratio <em>settles</em> as n → ∞.</p>
+
+    <div class="widget">
+      <div class="btnrow" id="pairbtns" role="group" aria-label="choose a pair of functions"></div>
+      <div class="panelwrap"><canvas id="cv-lim" height="270"></canvas></div>
+      <div class="controls">
+        <div class="ctrl" style="flex:2">
+          <label>grow&nbsp;<span class="k">n</span> <span class="val" id="v-limn">1</span></label>
+          <input id="s-limn" type="range" min="1" max="400" step="1" value="1">
+        </div>
+        <button class="seg" id="lim-run">▶ animate n → ∞</button>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> ratio f(n)/g(n)</span>
+        <span><i class="dot" style="background:var(--g);border-top:2px dashed var(--g)"></i> limit c</span>
+      </div>
+      <div class="readout" id="ro-lim"></div>
+      <div class="verdict ok" id="verd-lim"></div>
+      <p class="notice"><b>What to notice:</b> the ratio's destination is the whole story — a <b>finite non-zero</b> number means f and g are the <em>same order</em> (Θ); <b>0</b> means f is strictly smaller (o); <b>∞</b> means f is strictly bigger (ω). The one-sided symbols O and Ω just allow the boundary values too.</p>
+    </div>
+
+    <div class="callout aha">
+      <div class="lab">Aha · the limit test</div>
+      <p style="margin:4px 0">With L = lim<sub>n→∞</sub> f(n)/g(n):</p>
+      <div class="eq">
+        L = 0&nbsp;&nbsp;→&nbsp; f = <span class="cx">o(g)</span> and O(g)<br>
+        L ∈ (0,∞)&nbsp;→&nbsp; f = <span class="ch">Θ(g)</span> &nbsp;(so O and Ω)<br>
+        L = ∞&nbsp;&nbsp;→&nbsp; f = <span class="cx">ω(g)</span> and Ω(g)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OMEGA ================= -->
+<section id="omega">
+  <div class="wrap">
+    <div class="snum">03 — The floor</div>
+    <h2>Big&nbsp;Ω: a guaranteed lower bound</h2>
+    <p class="lead">Flip the inequality. Ω says a scaled copy of g sits <em>under</em> f eventually — f grows <b>at least</b> this fast. It's the tool for "no algorithm can do better than…".</p>
+
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-om" height="290"></canvas></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>scale&nbsp;<span class="k">c</span> <span class="val" id="v-omc">2.0</span></label>
+          <input id="s-omc" type="range" min="0.5" max="8" step="0.1" value="2">
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> f(n) = 4n² + 2n + 10</span>
+        <span><i class="dot" style="background:var(--g)"></i> c·g(n) = c·n²</span>
+      </div>
+      <div class="verdict ok" id="verd-om"></div>
+      <p class="notice"><b>What to notice:</b> raise <span class="k">c</span> above <b>4</b> and the lower bound breaks — c·g overtakes f for large n. A valid Ω constant must sit at or below the same limit (4) that capped Big O. Duality: <span class="k">f = O(g) ⟺ g = Ω(f)</span>.</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · Big Ω</div>
+      <div class="eq"><span class="cg">c·g(n)</span> &le; <span class="cf">f(n)</span> &nbsp;for all&nbsp; <span class="cn0">n &ge; n₀</span>.</div>
+      Limit form: L ∈ ℝ⁺ ∪ {∞}, i.e. the ratio does <em>not</em> collapse to 0.
+    </div>
+  </div>
+</section>
+
+<!-- ================= THETA ================= -->
+<section id="theta">
+  <div class="wrap">
+    <div class="snum">04 — The tight fit</div>
+    <h2>Big&nbsp;Θ: sandwiched from both sides</h2>
+    <p class="lead">Θ is O and Ω at once — f is pinned between two scaled copies of g. This is the honest "the running time <em>is</em> this order", not just an upper or lower guess.</p>
+
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-th" height="290"></canvas></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>lower&nbsp;<span class="k">c₁</span> <span class="val" id="v-c1">3.0</span></label>
+          <input id="s-c1" type="range" min="0.5" max="4" step="0.1" value="3">
+        </div>
+        <div class="ctrl">
+          <label>upper&nbsp;<span class="k">c₂</span> <span class="val" id="v-c2">8.0</span></label>
+          <input id="s-c2" type="range" min="4.2" max="20" step="0.1" value="8">
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> f(n)</span>
+        <span><i class="dot" style="background:var(--g)"></i> c₁·g(n)</span>
+        <span><i class="dot" style="background:var(--c2)"></i> c₂·g(n)</span>
+      </div>
+      <div class="verdict ok" id="verd-th"></div>
+      <p class="notice"><b>What to notice:</b> the band <span class="k">[c₁·g, c₂·g]</span> has to contain f for all large n. It works precisely when <span class="k">c₁ ≤ 4 ≤ c₂</span> — the limit lives strictly inside the band. Θ exists iff a single finite non-zero limit exists.</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · Big Θ</div>
+      <div class="eq"><span class="cg">c₁·g(n)</span> &le; <span class="cf">f(n)</span> &le; <span style="color:#d7a6ff">c₂·g(n)</span> &nbsp;for all&nbsp; <span class="cn0">n &ge; n₀</span>.</div>
+      Equivalently f = O(g) <em>and</em> f = Ω(g). Limit form: L ∈ ℝ⁺ (finite, non-zero).
+    </div>
+  </div>
+</section>
+
+<!-- ================= little o ================= -->
+<section id="litto">
+  <div class="wrap">
+    <div class="snum">05 — Strictly smaller</div>
+    <h2>little&nbsp;o: dominated no matter the constant</h2>
+    <p class="lead">Big O needs <em>one</em> constant c that works. little o is stricter: <b>every</b> constant works, even absurdly tiny ones. However small you make c, f eventually dips below c·g. That's what "grows strictly slower" means.</p>
+
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-o" height="290"></canvas></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>shrink&nbsp;<span class="k">c</span> <span class="val" id="v-oc">1.00</span></label>
+          <input id="s-oc" type="range" min="0.02" max="2" step="0.01" value="1">
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> f(n) = 3n + 5</span>
+        <span><i class="dot" style="background:var(--g)"></i> c·g(n) = c·n²</span>
+      </div>
+      <div class="verdict ok" id="verd-o"></div>
+      <p class="notice"><b>What to notice:</b> shrink <span class="k">c</span> toward zero and a valid <span class="k">n₀</span> <em>always</em> reappears further right — it never becomes impossible. Contrast the Big O hero, where dropping c below 4 killed it outright. little o ⇒ Big O, never the reverse.</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · little o</div>
+      <div class="eq"><span class="dim">for every</span> <span class="cg">c &gt; 0</span> <span class="dim">there is an</span> <span class="cn0">n₀</span>: &nbsp;<span class="cf">f(n)</span> &lt; <span class="cg">c·g(n)</span> <span class="dim">∀</span> <span class="cn0">n &ge; n₀</span>.</div>
+      Limit form: L = 0.
+    </div>
+  </div>
+</section>
+
+<!-- ================= little omega ================= -->
+<section id="littw">
+  <div class="wrap">
+    <div class="snum">06 — Strictly bigger</div>
+    <h2>little&nbsp;ω: dominates any constant</h2>
+    <p class="lead">The mirror of little o. Pick any constant c, however large — f still overtakes c·g eventually. f grows strictly <em>faster</em> than g.</p>
+
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-w" height="290"></canvas></div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>raise&nbsp;<span class="k">c</span> <span class="val" id="v-wc">6</span></label>
+          <input id="s-wc" type="range" min="1" max="60" step="1" value="6">
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> f(n) = 2n³ − 4n² + 2n + 10</span>
+        <span><i class="dot" style="background:var(--g)"></i> c·g(n) = c·n²</span>
+      </div>
+      <div class="verdict ok" id="verd-w"></div>
+      <p class="notice"><b>What to notice:</b> crank <span class="k">c</span> as high as the slider allows — the amber curve still wins in the end, just later. This is example 4 from the notes: f = ω(n²) because f/n² → ∞.</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · little ω</div>
+      <div class="eq"><span class="dim">for every</span> <span class="cg">c &gt; 0</span> <span class="dim">there is an</span> <span class="cn0">n₀</span>: &nbsp;<span class="cg">c·g(n)</span> &lt; <span class="cf">f(n)</span> <span class="dim">∀</span> <span class="cn0">n &ge; n₀</span>.</div>
+      Limit form: L = ∞.
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAMILY MAP ================= -->
+<section id="family">
+  <div class="wrap">
+    <div class="snum">07 — How they relate</div>
+    <h2>The five symbols, as one family</h2>
+    <p class="lead">Tap a relation to see what it claims and how it connects to the others. Think of them like ≤, ≥, =, &lt;, &gt; — but for <em>growth rates</em>.</p>
+    <div class="widget">
+      <div class="map" id="famap"></div>
+      <div class="callout aha" style="margin:18px 0 0">
+        <div class="lab">Aha · the analogy</div>
+        <p style="margin:4px 0">O is “≤”, Ω is “≥”, Θ is “=”, o is “&lt;”, ω is “&gt;”. And the dualities fall straight out:
+        <span class="k">f = O(g) ⟺ g = Ω(f)</span> and <span class="k">f = o(g) ⟺ g = ω(f)</span> — flip the comparison, flip the sides. The strict ones imply the loose ones: <span class="k">o ⇒ O</span>, <span class="k">ω ⇒ Ω</span>, and <span class="k">Θ = O ∩ Ω</span>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WORKED EXAMPLES ================= -->
+<section id="worked">
+  <div class="wrap">
+    <div class="snum">08 — Proof, step by step</div>
+    <h2>The notes' four worked examples, unrolled</h2>
+    <p class="lead">Each proof is the same ritual: form the ratio, let n → ∞, read off L, classify. Step through them — terms that vanish are flagged in <span style="color:var(--fail);font-family:var(--mono)">rose</span>.</p>
+
+    <div class="widget">
+      <div class="exhead"><h3 style="margin:0" id="ex-title"></h3><span class="tag" id="ex-count"></span></div>
+      <div class="btnrow" id="exbtns" role="group" aria-label="choose an example" style="margin-top:12px"></div>
+      <div class="stepper" id="ex-body"></div>
+      <div class="controls" style="margin-top:14px">
+        <button class="seg" id="ex-prev">◀ back</button>
+        <button class="seg" id="ex-next">step ▶</button>
+      </div>
+      <div class="verdict ok" id="ex-verd"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CORRECTNESS ================= -->
+<section id="correct">
+  <div class="wrap">
+    <div class="snum">09 — Property one</div>
+    <h2>Correctness: right answer, every input, and it stops</h2>
+    <p class="lead">Before speed matters at all, an algorithm has to actually solve the problem. Correctness is a promise about <em>all</em> valid inputs — and it has two halves.</p>
+
+    <div class="widget">
+      <div class="gates">
+        <div class="gate">
+          <div class="gt">A(I)↓ &nbsp;— the algorithm <b>terminates</b> on every input</div>
+          <div class="toggle on" id="g-term" role="switch" aria-checked="true" tabindex="0"><div class="switch"></div><span class="mono" id="g-term-lab">on</span></div>
+        </div>
+        <div class="gate">
+          <div class="gt">R(I, A(I)) &nbsp;— the output is <b>valid</b> for that input</div>
+          <div class="toggle on" id="g-valid" role="switch" aria-checked="true" tabindex="0"><div class="switch"></div><span class="mono" id="g-valid-lab">on</span></div>
+        </div>
+      </div>
+      <div class="gateverdict" id="g-verd"></div>
+      <p class="notice"><b>What to notice:</b> correctness is an <span class="k">AND</span> across <em>both</em> gates, quantified over <span class="k">∀ I ∈ 𝓘</span>. Terminating with a wrong answer isn't correct; producing right answers but looping forever on one input isn't correct either.</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · correctness</div>
+      <div class="eq"><span class="dim">∀ I ∈ 𝓘,</span>&nbsp; <span class="cf">A(I)↓</span> &nbsp;∧&nbsp; <span class="ch">R(I, A(I))</span></div>
+      𝓘 is the set of <em>valid</em> inputs — narrowed by our assumptions (e.g. "the list is sorted", "values are unique").
+    </div>
+  </div>
+</section>
+
+<!-- ================= BEST / WORST ================= -->
+<section id="cases">
+  <div class="wrap">
+    <div class="snum">10 — Property two</div>
+    <h2>Complexity: best case and worst case are min &amp; max over inputs of one size</h2>
+    <p class="lead">Fix the input <em>size</em> n. There are many inputs of that size, each costing a different number of steps. Best case is the cheapest; worst case is the most expensive.</p>
+
+    <div class="widget">
+      <p class="muted" style="margin:2px 0 12px;font-family:var(--mono);font-size:13px">8 different inputs, all of size n. Bar height = steps T<sub>A</sub>(I).</p>
+      <div class="bars" id="bars"></div>
+      <div class="controls" style="margin-top:26px">
+        <button class="seg" id="bars-shuffle">↻ new inputs</button>
+      </div>
+      <div class="legend">
+        <span><i class="dot sq" style="background:var(--hold)"></i> best case = min</span>
+        <span><i class="dot sq" style="background:var(--fail)"></i> worst case = max</span>
+      </div>
+      <div class="readout" id="ro-bars"></div>
+      <p class="notice"><b>What to notice:</b> both are functions <em>of n</em> — reshuffle and the specific min/max inputs change, but the definitions don't. Worst case is what we usually design against, because it's the guarantee that holds no matter which input arrives.</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · best &amp; worst case</div>
+      <div class="eq">T<span class="dim">ᴬ</span><sup>best</sup>(n) = <span class="ch">min</span><span class="dim"> over I of size n</span> T<span class="dim">ᴬ</span>(I)&nbsp;&nbsp;&nbsp; T<span class="dim">ᴬ</span><sup>worst</sup>(n) = <span class="cx">max</span><span class="dim"> over I of size n</span> T<span class="dim">ᴬ</span>(I)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OPTIMALITY ================= -->
+<section id="optimal">
+  <div class="wrap">
+    <div class="snum">11 — Property three</div>
+    <h2>Optimality: does the worst case match the problem's floor?</h2>
+    <p class="lead">This one compares an algorithm not to its other cases, but to the <em>problem itself</em>. L(n) is the best worst-case any correct algorithm could possibly achieve — the problem's inherent difficulty. An algorithm is optimal when its worst case sits right on that floor.</p>
+
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-opt" height="300"></canvas></div>
+      <div class="legend" id="opt-legend"></div>
+      <div class="verdict ok" id="verd-opt"></div>
+      <p class="notice"><b>What to notice:</b> only <em>correct</em> algorithms are in the race (a fast-but-wrong one is disqualified, not optimal). The floor L(n) is a property of the problem; an algorithm is optimal exactly when its worst case is Θ(L(n)) — never below (impossible) and, ideally, not above (wasteful).</p>
+    </div>
+    <div class="callout def"><div class="lab">Definition · asymptotic optimality</div>
+      <div class="eq">every correct B: &nbsp;T<sub>B</sub><sup>worst</sup>(n) = <span class="cg">Ω(L(n))</span>&nbsp;&nbsp;&nbsp;&nbsp;A is optimal if&nbsp; T<sub>A</sub><sup>worst</sup>(n) = <span class="ch">O(L(n))</span> ⇒ <span class="ch">Θ(L(n))</span></div>
+      L(n) is a lower bound on the worst case of <em>every</em> algorithm — the “best worst case”. Different algorithms may hit their worst case on different inputs; that's fine.
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAKEAWAYS ================= -->
+<section id="summary" style="border-bottom:none">
+  <div class="wrap">
+    <div class="snum">12 — Carry these forward</div>
+    <h2>Three properties, three different questions</h2>
+    <p class="lead">The notes are blunt about it: <span class="k">Correctness ≠ Complexity ≠ Optimality</span>. Keep them separate.</p>
+    <div class="cards3">
+      <div class="tcard"><div class="tk">Correctness</div><h4>Is it right?</h4><p class="muted" style="margin:6px 0 0;font-size:15px">Valid output <em>and</em> termination, for all valid inputs. A yes/no property of the input–output relation.</p></div>
+      <div class="tcard"><div class="tk">Complexity</div><h4>What does it cost?</h4><p class="muted" style="margin:6px 0 0;font-size:15px">Best case = easiest input of size n; worst case = hardest. Described with O / Ω / Θ.</p></div>
+      <div class="tcard"><div class="tk">Optimality</div><h4>Is it as good as possible?</h4><p class="muted" style="margin:6px 0 0;font-size:15px">Worst case matches the problem's lower bound L(n). A claim about the algorithm <em>vs the problem</em>.</p></div>
+    </div>
+
+    <div class="next">
+      <div class="eyebrow">Coming next</div>
+      <h3>Part 2 · Searching</h3>
+      <p>Now we spend this vocabulary on two algorithms. <b>Linear search</b> — O(n) worst case, and provably <em>optimal</em> for an unordered list, because you can always hide the key in the last place it looks. Then <b>bisection search</b> — O(log n) on a sorted list, with a decision-tree argument that log₂n + 1 comparisons is the floor. Same three questions; two very different answers.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Part 1 of 2 · COMS3005A Foundations · every worked value verified against the notes</div>
+</footer>
+
+<script>
+"use strict";
+const RM = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- shared canvas plot ---------- */
+class Plot{
+  constructor(cv,opt){
+    this.cv=cv; this.o=Object.assign({xMin:0,xMax:40,yMin:0,yMax:100,padL:44,padR:14,padT:14,padB:26},opt);
+    this.ro=new ResizeObserver(()=>this.resize()); this.ro.observe(cv.parentElement);
+    this.resize();
+  }
+  resize(){
+    const dpr=window.devicePixelRatio||1;
+    const w=this.cv.parentElement.clientWidth-20; // panel padding 10*2
+    const h=this.h||300;
+    this.cv.style.width=w+'px'; this.cv.style.height=h+'px';
+    this.cv.width=w*dpr; this.cv.height=h*dpr;
+    this.ctx=this.cv.getContext('2d'); this.ctx.setTransform(dpr,0,0,dpr,0,0);
+    this.W=w; this.H=h;
+    if(this._draw) this._draw();
+  }
+  setHeight(h){this.h=h; this.resize();}
+  onDraw(fn){this._draw=fn; fn();}
+  px(x){const o=this.o;return o.padL+(x-o.xMin)/(o.xMax-o.xMin)*(this.W-o.padL-o.padR);}
+  py(y){const o=this.o;return o.padT+(this.H-o.padT-o.padB)-(y-o.yMin)/(o.yMax-o.yMin)*(this.H-o.padT-o.padB);}
+  bg(){const c=this.ctx;c.clearRect(0,0,this.W,this.H);}
+  grid(){
+    const c=this.ctx,o=this.o;c.save();
+    c.strokeStyle='#26304a';c.lineWidth=1;c.font='11px "JetBrains Mono"';c.fillStyle='#5c6784';
+    // horizontal
+    for(let i=0;i<=4;i++){const y=o.yMin+(o.yMax-o.yMin)*i/4;const yy=this.py(y);
+      c.globalAlpha=.5;c.beginPath();c.moveTo(this.px(o.xMin),yy);c.lineTo(this.px(o.xMax),yy);c.stroke();
+      c.globalAlpha=1;c.fillText(fmt(y),4,yy+3);}
+    // axis labels x
+    for(let i=0;i<=4;i++){const x=o.xMin+(o.xMax-o.xMin)*i/4;const xx=this.px(x);
+      c.fillText(Math.round(x),xx-6,this.H-8);}
+    c.restore();
+  }
+  region(n0){ // shade x>=n0
+    if(n0==null||!isFinite(n0)) return;
+    const c=this.ctx;const x0=this.px(Math.max(n0,this.o.xMin));const x1=this.px(this.o.xMax);
+    c.save();c.fillStyle='rgba(108,99,224,.13)';c.fillRect(x0,this.o.padT,Math.max(0,x1-x0),this.H-this.o.padT-this.o.padB);
+    c.strokeStyle='#8b82ff';c.setLineDash([5,4]);c.lineWidth=1.5;c.beginPath();
+    c.moveTo(x0,this.o.padT);c.lineTo(x0,this.H-this.o.padB);c.stroke();
+    c.setLineDash([]);c.fillStyle='#a49bff';c.font='11px "JetBrains Mono"';
+    if(x0<this.W-70) c.fillText('n₀='+ (isFinite(n0)?n0:'∞'),x0+5,this.o.padT+13);
+    c.restore();
+  }
+  curve(fn,color,width=2.5,dash=null){
+    const c=this.ctx,o=this.o;c.save();
+    c.beginPath();c.rect(this.px(o.xMin),o.padT,this.px(o.xMax)-this.px(o.xMin),this.H-o.padT-o.padB);c.clip();
+    c.strokeStyle=color;c.lineWidth=width;if(dash)c.setLineDash(dash);
+    c.beginPath();let started=false;
+    const N=260;
+    for(let i=0;i<=N;i++){const x=o.xMin+(o.xMax-o.xMin)*i/N;let y=fn(x);
+      if(!isFinite(y)){started=false;continue;}
+      const X=this.px(x),Y=this.py(y);
+      if(!started){c.moveTo(X,Y);started=true;}else c.lineTo(X,Y);}
+    c.stroke();c.restore();
+  }
+  hline(y,color,dash=[5,4]){const c=this.ctx;c.save();c.strokeStyle=color;c.lineWidth=1.6;c.setLineDash(dash);
+    c.beginPath();c.moveTo(this.px(this.o.xMin),this.py(y));c.lineTo(this.px(this.o.xMax),this.py(y));c.stroke();c.restore();}
+  dot(x,y,color,label){const c=this.ctx;c.save();c.fillStyle=color;c.beginPath();c.arc(this.px(x),this.py(y),4.5,0,7);c.fill();
+    if(label){c.fillStyle='#c9cfe0';c.font='11px "JetBrains Mono"';c.fillText(label,this.px(x)+7,this.py(y)-6);}c.restore();}
+}
+function fmt(v){if(Math.abs(v)>=1000)return (v/1000).toFixed(0)+'k';if(Number.isInteger(v))return v;return v.toFixed(0);}
+function requiredN0(f,g,c,N=5000){let last=0;for(let n=1;n<=N;n++){if(f(n)>c*g(n)+1e-9)last=n;}return last>=N?Infinity:last+1;}
+function requiredN0lo(f,g,c,N=5000){let last=0;for(let n=1;n<=N;n++){if(c*g(n)>f(n)+1e-9)last=n;}return last>=N?Infinity:last+1;}
+
+/* =============== BIG O HERO =============== */
+(function(){
+  const f=n=>4*n*n+2*n+10, g=n=>n*n;
+  const P=new Plot(document.getElementById('cv-bigo'),{xMax:40});P.setHeight(300);
+  const sc=document.getElementById('s-c'), sn=document.getElementById('s-n0');
+  function render(){
+    const c=+sc.value, n0=+sn.value;
+    document.getElementById('v-c').textContent=c.toFixed(1);
+    document.getElementById('v-n0').textContent=n0;
+    P.o.yMax=Math.max(f(40),c*g(40))*1.05;
+    P._draw=()=>{P.bg();P.grid();P.region(n0);
+      P.curve(g? (x=>c*g(x)):null,'#12a7a3',2.5);
+      P.curve(f,'#e0952b',2.8);};
+    P._draw();
+    // does f<=cg hold for all n>=n0 (sample integers up to xMax and a bit beyond)
+    let ok=true, firstFail=null;
+    for(let n=n0;n<=5000;n++){ if(f(n)>c*g(n)+1e-9){ok=false;firstFail=n;break;} }
+    const need=requiredN0(f,g,c);
+    const v=document.getElementById('verd-bigo');
+    if(ok){v.className='verdict ok';v.innerHTML='<span class="tag">holds</span> f(n) ≤ c·g(n) for every n ≥ '+n0+'.';}
+    else{v.className='verdict bad';v.innerHTML='<span class="tag">violated</span> at n = '+firstFail+', f = '+f(firstFail)+' &gt; c·g = '+(c*g(firstFail)).toFixed(0)+'.';}
+    const ro=document.getElementById('ro-bigo');
+    ro.innerHTML = isFinite(need)
+      ? 'smallest n₀ that works for this c: <b>'+need+'</b>'
+      : 'no n₀ works — <b>c must exceed 4</b> (the limit of f/g)';
+  }
+  sc.oninput=render; sn.oninput=render; render();
+})();
+
+/* =============== LIMIT UNIFIER =============== */
+(function(){
+  const pairs=[
+    {name:'n²+3n  /  n²', f:n=>n*n+3*n, g:n=>n*n, L:1, verd:'Θ', txt:'ratio → 1 (finite, non-zero) ⇒ f = Θ(g), so O and Ω too.'},
+    {name:'½n²+10n / n²', f:n=>0.5*n*n+10*n, g:n=>n*n, L:0.5, verd:'Θ', txt:'ratio → 0.5 ⇒ f = Θ(g). Constants don\'t change the order.'},
+    {name:'6n  /  n²', f:n=>6*n, g:n=>n*n, L:0, verd:'o', txt:'ratio → 0 ⇒ f = o(g) (and O(g)). f is strictly smaller-order.'},
+    {name:'n·log₂n / n²', f:n=>n*Math.log2(n+1), g:n=>n*n, L:0, verd:'o', txt:'ratio → 0 ⇒ f = o(g). n log n loses to n² eventually.'},
+    {name:'n³  /  n²', f:n=>n*n*n, g:n=>n*n, L:Infinity, verd:'ω', txt:'ratio → ∞ ⇒ f = ω(g) (and Ω(g)). f is strictly larger-order.'}
+  ];
+  let cur=0;
+  const P=new Plot(document.getElementById('cv-lim'),{xMax:60,yMax:3});P.setHeight(270);
+  const btns=document.getElementById('pairbtns');
+  pairs.forEach((p,i)=>{const b=document.createElement('button');b.className='seg';b.textContent=p.name;
+    b.setAttribute('aria-pressed',i===0);b.onclick=()=>{cur=i;[...btns.children].forEach((x,j)=>x.setAttribute('aria-pressed',j===i));setN(1);};btns.appendChild(b);});
+  const sn=document.getElementById('s-limn');
+  function ratio(n){const p=pairs[cur];return p.f(n)/p.g(n);}
+  function setN(n){sn.value=n;render();}
+  function render(){
+    const p=pairs[cur], n=+sn.value;
+    document.getElementById('v-limn').textContent=n;
+    // choose yMax to frame the limit nicely
+    const yMax = p.L===Infinity? Math.max(3, ratio(n)*1.1) : (p.L>0? Math.max(p.L*2.2, ratio(1)*1.05) : Math.max(1.2, ratio(2)*1.05));
+    P.o.yMax=yMax; P.o.xMax=Math.max(60, n*1.1);
+    P._draw=()=>{P.bg();P.grid();
+      if(isFinite(p.L)) P.hline(p.L,'#4fd6d1',[6,4]);
+      P.curve(x=> x<1?null:ratio(x),'#e0952b',2.8);
+      P.dot(n,Math.min(ratio(n),P.o.yMax),'#e0952b', 'ratio='+ratio(n).toFixed(3));};
+    P._draw();
+    document.getElementById('ro-lim').innerHTML='f('+n+')/g('+n+') = <b>'+ratio(n).toFixed(4)+'</b> &nbsp;→&nbsp; limit '+(isFinite(p.L)?p.L:'∞');
+    const v=document.getElementById('verd-lim');v.className='verdict ok';
+    v.innerHTML='<span class="tag">'+p.verd+'</span>'+p.txt;
+  }
+  document.getElementById('lim-run').onclick=function(){
+    if(RM){setN(400);return;}
+    let n=1;const id=setInterval(()=>{n=Math.round(n*1.10)+1;if(n>=400){n=400;clearInterval(id);}setN(n);},28);
+  };
+  sn.oninput=render; render();
+})();
+
+/* =============== OMEGA =============== */
+(function(){
+  const f=n=>4*n*n+2*n+10, g=n=>n*n;
+  const P=new Plot(document.getElementById('cv-om'),{xMax:40});P.setHeight(290);
+  const sc=document.getElementById('s-omc');
+  function render(){
+    const c=+sc.value;document.getElementById('v-omc').textContent=c.toFixed(1);
+    P.o.yMax=Math.max(f(40),c*g(40))*1.05;
+    const n0=requiredN0lo(f,g,c);
+    P._draw=()=>{P.bg();P.grid();P.region(n0);P.curve(x=>c*g(x),'#12a7a3',2.5);P.curve(f,'#e0952b',2.8);};
+    P._draw();
+    const v=document.getElementById('verd-om');
+    if(isFinite(n0)){v.className='verdict ok';v.innerHTML='<span class="tag">holds</span> c·g(n) ≤ f(n) for all n ≥ '+n0+' ⇒ f = Ω(n²) with this c.';}
+    else{v.className='verdict bad';v.innerHTML='<span class="tag">violated</span> c·g overtakes f — c &gt; 4 is too large for a lower bound.';}
+  }
+  sc.oninput=render;render();
+})();
+
+/* =============== THETA =============== */
+(function(){
+  const f=n=>4*n*n+2*n+10, g=n=>n*n;
+  const P=new Plot(document.getElementById('cv-th'),{xMax:40});P.setHeight(290);
+  const s1=document.getElementById('s-c1'), s2=document.getElementById('s-c2');
+  function render(){
+    const c1=+s1.value, c2=+s2.value;
+    document.getElementById('v-c1').textContent=c1.toFixed(1);document.getElementById('v-c2').textContent=c2.toFixed(1);
+    P.o.yMax=Math.max(f(40),c2*g(40))*1.05;
+    const n0lo=requiredN0lo(f,g,c1), n0hi=requiredN0(f,g,c2);
+    const n0=Math.max(isFinite(n0lo)?n0lo:0, isFinite(n0hi)?n0hi:0);
+    const both=isFinite(n0lo)&&isFinite(n0hi);
+    P._draw=()=>{P.bg();P.grid();if(both)P.region(n0);
+      P.curve(x=>c1*g(x),'#12a7a3',2.2);P.curve(x=>c2*g(x),'#c77dff',2.2);P.curve(f,'#e0952b',2.8);};
+    P._draw();
+    const v=document.getElementById('verd-th');
+    if(both){v.className='verdict ok';v.innerHTML='<span class="tag">holds</span> c₁·g ≤ f ≤ c₂·g for all n ≥ '+n0+' ⇒ f = Θ(n²).';}
+    else{v.className='verdict bad';v.innerHTML='<span class="tag">band broken</span> need c₁ ≤ 4 ≤ c₂ for the sandwich to hold at large n.';}
+  }
+  s1.oninput=render;s2.oninput=render;render();
+})();
+
+/* =============== little o =============== */
+(function(){
+  const f=n=>3*n+5, g=n=>n*n;
+  const P=new Plot(document.getElementById('cv-o'),{xMax:60});P.setHeight(290);
+  const sc=document.getElementById('s-oc');
+  function render(){
+    const c=+sc.value;document.getElementById('v-oc').textContent=c.toFixed(2);
+    const n0=requiredN0(f,g,c);
+    P.o.xMax=Math.max(60, isFinite(n0)?n0*1.4:60);
+    P.o.yMax=Math.max(f(P.o.xMax),c*g(P.o.xMax))*1.05;
+    P._draw=()=>{P.bg();P.grid();P.region(n0);P.curve(x=>c*g(x),'#12a7a3',2.5);P.curve(f,'#e0952b',2.8);};
+    P._draw();
+    const v=document.getElementById('verd-o');v.className='verdict ok';
+    v.innerHTML='<span class="tag">holds</span> even at c = '+c.toFixed(2)+', a threshold exists: n₀ = '+n0+'. Shrinking c just pushes n₀ right.';
+  }
+  sc.oninput=render;render();
+})();
+
+/* =============== little omega =============== */
+(function(){
+  const f=n=>2*n*n*n-4*n*n+2*n+10, g=n=>n*n;
+  const P=new Plot(document.getElementById('cv-w'),{xMax:40});P.setHeight(290);
+  const sc=document.getElementById('s-wc');
+  function render(){
+    const c=+sc.value;document.getElementById('v-wc').textContent=c;
+    const n0=requiredN0lo(f,g,c);
+    P.o.xMax=Math.max(40, isFinite(n0)?n0*1.6:40);
+    P.o.yMax=Math.max(f(P.o.xMax),c*g(P.o.xMax))*1.05;
+    P._draw=()=>{P.bg();P.grid();P.region(n0);P.curve(x=>c*g(x),'#12a7a3',2.5);P.curve(f,'#e0952b',2.8);};
+    P._draw();
+    const v=document.getElementById('verd-w');v.className='verdict ok';
+    v.innerHTML='<span class="tag">holds</span> even at c = '+c+', f overtakes c·g from n₀ = '+n0+' on. Any c is eventually beaten ⇒ f = ω(n²).';
+  }
+  sc.oninput=render;render();
+})();
+
+/* =============== FAMILY MAP =============== */
+(function(){
+  const rels=[
+    {n:'f = O(g)', l:'“≤”  ·  L ∈ [0,∞)', m:'f grows no faster than g — an upper bound. One constant c is enough.'},
+    {n:'f = Ω(g)', l:'“≥”  ·  L ∈ (0,∞]', m:'f grows at least as fast as g — a lower bound. Dual of O: f=Ω(g) ⟺ g=O(f).'},
+    {n:'f = Θ(g)', l:'“=”  ·  L ∈ (0,∞)', m:'Same order both ways: O and Ω together. The tight, honest bound.'},
+    {n:'f = o(g)', l:'“<”  ·  L = 0', m:'Strictly slower. Holds for every c>0, not just one ⇒ implies O(g).'},
+    {n:'f = ω(g)', l:'“>”  ·  L = ∞', m:'Strictly faster. Holds for every c>0 ⇒ implies Ω(g). Dual of o.'}
+  ];
+  const wrap=document.getElementById('famap');
+  rels.forEach((r,i)=>{const d=document.createElement('div');d.className='rel'+(i===0?' active':'');d.tabIndex=0;
+    d.innerHTML='<div class="rname">'+r.n+'</div><div class="rlim">'+r.l+'</div><div class="rmean">'+r.m+'</div>';
+    const act=()=>{[...wrap.children].forEach(x=>x.classList.remove('active'));d.classList.add('active');};
+    d.onclick=act;d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}};
+    wrap.appendChild(d);});
+})();
+
+/* =============== WORKED EXAMPLES =============== */
+(function(){
+  const ex=[
+    {t:'Example 1 — proving Big O', tag:'f = 4n²+2n+10 = O(n²)', verd:'L = 4 ∈ ℝ⁺ ⇒ f = O(n²). ✓',
+     steps:['We want L = limₙ→∞ f(n)/g(n) with g(n)=n².',
+            'limₙ→∞ (4n² + 2n + 10) / n²',
+            '= limₙ→∞ 4 + <span class="van">2/n</span> + <span class="van">10/n²</span>',
+            '= 4 &nbsp;(the vanishing terms → 0)',
+            'L = 4 is a finite real ⇒ f(n) = O(n²).']},
+    {t:'Example 2 — disproving Big O', tag:'f = 4n²+2n+10 ≠ O(n)', verd:'L = ∞ ∉ ℝ⁺∪{0} ⇒ f ≠ O(n). ✗',
+     steps:['Same f, but now test against g(n)=n.',
+            'limₙ→∞ (4n² + 2n + 10) / n',
+            '= limₙ→∞ 4n + 2 + <span class="van">10/n</span>',
+            '= ∞',
+            '∞ is not in ℝ⁺∪{0} ⇒ f(n) ≠ O(n).']},
+    {t:'Example 3 — proving Big Θ', tag:'f = 4n²+2n+10 = Θ(n²)', verd:'O(n²) and Ω(n²) ⇒ Θ(n²). ✓',
+     steps:['Θ needs both O(n²) and Ω(n²).',
+            'From Example 1: L = 4 gives f = O(n²).',
+            'The same limit L = 4 ∈ ℝ⁺ also gives f = Ω(n²).',
+            'Upper and lower orders coincide (L finite & non-zero)…',
+            '…therefore f(n) = Θ(n²).']},
+    {t:'Example 4 — proving little ω', tag:'f = 2n³−4n²+2n+10 = ω(n²)', verd:'L = ∞ ⇒ f = ω(n²). ✓',
+     steps:['New f = 2n³ − 4n² + 2n + 10, test against g(n)=n².',
+            'limₙ→∞ (2n³ − 4n² + 2n + 10) / n²',
+            '= limₙ→∞ 2n − 4 + <span class="van">2/n</span> + <span class="van">10/n²</span>',
+            '= 2·∞ − 4 = ∞',
+            'L = ∞ ⇒ f(n) = ω(n²) (strictly faster than n²).']}
+  ];
+  let cur=0, step=0;
+  const btns=document.getElementById('exbtns');
+  ex.forEach((e,i)=>{const b=document.createElement('button');b.className='seg';b.textContent=['Ex 1','Ex 2','Ex 3','Ex 4'][i];
+    b.setAttribute('aria-pressed',i===0);b.onclick=()=>{cur=i;step=0;[...btns.children].forEach((x,j)=>x.setAttribute('aria-pressed',j===i));render();};btns.appendChild(b);});
+  const body=document.getElementById('ex-body');
+  function render(){
+    const e=ex[cur];
+    document.getElementById('ex-title').textContent=e.t;
+    document.getElementById('ex-count').textContent=e.tag;
+    body.innerHTML=e.steps.map((s,i)=>'<div class="step'+(i<=step?' on':'')+'">'+s+'</div>').join('');
+    const v=document.getElementById('ex-verd');
+    if(step>=e.steps.length-1){v.style.display='flex';v.className='verdict ok';v.innerHTML='<span class="tag">result</span>'+e.verd;}
+    else{v.style.display='none';}
+  }
+  document.getElementById('ex-next').onclick=()=>{if(step<ex[cur].steps.length-1)step++;render();};
+  document.getElementById('ex-prev').onclick=()=>{if(step>0)step--;render();};
+  render();
+})();
+
+/* =============== CORRECTNESS GATES =============== */
+(function(){
+  const gt=document.getElementById('g-term'), gv=document.getElementById('g-valid');
+  function upd(){
+    const t=gt.classList.contains('on'), v=gv.classList.contains('on');
+    document.getElementById('g-term-lab').textContent=t?'on':'off';
+    document.getElementById('g-valid-lab').textContent=v?'on':'off';
+    gt.setAttribute('aria-checked',t);gv.setAttribute('aria-checked',v);
+    const out=document.getElementById('g-verd');
+    if(t&&v){out.textContent='✓ correct';out.style.color='var(--hold)';}
+    else{out.style.color='var(--fail)';
+      out.textContent = (!t&&!v)?'✗ not correct — loops and gives wrong answers'
+                      : (!t)?'✗ not correct — can loop forever on some input'
+                      : '✗ not correct — terminates, but with an invalid answer';}
+  }
+  [gt,gv].forEach(g=>{const tog=()=>{g.classList.toggle('on');upd();};
+    g.onclick=tog; g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tog();}};});
+  upd();
+})();
+
+/* =============== BEST / WORST BARS =============== */
+(function(){
+  const wrap=document.getElementById('bars');
+  let vals=[];
+  function shuffle(){vals=Array.from({length:8},()=>Math.round(20+Math.random()*80));render();}
+  function render(){
+    const mn=Math.min(...vals), mx=Math.max(...vals), top=100;
+    wrap.innerHTML='';
+    vals.forEach((v,i)=>{
+      const b=document.createElement('div');b.className='bar';
+      b.style.height=(v/top*140+8)+'px';
+      b.style.background = v===mx?'var(--fail)': v===mn?'var(--hold)':'#38445f';
+      b.innerHTML='<span class="tv">'+v+'</span><span class="cap">I'+(i+1)+'</span>';
+      wrap.appendChild(b);
+    });
+    document.getElementById('ro-bars').innerHTML='best case T<sub>A</sub><sup>best</sup>(n) = <b style="color:#2f8f56">'+mn+'</b> &nbsp;·&nbsp; worst case T<sub>A</sub><sup>worst</sup>(n) = <b style="color:#c33">'+mx+'</b>';
+  }
+  document.getElementById('bars-shuffle').onclick=shuffle;
+  vals=[46,71,33,88,52,27,63,41];render();
+})();
+
+/* =============== OPTIMALITY =============== */
+(function(){
+  // problem lower bound L(n) = log2 n ; three CORRECT algorithms with worst cases
+  const P=new Plot(document.getElementById('cv-opt'),{xMax:64});P.setHeight(300);
+  const L = n=> Math.log2(n)+1;                       // the floor
+  const algos=[
+    {name:'Algo A — worst case ≈ n',        wc:n=>n,               col:'#e0952b'},
+    {name:'Algo B — worst case ≈ 5√n',      wc:n=>5*Math.sqrt(n),  col:'#c77dff'},
+    {name:'Algo C — worst case ≈ 2log₂n+1', wc:n=>2*Math.log2(n)+1,col:'#3fa96a', optimal:true}
+  ];
+  P.o.yMax=64;
+  P._draw=()=>{P.bg();P.grid();
+    P.curve(x=>x<1?null:L(x),'#8b93a8',2,[6,4]);        // floor
+    algos.forEach(a=>P.curve(x=>x<1?null:a.wc(x),a.col,a.optimal?3:2.2));
+  };
+  P.onDraw(P._draw);
+  const leg=document.getElementById('opt-legend');
+  leg.innerHTML='<span><i class="dot" style="background:#8b93a8;border-top:2px dashed #8b93a8"></i> L(n) — problem floor (best possible worst case)</span>'
+    + algos.map(a=>'<span><i class="dot" style="background:'+a.col+'"></i> '+a.name+(a.optimal?' — optimal':'')+'</span>').join('');
+  const v=document.getElementById('verd-opt');v.className='verdict ok';
+  v.innerHTML='<span class="tag">optimal</span> Algo C hugs the floor: its worst case is Θ(L(n)). A and B are correct but do <em>more</em> work than the problem requires — not optimal.';
+})();
+</script>
+</body>
+</html>

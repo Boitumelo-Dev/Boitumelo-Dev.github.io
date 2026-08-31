@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Searching — Linear & Bisection · COMS3005A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eceef2; --paper-2:#e3e6ec; --card:#ffffff;
+  --panel:#0e1420; --panel-2:#161e2e; --grid:#26304a;
+  --ink:#171d2b; --ink-soft:#586074; --ink-faint:#8990a0; --line:#d3d8e1;
+  --f:#e0952b;      /* the probe / current element under inspection */
+  --g:#12a7a3;      /* the active search window / range in play      */
+  --hold:#3fa96a;   /* found / correct / optimal                     */
+  --fail:#db4a55;   /* mismatch / ruled out / not found              */
+  --n0:#6c63e0;     /* pointers, thresholds, structure               */
+  --c2:#c77dff;
+  --disp:'Space Grotesk',sans-serif; --body:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);line-height:1.65;-webkit-font-smoothing:antialiased;font-size:17px}
+.wrap{max-width:920px;margin:0 auto;padding:0 22px}
+h1,h2,h3{font-family:var(--disp);line-height:1.12;letter-spacing:-.02em;font-weight:600}
+code,.mono,.k{font-family:var(--mono)}
+a{color:var(--n0)}
+.eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+
+header{padding:64px 0 26px;border-bottom:1px solid var(--line)}
+.partpill{display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--n0);border:1px solid var(--n0);padding:5px 11px;border-radius:100px}
+.partpill b{color:var(--ink)}
+h1{font-size:clamp(34px,6vw,58px);margin:20px 0 8px;font-weight:700}
+.sub{font-size:clamp(17px,2.4vw,20px);color:var(--ink-soft);max-width:660px;margin:0}
+.course{margin-top:18px;font-family:var(--mono);font-size:12.5px;color:var(--ink-faint)}
+.recap{margin-top:14px;font-size:14.5px;color:var(--ink-soft);border-left:3px solid var(--n0);padding:3px 0 3px 14px}
+.recap b{color:var(--ink)}
+
+section{padding:52px 0;border-bottom:1px solid var(--line)}
+.snum{font-family:var(--mono);font-size:13px;color:var(--n0);font-weight:500;letter-spacing:.08em}
+h2{font-size:clamp(24px,4vw,34px);margin:6px 0 10px}
+h3{font-size:20px;margin:26px 0 6px}
+p{margin:12px 0}.lead{font-size:18.5px}.muted{color:var(--ink-soft)}
+
+.widget{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin:22px 0;box-shadow:0 1px 0 rgba(20,28,50,.03),0 12px 30px -22px rgba(20,28,50,.35)}
+.panelwrap{background:var(--panel);border-radius:12px;padding:16px 12px 12px;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:auto}
+.controls{display:flex;flex-wrap:wrap;gap:14px 18px;align-items:center;margin-top:16px}
+.ctrl{display:flex;flex-direction:column;gap:6px;min-width:150px;flex:1}
+.ctrl label{font-family:var(--mono);font-size:12.5px;color:var(--ink-soft);display:flex;justify-content:space-between;gap:10px}
+.ctrl label .val{color:var(--ink);font-weight:500}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;background:var(--paper-2);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--n0);cursor:pointer;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--n0);cursor:pointer;border:3px solid #fff}
+input[type=range]:focus-visible{box-shadow:0 0 0 3px rgba(108,99,224,.4)}
+.verdict{font-family:var(--mono);font-size:14px;padding:10px 14px;border-radius:10px;margin-top:14px;display:flex;align-items:center;gap:10px;border:1px solid transparent;line-height:1.45}
+.verdict.ok{background:rgba(63,169,106,.12);color:#1f7a45;border-color:rgba(63,169,106,.35)}
+.verdict.bad{background:rgba(219,74,85,.1);color:#b5313c;border-color:rgba(219,74,85,.3)}
+.verdict.info{background:rgba(108,99,224,.1);color:#463fb0;border-color:rgba(108,99,224,.3)}
+.verdict .tag{font-weight:700;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-family:var(--mono);font-size:12.5px;color:var(--ink-soft)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.dot{width:11px;height:3px;border-radius:2px;display:inline-block}.dot.sq{width:12px;height:12px;border-radius:3px}
+.notice{font-size:14.5px;color:var(--ink-soft);border-left:3px solid var(--n0);padding:2px 0 2px 14px;margin:14px 0 2px}
+.notice b{color:var(--ink);font-weight:600}
+.seg,.btnrow button{font-family:var(--mono);font-size:13px;padding:8px 13px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink-soft);cursor:pointer;transition:.15s}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;align-items:center}
+.btnrow button[aria-pressed=true]{background:var(--n0);border-color:var(--n0);color:#fff}
+button:focus-visible,.seg:focus-visible,[tabindex]:focus-visible{outline:3px solid rgba(108,99,224,.45);outline-offset:2px}
+.readout{font-family:var(--mono);font-size:15px;color:var(--ink);background:var(--paper);border-radius:8px;padding:8px 12px;display:inline-block;margin-top:12px}
+.readout b{color:var(--g)}
+
+.callout{border-radius:14px;padding:16px 18px;margin:22px 0;border:1px solid var(--line);background:#fff}
+.callout .lab{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+.callout.def{border-left:4px solid var(--n0)} .callout.def .lab{color:var(--n0)}
+.callout.aha{border-left:4px solid var(--f)} .callout.aha .lab{color:#b06f13}
+.callout.watch{border-left:4px solid var(--fail)} .callout.watch .lab{color:var(--fail)}
+.eq{font-family:var(--mono);background:var(--panel);color:#e7eaf2;border-radius:10px;padding:13px 16px;margin:12px 0;font-size:14.5px;overflow-x:auto;line-height:1.9}
+.eq .cf{color:var(--f)} .eq .cg{color:#4fd6d1} .eq .cn0{color:#a49bff} .eq .ch{color:#68d798} .eq .cx{color:#ef7b83} .eq .dim{color:#6b7590}
+
+/* array strip */
+.strip{display:flex;flex-direction:column;gap:6px}
+.cells{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding-bottom:22px}
+.cell{width:46px;height:50px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);background:#1c2740;color:#cfd6e6;border:2px solid #26304a;position:relative;transition:.16s}
+.cell .v{font-size:15px;font-weight:600}
+.cell .ix{font-size:10px;color:#71809e;position:absolute;bottom:-18px}
+.cell.win{border-color:var(--g);background:rgba(18,167,163,.14);color:#a8ece8}
+.cell.out{opacity:.28}
+.cell.probe{border-color:var(--f);background:rgba(224,149,43,.2);color:#ffd79a}
+.cell.found{border-color:var(--hold);background:rgba(63,169,106,.24);color:#b6f0cc}
+.status{font-family:var(--mono);font-size:13px;color:#aeb6c8;text-align:center;min-height:20px}
+.status b{color:#fff}
+.counters{display:flex;gap:22px;flex-wrap:wrap;font-family:var(--mono);font-size:13px;color:var(--ink-soft);margin-top:4px}
+.counters b{font-size:22px;color:var(--ink);font-family:var(--disp)}
+
+/* pseudocode */
+.code{font-family:var(--mono);font-size:13px;background:var(--panel-2);border-radius:10px;padding:10px 12px;color:#c3cbdd;line-height:1.7;overflow-x:auto}
+.code .ln{display:block;padding:1px 8px;border-radius:5px;white-space:pre}
+.code .ln.hot{background:rgba(224,149,43,.22);color:#ffe4bd}
+.code .kw{color:#7fb0ff}.code .cm{color:#5c6b86}
+
+/* two-up race */
+.race{display:grid;grid-template-columns:1fr;gap:16px}
+.racecol{background:var(--panel);border-radius:12px;padding:14px}
+.racecol h4{font-family:var(--disp);color:#e7eaf2;margin:0 0 10px;font-size:16px;display:flex;justify-content:space-between;align-items:baseline}
+.racecol h4 .cc{font-family:var(--mono);font-size:13px;color:#8b93a8}
+
+/* determinant / relation cards */
+.map{display:grid;grid-template-columns:1fr;gap:10px}
+.rel{border:1px solid var(--line);border-radius:11px;padding:12px 14px;cursor:pointer;background:#fff;transition:.18s}
+.rel:hover{border-color:var(--n0)}.rel.active{background:rgba(108,99,224,.08);border-color:var(--n0)}
+.rel .rname{font-family:var(--disp);font-weight:600;font-size:16px}
+.rel .rmean{font-size:14px;color:var(--ink-soft);margin-top:4px;display:none}.rel.active .rmean{display:block}
+
+/* stepper */
+.stepper{background:var(--panel);border-radius:12px;padding:16px;color:#e7eaf2;font-family:var(--mono);font-size:14px}
+.stepper .step{opacity:.22;transition:.35s;padding:5px 0;line-height:1.8}.stepper .step.on{opacity:1}
+.stepper .step .van{color:#7a8398;transition:.35s}.stepper .step.on .van{color:#ef7b83}
+
+/* svg trees */
+.treewrap{background:var(--panel);border-radius:12px;padding:12px;overflow-x:auto}
+.treewrap svg{display:block;margin:0 auto;max-width:100%;height:auto}
+
+/* table */
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:15px}
+th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:500}
+td.mono{font-family:var(--mono);font-size:14px}
+tr td:first-child{font-family:var(--mono);font-size:13px;color:var(--ink-soft)}
+.hl-lin{color:#b06f13;font-weight:600}.hl-bis{color:#1f7a45;font-weight:600}
+
+.cards3{display:grid;grid-template-columns:1fr;gap:14px}
+.tcard{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:#fff}
+.tcard h4{font-family:var(--disp);margin:0 0 4px;font-size:17px}
+.tcard .tk{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.done{background:var(--panel);color:#e7eaf2;border-radius:16px;padding:26px;margin:26px 0 8px}
+.done .eyebrow{color:#9aa2b8}.done h3{color:#fff;font-size:24px;margin:8px 0}.done p{color:#b7bdcd}
+footer{padding:40px 0 70px;color:var(--ink-faint);font-family:var(--mono);font-size:12.5px;text-align:center}
+
+@media(min-width:700px){ .race{grid-template-columns:1fr 1fr} .map{grid-template-columns:1fr 1fr} .cards3{grid-template-columns:1fr 1fr 1fr} }
+@media(max-width:520px){ body{font-size:16px} .cell{width:38px;height:44px} .ctrl{min-width:120px} }
+@media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} .stepper .step,.cell,.bar{transition:none} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <span class="partpill">Part <b>2</b> of 2 · Searching</span>
+    <h1>Where is the key?</h1>
+    <p class="sub">One task — find a number's position in an array — solved two ways. We'll ask each algorithm the same four questions from Part&nbsp;1: is it complete, is it optimal, what does it cost in time, and what in space.</p>
+    <div class="course">COMS3005A — Advanced Analysis of Algorithms · Theory Notes: Searching</div>
+    <div class="recap"><b>Carried over from Part 1:</b> amber = the element being inspected · teal = the range still in play · <span style="color:#2f8f56">green</span> = found / correct / optimal · <span style="color:#b5313c">rose</span> = ruled out / mismatch · indigo = pointers &amp; structure. Same colours, new subject.</div>
+  </div>
+</header>
+
+<!-- ================= HERO RACE ================= -->
+<section id="race">
+  <div class="wrap">
+    <div class="snum">01 — The thesis</div>
+    <h2>Same array, same key — one algorithm reads structure, the other doesn't</h2>
+    <p class="lead">Here is the sorted example list from the notes. Pick a key and watch both algorithms hunt for it. Count the comparisons. That gap is the entire reason this topic exists.</p>
+
+    <div class="widget">
+      <div class="btnrow" id="race-keys" role="group" aria-label="choose a key"></div>
+      <div class="race">
+        <div class="racecol">
+          <h4>Linear search <span class="cc" id="lc-count">0 comparisons</span></h4>
+          <div class="strip"><div class="cells" id="lc-cells"></div></div>
+          <div class="status" id="lc-status">ready</div>
+        </div>
+        <div class="racecol">
+          <h4>Bisection search <span class="cc" id="bc-count">0 comparisons</span></h4>
+          <div class="strip"><div class="cells" id="bc-cells"></div></div>
+          <div class="status" id="bc-status">ready</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="seg" id="race-run">▶ run both</button>
+        <button class="seg" id="race-step">step ▶</button>
+        <button class="seg" id="race-reset">↺ reset</button>
+      </div>
+      <div class="verdict info" id="race-verd"><span class="tag">try it</span> Search for 89 (the last element) or a value that isn't there — that's where linear pays full price.</div>
+      <p class="notice"><b>What to notice:</b> linear walks left to right, one cell at a time. Bisection jumps to the middle and throws away half the array on every comparison. Both are correct; only the number of questions differs.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROBLEM SETUP ================= -->
+<section id="setup">
+  <div class="wrap">
+    <div class="snum">02 — The problem, precisely</div>
+    <h2>What we're solving, and how we'll judge it</h2>
+    <p class="lead">The problem: given an array and a <b>key</b>, return the key's index, or <span class="k">−1</span> if it's absent. Two standing assumptions from the notes — the values are <b>unique</b>, and the key <b>might not be present</b>.</p>
+    <div class="widget">
+      <p class="muted" style="font-family:var(--mono);font-size:13px;margin:2px 0 10px">The notes' example array (unsorted):</p>
+      <div class="panelwrap"><div class="strip"><div class="cells" id="setup-cells"></div></div></div>
+      <p style="margin-top:22px">We measure every algorithm against the four determinants of problem-solving performance. Tap each:</p>
+      <div class="map" id="det-map"></div>
+    </div>
+    <div class="callout aha"><div class="lab">Aha · why comparisons?</div>
+      For both algorithms the <b>unit of work</b> is a single comparison of the key against one array element. It's the operation inside the only loop, and it tracks the real cost faithfully — so all our time analysis counts comparisons.</div>
+  </div>
+</section>
+
+<!-- ================= LINEAR MECHANISM ================= -->
+<section id="lin-mech">
+  <div class="wrap">
+    <div class="snum">03 — Linear search · mechanism</div>
+    <h2>Walk the array until you find it (or run off the end)</h2>
+    <p class="lead">Start at index 0. If the cell holds the key, stop. Otherwise step right and repeat. If you pass the last index, the key isn't there — return <span class="k">−1</span>. No assumptions about order needed.</p>
+    <div class="widget">
+      <div class="panelwrap"><div class="strip"><div class="cells" id="lm-cells"></div></div><div class="status" id="lm-status"></div></div>
+      <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px">
+        <div class="code" id="lm-code"></div>
+      </div>
+      <div class="controls">
+        <div class="ctrl" style="max-width:220px"><label>key <span class="val" id="lm-keyval">17</span></label>
+          <input id="lm-key" type="range" min="0" max="95" step="1" value="17"></div>
+        <button class="seg" id="lm-step">step ▶</button>
+        <button class="seg" id="lm-run">▶ run</button>
+        <button class="seg" id="lm-reset">↺</button>
+      </div>
+      <div class="verdict ok" id="lm-verd"></div>
+      <p class="notice"><b>What to notice:</b> the amber cursor only ever moves right, and cells behind it turn rose — permanently ruled out. The loop's exit is either a match or falling off the end.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LINEAR COMPLETENESS ================= -->
+<section id="lin-complete">
+  <div class="wrap">
+    <div class="snum">04 — Linear search · completeness</div>
+    <h2>It always returns the right answer (Theorem 1, by induction)</h2>
+    <p class="lead">Completeness asks: <em>will it find a solution if one exists?</em> The notes prove yes for any length by induction. The idea is visual — a length-<span class="k">k</span> array is a length-<span class="k">k−1</span> array (handled by the hypothesis) plus one new final cell.</p>
+    <div class="widget">
+      <div class="btnrow" id="ind-btns" role="group" aria-label="pick the case"></div>
+      <div class="panelwrap"><div class="strip"><div class="cells" id="ind-cells"></div></div><div class="status" id="ind-status"></div></div>
+      <div class="verdict ok" id="ind-verd"></div>
+      <p class="notice"><b>What to notice:</b> if the key sits anywhere in the first <span class="k">k−1</span> cells (teal), the induction hypothesis already guarantees a correct result. Only the last cell (indigo) is genuinely new — and the two cases there (match / off-the-end) both return correctly. That closes the proof.</p>
+    </div>
+    <div class="callout def"><div class="lab">Proof shape · induction on length n</div>
+      <b>Base (n=1):</b> either key = myList[0] → return 0, or not → loop increments past the end → return −1. Both correct.<br>
+      <b>Hypothesis:</b> correct for length k−1.<br>
+      <b>Step (n=k):</b> key in positions 0…k−2 is covered by the hypothesis; the only new case is position k−1 (match → return k−1) or absent (return −1). ∎</div>
+  </div>
+</section>
+
+<!-- ================= LINEAR OPTIMALITY (ADVERSARY) ================= -->
+<section id="lin-optimal">
+  <div class="wrap">
+    <div class="snum">05 — Linear search · optimality</div>
+    <h2>You can't beat n comparisons on an unordered array — the adversary proof</h2>
+    <p class="lead">Optimality compares an algorithm to the problem's floor. For an <em>unordered</em> array we prove that floor is <b>n comparisons</b> using an adversary: whatever cells you check, the key hides in one you haven't. <b>You be the algorithm</b> — click cells to check them.</p>
+
+    <div class="widget">
+      <p class="muted" style="font-family:var(--mono);font-size:13px;margin:2px 0 10px">Values are hidden. Click a cell to "check" it — the adversary answers.</p>
+      <div class="panelwrap"><div class="strip"><div class="cells" id="adv-cells"></div></div><div class="status" id="adv-status">Cells checked: 0. The key could still be in any unchecked cell.</div></div>
+      <div class="controls"><button class="seg" id="adv-reset">↺ new round</button>
+        <button class="seg" id="adv-giveup">I've checked all but one — where's the key?</button></div>
+      <div class="verdict info" id="adv-verd"></div>
+      <p class="notice"><b>What to notice:</b> after <span class="k">n−1</span> checks there's still one unseen cell — and the adversary is free to have put the key there. So you <em>must</em> check that last cell too. Any correct algorithm needs all <span class="k">n</span> comparisons in its worst case.</p>
+    </div>
+    <div class="callout aha"><div class="lab">Aha · why this makes linear optimal</div>
+      The lower bound for the problem is <span class="k">L(n) = n</span>. Linear search does at most <span class="k">n</span> comparisons. Its worst case <em>matches</em> the floor — so it is <b>Θ(n)</b> and optimal for unordered arrays. "Hide the key in the last place it looks" is the whole argument.</div>
+  </div>
+</section>
+
+<!-- ================= LINEAR TIME ================= -->
+<section id="lin-time">
+  <div class="wrap">
+    <div class="snum">06 — Linear search · time complexity</div>
+    <h2>Best O(1), worst O(n), and an average that depends on q</h2>
+    <p class="lead">Best case: the key sits at index 0 — one comparison, done. Worst case: the key is absent — every one of the n cells is compared. The average is the interesting one.</p>
+
+    <div class="callout def"><div class="lab">Best &amp; worst case</div>
+      <div class="eq"><span class="cf">best</span>: key at index 0 → g(n)=1 → <span class="ch">O(1)</span> &nbsp;&nbsp;·&nbsp;&nbsp; <span class="cx">worst</span>: key absent → g(n)=n → <span class="ch">O(n)</span></div>
+      (Same O-proof ritual as Part 1: constant work is O(1); linear work is O(n).)</div>
+
+    <h3>The average case, derived</h3>
+    <p>Group inputs by where the key is. Let <span class="k">q</span> be the probability the key is in the array at all; positions are equally likely (the list is unordered). Step through it:</p>
+    <div class="widget">
+      <div class="stepper" id="avg-body"></div>
+      <div class="controls"><button class="seg" id="avg-prev">◀ back</button><button class="seg" id="avg-next">step ▶</button></div>
+      <div class="verdict ok" id="avg-verd" style="display:none"></div>
+    </div>
+
+    <h3>Play with q and n</h3>
+    <p>The result is <span class="k">gA(n) = q(n+1)/2 + (1−q)n</span>. Drag both and watch where the average lands between "instant" and "worst case".</p>
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-avg" height="280"></canvas></div>
+      <div class="controls">
+        <div class="ctrl"><label>q — P(key in array) <span class="val" id="v-q">0.50</span></label><input id="s-q" type="range" min="0" max="1" step="0.01" value="0.5"></div>
+        <div class="ctrl"><label>n — array length <span class="val" id="v-avgn">40</span></label><input id="s-avgn" type="range" min="2" max="100" step="1" value="40"></div>
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--f)"></i> gA(n) = q(n+1)/2 + (1−q)n</span>
+        <span><i class="dot" style="background:var(--hold);border-top:2px dashed var(--hold)"></i> (n+1)/2, q=1</span>
+        <span><i class="dot" style="background:var(--fail);border-top:2px dashed var(--fail)"></i> n, q=0</span>
+      </div>
+      <div class="readout" id="ro-avg"></div>
+      <p class="notice"><b>What to notice:</b> at <span class="k">q=1</span> (key certainly present) the average is <b>(n+1)/2</b> — about half the list. At <span class="k">q=0</span> (certainly absent) it collapses onto the worst case <b>n</b>. Either way it's linear in n, so the average case is still <b>O(n)</b>.</p>
+    </div>
+    <div class="callout def"><div class="lab">Why O(n) · the limit proof</div>
+      <div class="eq">limₙ→∞ [q(n+1)/2 + (1−q)n] / n = <span class="ch">(2 − q)/2</span></div>
+      For any q ∈ [0,1] this is a finite positive constant, so gA(n) = O(n). (Notice c depends on q.)</div>
+  </div>
+</section>
+
+<!-- ================= LINEAR SPACE ================= -->
+<section id="lin-space">
+  <div class="wrap">
+    <div class="snum">07 — Linear search · space complexity</div>
+    <h2>O(n): the array dominates, everything else is a constant</h2>
+    <p class="lead">Linear search stores the length-<span class="k">n</span> array plus a couple of scalar variables (the index). The scalars don't grow with the input, so total memory is <b>O(n)</b> — driven entirely by the array itself.</p>
+    <div class="callout def"><div class="lab">Space</div>
+      <div class="eq"><span class="cf">n</span> array cells + <span class="cn0">O(1)</span> bookkeeping = <span class="ch">O(n)</span>, regardless of input.</div>
+      This is the same for both algorithms in these notes — the interesting differences are all in <em>time</em>.</div>
+  </div>
+</section>
+
+<!-- ================= BISECTION MECHANISM ================= -->
+<section id="bis-mech">
+  <div class="wrap">
+    <div class="snum">08 — Bisection search · mechanism</div>
+    <h2>Halve the problem every comparison — but only if it's sorted</h2>
+    <p class="lead">Keep a window <span class="k">[low, high]</span>. Look at its middle. Equal? Done. Key smaller? The answer must be in the left half — discard the right. Key larger? Discard the left. Each comparison throws away half the array. This is <b>decrease-and-conquer</b>.</p>
+
+    <div class="widget">
+      <div class="panelwrap"><div class="strip"><div class="cells" id="bm-cells"></div></div><div class="status" id="bm-status"></div></div>
+      <div class="code" id="bm-code" style="margin-top:14px"></div>
+      <div class="controls">
+        <div class="ctrl" style="max-width:220px"><label>key <span class="val" id="bm-keyval">45</span></label>
+          <input id="bm-key" type="range" min="0" max="95" step="1" value="45"></div>
+        <button class="seg" id="bm-step">step ▶</button>
+        <button class="seg" id="bm-run">▶ run</button>
+        <button class="seg" id="bm-reset">↺</button>
+      </div>
+      <div class="verdict ok" id="bm-verd"></div>
+      <p class="notice"><b>What to notice:</b> the teal window shrinks by half after every amber probe; the discarded half dims to rose. Reaching a single-cell window and missing means the key isn't there → <span class="k">−1</span>.</p>
+    </div>
+
+    <div class="callout watch"><div class="lab">Gotcha · sorting is not optional</div>
+      Bisection's whole logic — "smaller ⇒ go left" — relies on order. On an <b>unsorted</b> array a comparison tells you nothing about which half to keep, so discarding a half can throw away the key. That's the price of admission: bisection needs a sorted list; linear does not.</div>
+  </div>
+</section>
+
+<!-- ================= BISECTION COMPLETENESS ================= -->
+<section id="bis-complete">
+  <div class="wrap">
+    <div class="snum">09 — Bisection search · completeness</div>
+    <h2>It always terminates with the right answer (Theorem 6)</h2>
+    <p class="lead">Two things must hold: it always <em>stops</em>, and when it stops the answer is right. Both come from the window strictly shrinking.</p>
+    <div class="callout def"><div class="lab">Why it terminates &amp; is correct</div>
+      Every iteration either finds the key or moves <span class="k">low</span> up / <span class="k">high</span> down past <span class="k">mid</span>, so the window <b>[low, high] strictly shrinks</b>. It can't shrink forever — eventually either the key is found, or <span class="k">low &gt; high</span> and the loop halts returning <span class="k">−1</span>. Because the list is sorted, whenever the key exists the discarded half provably can't contain it, so a present key is never skipped. ∎</div>
+    <div class="callout aha"><div class="lab">Aha · base case n=1</div>
+      A one-cell window: either <span class="k">myList[0] = key</span> (found → return 0) or not (one branch sets <span class="k">low&gt;high</span>, loop halts → return −1). The smallest case already shows the two exits that the general proof relies on.</div>
+  </div>
+</section>
+
+<!-- ================= BISECTION OPTIMALITY (DECISION TREE) ================= -->
+<section id="bis-optimal">
+  <div class="wrap">
+    <div class="snum">10 — Bisection search · optimality</div>
+    <h2>⌊log₂n⌋ + 1 comparisons is the floor — the decision-tree argument</h2>
+    <p class="lead">Any search on a sorted list is a sequence of index checks, and each check sends you left or right. That makes every such algorithm a <b>binary tree of indices</b>. The worst-case number of comparisons is the longest root-to-leaf path: the tree's height plus one.</p>
+
+    <div class="widget">
+      <div class="btnrow" id="tree-btns" role="group" aria-label="choose an algorithm's tree"></div>
+      <div class="treewrap"><svg id="tree-svg" viewBox="0 0 720 300" role="img" aria-label="decision tree"></svg></div>
+      <div class="verdict ok" id="tree-verd"></div>
+      <p class="notice"><b>What to notice:</b> bisection's tree is <em>balanced</em> — height ⌊log₂n⌋, so ⌊log₂n⌋+1 comparisons worst case. Linear search is the <em>same idea gone wrong</em>: its tree is a single chain of height n−1, needing n comparisons. Balance is everything.</p>
+    </div>
+
+    <h3>Why a balanced tree can't be shorter — Proposition 1</h3>
+    <p>A binary tree with <span class="k">N</span> nodes has height <span class="k">h ≥ ⌊log₂N⌋</span>. The reason: level <span class="k">i</span> holds at most <span class="k">2ⁱ</span> nodes, so a tree of height h holds at most <span class="k">2ʰ⁺¹ − 1</span>. To fit N nodes you need enough levels.</p>
+    <div class="widget">
+      <div class="treewrap"><svg id="prop-svg" viewBox="0 0 720 260" role="img" aria-label="balanced tree filling up"></svg></div>
+      <div class="controls">
+        <div class="ctrl"><label>N — nodes in the tree <span class="val" id="v-N">11</span></label><input id="s-N" type="range" min="1" max="31" step="1" value="11"></div>
+      </div>
+      <div class="readout" id="ro-prop"></div>
+      <p class="notice"><b>What to notice:</b> pack nodes as tightly as possible (a balanced tree) and the height still can't dip below <span class="k">⌊log₂N⌋</span>. Since every list index needs its own node (<span class="k">N ≥ n</span> for a complete algorithm), the height — and so the worst-case comparisons — is bounded below by <span class="k">⌊log₂n⌋ + 1</span>.</p>
+    </div>
+    <div class="callout aha"><div class="lab">Aha · the chain that closes it</div>
+      worst-case comparisons = height + 1 ≥ ⌊log₂N⌋ + 1 ≥ ⌊log₂n⌋ + 1. Bisection <em>achieves</em> exactly ⌊log₂n⌋ + 1 (next section), so it hits the floor — <b>optimal</b> among all sorted-list search algorithms.</div>
+  </div>
+</section>
+
+<!-- ================= BISECTION TIME ================= -->
+<section id="bis-time">
+  <div class="wrap">
+    <div class="snum">11 — Bisection search · time complexity</div>
+    <h2>Best O(1), worst O(log₂ n)</h2>
+    <p class="lead">Best case: the key is exactly the first middle you check — one comparison. Worst case: you keep halving until a single cell remains. Let's build the worst-case count from its recurrence.</p>
+
+    <div class="callout watch"><div class="lab">Note on the notes</div>
+      Theorem 7 in the notes is labelled "O(1) in the worst case" — that's a typo. The single-comparison result is the <b>best</b> case (key at the first mid). The worst case is what we derive next.</div>
+
+    <h3>Unroll the recurrence</h3>
+    <p>One comparison, then recurse on a half of size <span class="k">⌊n/2⌋</span>. Slide n and watch it collapse to a single cell — the number of halvings plus one is the comparison count.</p>
+    <div class="widget">
+      <div class="panelwrap" id="rec-wrap" style="padding:18px 14px"></div>
+      <div class="controls"><div class="ctrl"><label>n — array length <span class="val" id="v-recn">45</span></label><input id="s-recn" type="range" min="1" max="128" step="1" value="45"></div></div>
+      <div class="readout" id="ro-rec"></div>
+      <div class="verdict ok" id="rec-verd"></div>
+    </div>
+
+    <h3>Prove the closed form by induction</h3>
+    <div class="widget">
+      <div class="stepper" id="bind-body"></div>
+      <div class="controls"><button class="seg" id="bind-prev">◀ back</button><button class="seg" id="bind-next">step ▶</button></div>
+      <div class="verdict ok" id="bind-verd" style="display:none"></div>
+    </div>
+
+    <div class="callout def"><div class="lab">Why O(log₂n) · Theorem 8</div>
+      <div class="eq">gW(n) = ⌊log₂n⌋ + 1 &nbsp;≤&nbsp; a·log₂n &nbsp;⟺&nbsp; 1 + 1/log₂n ≤ a</div>
+      As n → ∞, the 1/log₂n term vanishes, so any a &gt; 1 works ⇒ gW(n) = <span class="ch">O(log₂n)</span>.</div>
+  </div>
+</section>
+
+<!-- ================= HEAD TO HEAD ================= -->
+<section id="verdict">
+  <div class="wrap">
+    <div class="snum">12 — The two, side by side</div>
+    <h2>Everything the notes proved, on one screen</h2>
+
+    <div class="widget" style="padding:8px 18px 18px">
+      <table>
+        <thead><tr><th></th><th>Linear search</th><th>Bisection search</th></tr></thead>
+        <tbody>
+          <tr><td>Requires sorted input</td><td class="mono">no</td><td class="mono">yes</td></tr>
+          <tr><td>Best case</td><td class="mono">O(1) — key at index 0</td><td class="mono">O(1) — key at first mid</td></tr>
+          <tr><td>Worst case</td><td class="mono hl-lin">O(n)</td><td class="mono hl-bis">O(log₂ n)</td></tr>
+          <tr><td>Average case</td><td class="mono">q(n+1)/2 + (1−q)n = O(n)</td><td class="mono">O(log₂ n)</td></tr>
+          <tr><td>Space</td><td class="mono">O(n)</td><td class="mono">O(n)</td></tr>
+          <tr><td>Optimal for…</td><td class="mono hl-lin">unordered arrays</td><td class="mono hl-bis">sorted arrays</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The payoff, plotted</h3>
+    <p>Worst-case comparisons as n grows. This is why sorting once can be worth it if you'll search many times.</p>
+    <div class="widget">
+      <div class="panelwrap"><canvas id="cv-final" height="300"></canvas></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--fail)"></i> linear worst = n</span>
+        <span><i class="dot" style="background:var(--hold)"></i> bisection worst = ⌊log₂n⌋+1</span>
+      </div>
+      <div class="readout" id="ro-final"></div>
+    </div>
+
+    <div class="callout aha"><div class="lab">Aha · optimality is relative to assumptions</div>
+      Both algorithms are optimal — for <em>different problems</em>. Linear matches the floor <span class="k">L(n)=n</span> when nothing is known about order; bisection matches <span class="k">L(n)=log₂n</span> when the list is sorted. Sorting doesn't make linear "wrong" — it changes the problem, and with it, the floor.</div>
+  </div>
+</section>
+
+<!-- ================= TAKEAWAYS ================= -->
+<section id="takeaways" style="border-bottom:none">
+  <div class="wrap">
+    <div class="snum">13 — Decision guide</div>
+    <h2>Which one, when?</h2>
+    <div class="cards3">
+      <div class="tcard"><div class="tk">Unsorted data</div><h4>Use linear</h4><p class="muted" style="margin:6px 0 0;font-size:15px">No ordering to exploit, and linear is provably optimal here. Sorting first only pays off if you'll search repeatedly.</p></div>
+      <div class="tcard"><div class="tk">Sorted, many searches</div><h4>Use bisection</h4><p class="muted" style="margin:6px 0 0;font-size:15px">O(log n) per query crushes O(n) as n grows. Amortise the one-time sort across all the lookups.</p></div>
+      <div class="tcard"><div class="tk">Sorted, one search</div><h4>It depends</h4><p class="muted" style="margin:6px 0 0;font-size:15px">If already sorted, bisection. If you'd have to sort just for one lookup, a single linear pass may be cheaper.</p></div>
+    </div>
+
+    <div class="done">
+      <div class="eyebrow">Series complete</div>
+      <h3>Two parts, one framework</h3>
+      <p>Part 1 gave us the language — O, Ω, Θ, o, ω, and the split between correctness, complexity, and optimality. Part 2 spent it on two real algorithms and watched the same four questions produce two very different verdicts. The tools transfer: every algorithm you meet from here gets the same interrogation.</p>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap">Part 2 of 2 · COMS3005A Searching · every comparison count driven by the real algorithm trace &amp; verified against the notes</div></footer>
+
+<script>
+"use strict";
+const RM=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SORTED=[3,9,12,15,17,24,31,45,49,87,89];
+const UNSORTED=[3,17,24,12,9,89,45,87,15,49,31];
+
+/* ---------- real algorithm traces (source of truth) ---------- */
+function traceLinear(arr,key){
+  const n=arr.length, steps=[]; let comps=0,i=0; const ruled=[];
+  while(true){
+    if(i>n-1){ steps.push({kind:'oob',ruled:[...ruled],comps,line:2});
+               steps.push({kind:'notfound',ruled:[...ruled],comps,result:-1,line:4}); break; }
+    comps++;
+    if(arr[i]===key){ steps.push({kind:'match',probe:i,ruled:[...ruled],comps,line:2});
+                      steps.push({kind:'found',found:i,ruled:[...ruled],comps,result:i,line:5}); break; }
+    steps.push({kind:'miss',probe:i,ruled:[...ruled],comps,line:2}); ruled.push(i); i++;
+  }
+  return {steps,comps,result:steps[steps.length-1].result};
+}
+function traceBisection(arr,key){
+  const n=arr.length, steps=[]; let lo=0,hi=n-1,comps=0,found=false,mid=-1;
+  while(lo<=hi && !found){
+    mid=Math.floor((lo+hi)/2); comps++;
+    if(arr[mid]===key){ found=true;
+      steps.push({win:[lo,hi],probe:mid,cmp:'=',comps,line:4});
+      steps.push({win:[lo,hi],found:mid,cmp:'=',comps,result:mid,line:8,done:true}); }
+    else if(key<arr[mid]){ steps.push({win:[lo,hi],probe:mid,cmp:'<',comps,line:5}); hi=mid-1; }
+    else { steps.push({win:[lo,hi],probe:mid,cmp:'>',comps,line:6}); lo=mid+1; }
+  }
+  if(!found) steps.push({win:[lo,hi],comps,line:7,result:-1,done:true,oob:true});
+  return {steps,comps,result:found?mid:-1};
+}
+function nearestKey(arr,target){ // snap a slider value to a useful key (exact value, or force 'absent')
+  if(arr.includes(target)) return target;
+  return target; // absent value is fine — demonstrates the −1 path
+}
+function renderStrip(el,arr,st,opts){
+  opts=opts||{}; el.innerHTML='';
+  arr.forEach((v,ix)=>{
+    const c=document.createElement('div'); c.className='cell';
+    if(st.win){const[lo,hi]=st.win; if(ix<lo||ix>hi)c.classList.add('out'); else c.classList.add('win');}
+    if(st.ruled&&st.ruled.includes(ix)){c.className='cell out';}
+    if(ix===st.probe){c.className='cell probe';}
+    if(ix===st.found){c.className='cell found';}
+    const val=opts.hidden?'?':v;
+    c.innerHTML='<span class="v">'+val+'</span><span class="ix">'+ix+'</span>';
+    el.appendChild(c);
+  });
+}
+
+/* ---------- pseudocode ---------- */
+const LINCODE=[
+ [1,'index &larr; 0'],
+ [2,'<span class="kw">while</span> index &le; n&minus;1 <span class="kw">and</span> myList[index] &ne; key <span class="kw">do</span>'],
+ [3,'  index &larr; index + 1'],
+ [4,'<span class="kw">if</span> index &gt; n&minus;1 <span class="kw">then</span> index &larr; &minus;1'],
+ [5,'<span class="kw">return</span> index'],
+];
+const BISCODE=[
+ [1,'low &larr; 0,  high &larr; n&minus;1,  found &larr; False'],
+ [2,'<span class="kw">while</span> low &le; high <span class="kw">and not</span> found <span class="kw">do</span>'],
+ [3,'  mid &larr; &lfloor;(low+high)/2&rfloor;'],
+ [4,'  <span class="kw">if</span> key = myList[mid] <span class="kw">then</span> found &larr; True'],
+ [5,'  <span class="kw">else if</span> key &lt; myList[mid] <span class="kw">then</span> high &larr; mid&minus;1'],
+ [6,'  <span class="kw">else</span> low &larr; mid+1'],
+ [7,'<span class="kw">if not</span> found <span class="kw">then</span> mid &larr; &minus;1'],
+ [8,'<span class="kw">return</span> mid'],
+];
+function renderCode(el,code,hot){el.innerHTML=code.map(([ln,txt])=>'<span class="ln'+(ln===hot?' hot':'')+'">'+txt+'</span>').join('');}
+
+/* ---------- shared Plot (from Part 1) ---------- */
+class Plot{
+  constructor(cv,opt){this.cv=cv;this.o=Object.assign({xMin:0,xMax:40,yMin:0,yMax:100,padL:46,padR:14,padT:14,padB:26},opt);
+    this.ro=new ResizeObserver(()=>this.resize());this.ro.observe(cv.parentElement);this.resize();}
+  resize(){const dpr=window.devicePixelRatio||1;const w=this.cv.parentElement.clientWidth-24;const h=this.h||300;
+    this.cv.style.width=w+'px';this.cv.style.height=h+'px';this.cv.width=w*dpr;this.cv.height=h*dpr;
+    this.ctx=this.cv.getContext('2d');this.ctx.setTransform(dpr,0,0,dpr,0,0);this.W=w;this.H=h;if(this._draw)this._draw();}
+  setHeight(h){this.h=h;this.resize();}
+  onDraw(fn){this._draw=fn;fn();}
+  px(x){const o=this.o;return o.padL+(x-o.xMin)/(o.xMax-o.xMin)*(this.W-o.padL-o.padR);}
+  py(y){const o=this.o;return o.padT+(this.H-o.padT-o.padB)-(y-o.yMin)/(o.yMax-o.yMin)*(this.H-o.padT-o.padB);}
+  bg(){this.ctx.clearRect(0,0,this.W,this.H);}
+  grid(){const c=this.ctx,o=this.o;c.save();c.strokeStyle='#26304a';c.lineWidth=1;c.font='11px "JetBrains Mono"';c.fillStyle='#5c6784';
+    for(let i=0;i<=4;i++){const y=o.yMin+(o.yMax-o.yMin)*i/4,yy=this.py(y);c.globalAlpha=.5;c.beginPath();c.moveTo(this.px(o.xMin),yy);c.lineTo(this.px(o.xMax),yy);c.stroke();c.globalAlpha=1;c.fillText(fmt(y),4,yy+3);}
+    for(let i=0;i<=4;i++){const x=o.xMin+(o.xMax-o.xMin)*i/4,xx=this.px(x);c.fillText(Math.round(x),xx-6,this.H-8);}c.restore();}
+  curve(fn,color,width=2.6,dash=null){const c=this.ctx,o=this.o;c.save();c.beginPath();c.rect(this.px(o.xMin),o.padT,this.px(o.xMax)-this.px(o.xMin),this.H-o.padT-o.padB);c.clip();
+    c.strokeStyle=color;c.lineWidth=width;if(dash)c.setLineDash(dash);c.beginPath();let s=false;const N=260;
+    for(let i=0;i<=N;i++){const x=o.xMin+(o.xMax-o.xMin)*i/N;let y=fn(x);if(!isFinite(y)){s=false;continue;}const X=this.px(x),Y=this.py(y);if(!s){c.moveTo(X,Y);s=true;}else c.lineTo(X,Y);}c.stroke();c.restore();}
+  hline(y,color,dash=[5,4]){const c=this.ctx;c.save();c.strokeStyle=color;c.lineWidth=1.6;c.setLineDash(dash);c.beginPath();c.moveTo(this.px(this.o.xMin),this.py(y));c.lineTo(this.px(this.o.xMax),this.py(y));c.stroke();c.restore();}
+  dot(x,y,color,label){const c=this.ctx;c.save();c.fillStyle=color;c.beginPath();c.arc(this.px(x),this.py(Math.min(y,this.o.yMax)),4.5,0,7);c.fill();if(label){c.fillStyle='#c9cfe0';c.font='11px "JetBrains Mono"';c.fillText(label,this.px(x)+7,this.py(Math.min(y,this.o.yMax))-6);}c.restore();}
+}
+function fmt(v){if(Math.abs(v)>=1000)return(v/1000).toFixed(0)+'k';if(Number.isInteger(v))return v;return v.toFixed(1);}
+
+/* =============== HERO RACE =============== */
+(function(){
+  const keys=[3,17,45,89,50]; let key=45;
+  const btns=document.getElementById('race-keys');
+  keys.forEach(k=>{const b=document.createElement('button');b.className='seg';b.textContent=SORTED.includes(k)?('key '+k):('key '+k+' (absent)');
+    b.setAttribute('aria-pressed',k===key);b.onclick=()=>{key=k;[...btns.children].forEach(x=>x.setAttribute('aria-pressed',+x.dataset.k===k));reset();};b.dataset.k=k;btns.appendChild(b);});
+  const lcE=document.getElementById('lc-cells'),bcE=document.getElementById('bc-cells');
+  let L,B,li,bi,timer=null;
+  function reset(){clearInterval(timer);timer=null;L=traceLinear(SORTED,key);B=traceBisection(SORTED,key);li=-1;bi=-1;
+    renderStrip(lcE,SORTED,{});renderStrip(bcE,SORTED,{});
+    document.getElementById('lc-count').textContent='0 comparisons';document.getElementById('bc-count').textContent='0 comparisons';
+    document.getElementById('lc-status').textContent='ready';document.getElementById('bc-status').textContent='ready';
+    const v=document.getElementById('race-verd');v.className='verdict info';v.innerHTML='<span class="tag">ready</span> Step or run to compare comparison counts for key '+key+(SORTED.includes(key)?'.':' (not in the list).');}
+  function drawL(){const s=L.steps[Math.min(li,L.steps.length-1)];if(!s)return;renderStrip(lcE,SORTED,{ruled:s.ruled,probe:s.probe,found:s.found});
+    document.getElementById('lc-count').textContent=s.comps+' comparison'+(s.comps===1?'':'s');
+    document.getElementById('lc-status').innerHTML= s.result!==undefined ? (s.result>=0?('<b>found at index '+s.result+'</b>'):'<b>not found → −1</b>') : ('checking index '+s.probe);}
+  function drawB(){const s=B.steps[Math.min(bi,B.steps.length-1)];if(!s)return;renderStrip(bcE,SORTED,{win:s.win,probe:s.probe,found:s.found});
+    document.getElementById('bc-count').textContent=s.comps+' comparison'+(s.comps===1?'':'s');
+    document.getElementById('bc-status').innerHTML= s.result!==undefined ? (s.result>=0?('<b>found at index '+s.result+'</b>'):'<b>not found → −1</b>') : ('probe mid, key '+s.cmp+' myList[mid]');}
+  function step(){let adv=false;if(li<L.steps.length-1){li++;drawL();adv=true;}if(bi<B.steps.length-1){bi++;drawB();adv=true;}
+    if(!adv){const v=document.getElementById('race-verd');v.className='verdict ok';
+      v.innerHTML='<span class="tag">done</span> Linear used <b>'+L.comps+'</b>, bisection used <b>'+B.comps+'</b> comparison'+(B.comps===1?'':'s')+'.';}}
+  document.getElementById('race-step').onclick=step;
+  document.getElementById('race-reset').onclick=reset;
+  document.getElementById('race-run').onclick=function(){clearInterval(timer);if(RM){while(li<L.steps.length-1||bi<B.steps.length-1)step();return;}
+    timer=setInterval(()=>{if(li>=L.steps.length-1&&bi>=B.steps.length-1){clearInterval(timer);step();return;}step();},420);};
+  reset();
+})();
+
+/* =============== PROBLEM SETUP + DETERMINANTS =============== */
+(function(){
+  renderStrip(document.getElementById('setup-cells'),UNSORTED,{});
+  const dets=[
+    {n:'Completeness',m:'Will the algorithm find a solution if one exists? (For us: does it correctly return the index, or −1 when absent?)'},
+    {n:'Optimality',m:'Does it find the best solution / do no more work than necessary in its worst case, given the problem?'},
+    {n:'Time complexity',m:'How long does it take? Measured in comparisons — best, worst, and average case.'},
+    {n:'Space complexity',m:'How much memory does the search need beyond the input itself?'},
+  ];
+  const wrap=document.getElementById('det-map');
+  dets.forEach((d,i)=>{const el=document.createElement('div');el.className='rel'+(i===0?' active':'');el.tabIndex=0;
+    el.innerHTML='<div class="rname">'+d.n+'</div><div class="rmean">'+d.m+'</div>';
+    const act=()=>{[...wrap.children].forEach(x=>x.classList.remove('active'));el.classList.add('active');};
+    el.onclick=act;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act();}};wrap.appendChild(el);});
+})();
+
+/* =============== LINEAR MECHANISM =============== */
+(function(){
+  const cells=document.getElementById('lm-cells'),status=document.getElementById('lm-status'),code=document.getElementById('lm-code');
+  const sk=document.getElementById('lm-key');let T,idx,timer=null;
+  function build(){const key=+sk.value;document.getElementById('lm-keyval').textContent=key;T=traceLinear(SORTED,key);idx=-1;draw();}
+  function draw(){renderCode(code,LINCODE, idx<0?1:T.steps[Math.min(idx,T.steps.length-1)].line);
+    if(idx<0){renderStrip(cells,SORTED,{});status.textContent='press step to begin — searching for '+sk.value;document.getElementById('lm-verd').style.display='none';return;}
+    const s=T.steps[Math.min(idx,T.steps.length-1)];renderStrip(cells,SORTED,{ruled:s.ruled,probe:s.probe,found:s.found});
+    status.innerHTML= s.result!==undefined?(s.result>=0?'<b>match at index '+s.result+'</b>':'<b>fell off the end → return −1</b>'):('checking index '+s.probe+': '+SORTED[s.probe]+' '+(s.kind==='miss'?'≠':'=')+' '+sk.value);
+    const v=document.getElementById('lm-verd');
+    if(s.result!==undefined){v.style.display='flex';v.className='verdict ok';v.innerHTML='<span class="tag">result</span> '+(s.result>=0?('index '+s.result):'−1 (absent)')+' in <b>'+T.comps+'</b> comparison'+(T.comps===1?'':'s')+'.';}
+    else v.style.display='none';}
+  document.getElementById('lm-step').onclick=()=>{if(idx<T.steps.length-1)idx++;draw();};
+  document.getElementById('lm-run').onclick=()=>{clearInterval(timer);if(RM){idx=T.steps.length-1;draw();return;}timer=setInterval(()=>{if(idx>=T.steps.length-1){clearInterval(timer);return;}idx++;draw();},360);};
+  document.getElementById('lm-reset').onclick=()=>{clearInterval(timer);build();};
+  sk.oninput=()=>{clearInterval(timer);build();};build();
+})();
+
+/* =============== LINEAR COMPLETENESS (induction cases) =============== */
+(function(){
+  // length k array; teal = sublist 0..k-2 (IH), indigo-highlight last cell
+  const arr=SORTED, k=arr.length, cells=document.getElementById('ind-cells'),status=document.getElementById('ind-status');
+  const cases=[
+    {name:'Key in the first k−1 cells',key:arr[4],desc:'covered by the induction hypothesis'},
+    {name:'Key in the last cell (k−1)',key:arr[k-1],desc:'the one new case — matches, returns k−1'},
+    {name:'Key absent',key:100,desc:'the one new case — never matches, returns −1'},
+  ];
+  let cur=0; const btns=document.getElementById('ind-btns');
+  cases.forEach((c,i)=>{const b=document.createElement('button');b.className='seg';b.textContent=['first k−1','last cell','absent'][i];b.setAttribute('aria-pressed',i===0);
+    b.onclick=()=>{cur=i;[...btns.children].forEach((x,j)=>x.setAttribute('aria-pressed',j===i));draw();};btns.appendChild(b);});
+  function draw(){
+    const c=cases[cur]; const T=traceLinear(arr,c.key); const found=T.result;
+    // build a state that shades sublist teal, last cell as probe/found
+    const st={win:[0,k-2]}; // teal sublist
+    if(cur===1){st.found=k-1;} else if(cur===0){st.found=found;} 
+    renderStrip(cells,arr,st);
+    // mark last cell distinctly for absent case (rose)
+    if(cur===2){const el=cells.children[k-1];el.className='cell out';}
+    status.innerHTML='Case: <b>'+c.name+'</b> — '+c.desc+'. Result: <b>'+(found>=0?('index '+found):'−1')+'</b>.';
+    const v=document.getElementById('ind-verd');v.className='verdict ok';
+    v.innerHTML= cur===0
+      ? '<span class="tag">hypothesis</span> The key lies in the length-(k−1) sublist (teal), so correctness follows from the assumption for k−1.'
+      : '<span class="tag">new case</span> Only the last cell is unproven by the hypothesis — and it returns correctly. The induction closes.';
+  }
+  draw();
+})();
+
+/* =============== LINEAR OPTIMALITY (adversary) =============== */
+(function(){
+  const n=8, cells=document.getElementById('adv-cells'),status=document.getElementById('adv-status');
+  let checked, keyHome;
+  function reset(){checked=new Set();keyHome=null;render();
+    const v=document.getElementById('adv-verd');v.className='verdict info';v.innerHTML='<span class="tag">you\'re the algorithm</span> Click cells to check them. The adversary will keep the key hidden as long as it can.';}
+  function render(){cells.innerHTML='';
+    for(let ix=0;ix<n;ix++){const c=document.createElement('div');c.className='cell';
+      if(checked.has(ix))c.classList.add('out');
+      if(keyHome===ix)c.className='cell found';
+      c.innerHTML='<span class="v">'+(keyHome===ix?'KEY':(checked.has(ix)?'≠':'?'))+'</span><span class="ix">'+ix+'</span>';
+      c.tabIndex=0;c.style.cursor='pointer';c.onclick=()=>check(ix);c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();check(ix);}};
+      cells.appendChild(c);}
+    status.innerHTML='Cells checked: <b>'+checked.size+'</b> of '+n+'. '+(checked.size<n-1?'The key could still be in any unchecked cell.':checked.size===n-1?'One cell left — the adversary puts the key there.':'All checked.');}
+  function check(ix){if(keyHome!==null||checked.has(ix))return;
+    // adversary: as long as 2+ unchecked remain, this cell is NOT the key
+    checked.add(ix);
+    const unchecked=[...Array(n).keys()].filter(i=>!checked.has(i));
+    if(unchecked.length===0){/* impossible under adversary, but guard */}
+    render();
+    if(checked.size===n){ // forced: last unchecked becomes key only if user checks it too — handled in giveup
+    }
+  }
+  document.getElementById('adv-reset').onclick=reset;
+  document.getElementById('adv-giveup').onclick=()=>{
+    const unchecked=[...Array(n).keys()].filter(i=>!checked.has(i));
+    if(unchecked.length!==1){const v=document.getElementById('adv-verd');v.className='verdict bad';
+      v.innerHTML='<span class="tag">not yet</span> Check cells until exactly one is left unchecked ('+ (checked.size)+'/'+ (n-1) +' so far), then ask again.';return;}
+    keyHome=unchecked[0];render();
+    const v=document.getElementById('adv-verd');v.className='verdict ok';
+    v.innerHTML='<span class="tag">gotcha</span> After '+(n-1)+' checks the key was in the one cell you skipped (index '+keyHome+'). To be sure, you had to check it too — that\'s the <b>'+n+'</b>th comparison. Lower bound = n. ∎';};
+  reset();
+})();
+
+/* =============== LINEAR AVERAGE — derivation stepper =============== */
+(function(){
+  const steps=[
+    'Group inputs into n+1 types: key at index i (call it Xᵢ), or key absent (X₋₁).',
+    'Let q = P(key is in the array). Then P(X₋₁) = 1 − q, and each position is equally likely: P(Xᵢ) = q/n.',
+    'Work per type: g(Xᵢ) = i + 1 comparisons (search stops at index i); g(X₋₁) = n comparisons.',
+    'Average: gA(n) = Σᵢ P(Xᵢ)·g(Xᵢ) + P(X₋₁)·g(X₋₁) = (q/n)·Σᵢ(i+1) + (1−q)·n',
+    'The sum: Σ_{i=0}^{n−1}(i+1) = Σ_{i=1}^{n} i = n(n+1)/2.',
+    'gA(n) = (q/n)·n(n+1)/2 + (1−q)n = <b>q(n+1)/2 + (1−q)n</b>.',
+    'Sanity: q=1 → (n+1)/2 (≈ half the list). q=0 → n (the worst case). Both linear ⇒ O(n).',
+  ];
+  let step=0;const body=document.getElementById('avg-body');
+  function render(){body.innerHTML=steps.map((s,i)=>'<div class="step'+(i<=step?' on':'')+'">'+s+'</div>').join('');
+    const v=document.getElementById('avg-verd');if(step>=steps.length-1){v.style.display='flex';v.className='verdict ok';v.innerHTML='<span class="tag">result</span> gA(n) = q(n+1)/2 + (1−q)n = O(n).';}else v.style.display='none';}
+  document.getElementById('avg-next').onclick=()=>{if(step<steps.length-1)step++;render();};
+  document.getElementById('avg-prev').onclick=()=>{if(step>0)step--;render();};render();
+})();
+
+/* =============== LINEAR AVERAGE — q/n explorer =============== */
+(function(){
+  const P=new Plot(document.getElementById('cv-avg'),{xMax:100});P.setHeight(280);
+  const sq=document.getElementById('s-q'),sn=document.getElementById('s-avgn');
+  const gA=(n,q)=>q*(n+1)/2+(1-q)*n;
+  function render(){const q=+sq.value,n=+sn.value;document.getElementById('v-q').textContent=q.toFixed(2);document.getElementById('v-avgn').textContent=n;
+    P.o.xMax=100;P.o.yMax=105;
+    P._draw=()=>{P.bg();P.grid();
+      P.curve(x=>x,'#db4a55',1.8,[5,4]);            // q=0 -> n
+      P.curve(x=>(x+1)/2,'#3fa96a',1.8,[5,4]);      // q=1 -> (n+1)/2
+      P.curve(x=>gA(x,q),'#e0952b',2.8);            // current
+      P.dot(n,gA(n,q),'#e0952b','gA='+gA(n,q).toFixed(1));};
+    P._draw();
+    document.getElementById('ro-avg').innerHTML='gA('+n+') at q='+q.toFixed(2)+' = <b>'+gA(n,q).toFixed(2)+'</b> comparisons &nbsp;(worst case n='+n+')';}
+  sq.oninput=render;sn.oninput=render;render();
+})();
+
+/* =============== BISECTION MECHANISM =============== */
+(function(){
+  const cells=document.getElementById('bm-cells'),status=document.getElementById('bm-status'),code=document.getElementById('bm-code');
+  const sk=document.getElementById('bm-key');let T,idx,timer=null;
+  function build(){const key=+sk.value;document.getElementById('bm-keyval').textContent=key;T=traceBisection(SORTED,key);idx=-1;draw();}
+  function draw(){renderCode(code,BISCODE, idx<0?1:T.steps[Math.min(idx,T.steps.length-1)].line);
+    if(idx<0){renderStrip(cells,SORTED,{win:[0,SORTED.length-1]});status.textContent='press step to begin — searching for '+sk.value;document.getElementById('bm-verd').style.display='none';return;}
+    const s=T.steps[Math.min(idx,T.steps.length-1)];renderStrip(cells,SORTED,{win:s.win,probe:s.probe,found:s.found});
+    status.innerHTML= s.result!==undefined?(s.result>=0?'<b>match at index '+s.result+'</b>':'<b>window empty → return −1</b>'):('window ['+s.win[0]+','+s.win[1]+'], mid '+s.probe+': '+sk.value+' '+s.cmp+' '+SORTED[s.probe]);
+    const v=document.getElementById('bm-verd');
+    if(s.result!==undefined){v.style.display='flex';v.className='verdict ok';v.innerHTML='<span class="tag">result</span> '+(s.result>=0?('index '+s.result):'−1 (absent)')+' in <b>'+T.comps+'</b> comparison'+(T.comps===1?'':'s')+' — floor is ⌊log₂'+SORTED.length+'⌋+1 = '+(Math.floor(Math.log2(SORTED.length))+1)+'.';}
+    else v.style.display='none';}
+  document.getElementById('bm-step').onclick=()=>{if(idx<T.steps.length-1)idx++;draw();};
+  document.getElementById('bm-run').onclick=()=>{clearInterval(timer);if(RM){idx=T.steps.length-1;draw();return;}timer=setInterval(()=>{if(idx>=T.steps.length-1){clearInterval(timer);return;}idx++;draw();},520);};
+  document.getElementById('bm-reset').onclick=()=>{clearInterval(timer);build();};
+  sk.oninput=()=>{clearInterval(timer);build();};build();
+})();
+
+/* =============== DECISION TREES (SVG) =============== */
+function buildBisTree(lo,hi,depth){ if(lo>hi)return null; const mid=Math.floor((lo+hi)/2);
+  return {label:mid,depth,left:buildBisTree(lo,mid-1,depth+1),right:buildBisTree(mid+1,hi,depth+1)}; }
+function buildLinChain(n){ let root=null,prev=null; for(let i=0;i<n;i++){const node={label:i,depth:i,left:null,right:null};
+  if(!prev)root=node;else prev.right=node;prev=node;} return root; }
+function treeHeight(t){ if(!t)return -1; return 1+Math.max(treeHeight(t.left),treeHeight(t.right)); }
+function layoutTree(t){ let counter=0; const nodes=[],edges=[];
+  (function assign(node){ if(!node)return; assign(node.left); node._x=counter++; nodes.push(node);
+     if(node.left){edges.push([node,node.left]);} if(node.right){edges.push([node,node.right]);} assign(node.right); })(t);
+  return {nodes,edges}; }
+function renderTree(svg,t,opts){ opts=opts||{};
+  const {nodes,edges}=layoutTree(t); const H=treeHeight(t);
+  const maxX=Math.max(1,nodes.length-1);
+  const W=720, VH= (H+1)*64+30; svg.setAttribute('viewBox','0 0 '+W+' '+VH);
+  const px=x=> 40 + x/maxX*(W-80); const py=d=> 34 + d*64;
+  // longest path (leftmost deepest) for highlight: pick a deepest node, walk parents — instead compute path root->deepest
+  let deepest=nodes[0]; nodes.forEach(nd=>{if(nd.depth>deepest.depth)deepest=nd;});
+  const pathSet=new Set(); (function mark(node){ if(!node)return false;
+     if(node===deepest){pathSet.add(node);return true;} if(mark(node.left)||mark(node.right)){pathSet.add(node);return true;} return false;})(t);
+  let s='';
+  edges.forEach(([a,b])=>{const on=pathSet.has(a)&&pathSet.has(b);
+    s+='<line x1="'+px(a._x)+'" y1="'+py(a.depth)+'" x2="'+px(b._x)+'" y2="'+py(b.depth)+'" stroke="'+(on?'#3fa96a':'#38445f')+'" stroke-width="'+(on?3:1.6)+'"/>';});
+  nodes.forEach(nd=>{const on=pathSet.has(nd);const fill=on?'#173a29':'#1c2740';const stroke=on?'#3fa96a':'#3a486a';
+    s+='<circle cx="'+px(nd._x)+'" cy="'+py(nd.depth)+'" r="15" fill="'+fill+'" stroke="'+stroke+'" stroke-width="2"/>';
+    s+='<text x="'+px(nd._x)+'" y="'+(py(nd.depth)+4)+'" text-anchor="middle" font-family="JetBrains Mono" font-size="12" fill="'+(on?'#b6f0cc':'#cfd6e6')+'">'+nd.label+'</text>';});
+  svg.innerHTML=s;
+  return {H,count:H+1};
+}
+(function(){
+  const n=SORTED.length; const svg=document.getElementById('tree-svg');
+  const opts=[{name:'Bisection (balanced)',t:()=>buildBisTree(0,n-1,0)},{name:'Linear (chain)',t:()=>buildLinChain(n)}];
+  let cur=0; const btns=document.getElementById('tree-btns');
+  opts.forEach((o,i)=>{const b=document.createElement('button');b.className='seg';b.textContent=o.name;b.setAttribute('aria-pressed',i===0);
+    b.onclick=()=>{cur=i;[...btns.children].forEach((x,j)=>x.setAttribute('aria-pressed',j===i));draw();};btns.appendChild(b);});
+  function draw(){const t=opts[cur].t();const r=renderTree(svg,t);
+    const v=document.getElementById('tree-verd');v.className='verdict ok';
+    v.innerHTML= cur===0
+      ? '<span class="tag">balanced</span> Height '+r.H+' = ⌊log₂'+n+'⌋, so the longest path is '+r.count+' nodes → <b>'+r.count+' comparisons</b> worst case. This hits the floor.'
+      : '<span class="tag">degenerate</span> A single chain: height '+r.H+' = n−1, longest path '+r.count+' nodes → <b>'+r.count+' comparisons</b> worst case. Same tree idea, no balance, no savings.';}
+  draw();
+})();
+
+/* =============== PROPOSITION 1 — balanced tree filling =============== */
+(function(){
+  const svg=document.getElementById('prop-svg'),sN=document.getElementById('s-N');
+  function completeTree(N){ // heap-shaped: node i has children 2i+1,2i+2
+    const nodesArr=[]; for(let i=0;i<N;i++)nodesArr.push({i,depth:Math.floor(Math.log2(i+1))});
+    // build via recursion for layout
+    function build(i){ if(i>=N)return null; return {label:i,depth:Math.floor(Math.log2(i+1)),left:build(2*i+1),right:build(2*i+2)}; }
+    return build(0);
+  }
+  function render(){const N=+sN.value;document.getElementById('v-N').textContent=N;
+    const t=completeTree(N); if(!t){svg.innerHTML='';return;} const r=renderTree(svg,t);
+    const minh=Math.floor(Math.log2(N)); const nmax=Math.pow(2,r.H+1)-1;
+    document.getElementById('ro-prop').innerHTML='N = '+N+' nodes · minimum height ⌊log₂N⌋ = <b>'+minh+'</b> · a height-'+r.H+' tree holds at most 2^'+(r.H+1)+'−1 = '+nmax+' nodes.';}
+  sN.oninput=render;render();
+})();
+
+/* =============== BISECTION RECURRENCE UNROLLER =============== */
+(function(){
+  const wrap=document.getElementById('rec-wrap'),sn=document.getElementById('s-recn');
+  function render(){const n=+sn.value;document.getElementById('v-recn').textContent=n;
+    let sizes=[],x=n; while(x>=1){sizes.push(x); if(x===1)break; x=Math.floor(x/2);} 
+    const comps=sizes.length; // number of halving levels incl the size-1 check = floor(log2 n)+1
+    wrap.innerHTML='<div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">'+
+      sizes.map((s,i)=>{const w=Math.max(18, s/n*260);
+        return '<div style="text-align:center"><div style="height:26px;width:'+w+'px;background:'+(i===sizes.length-1?'#3fa96a':'#12a7a3')+';border-radius:5px;opacity:'+(1-i*0.08)+'"></div>'+
+        '<div style="font-family:JetBrains Mono;font-size:11px;color:#8b93a8;margin-top:4px">size '+s+'</div></div>';}).join('<div style="color:#5c6b86;align-self:center;padding-bottom:16px">→</div>')+'</div>';
+    document.getElementById('ro-rec').innerHTML='Halvings until size 1: <b>'+(comps-1)+'</b> · total comparisons ⌊log₂'+n+'⌋+1 = <b>'+comps+'</b>';
+    const v=document.getElementById('rec-verd');v.className='verdict ok';
+    v.innerHTML='<span class="tag">gW(n)</span> = gW(⌊n/2⌋)+1 unrolls to <b>⌊log₂n⌋ + 1 = '+comps+'</b> for n = '+n+'.';}
+  sn.oninput=render;render();
+})();
+
+/* =============== BISECTION WORST-CASE INDUCTION =============== */
+(function(){
+  const steps=[
+    'Each probe: 1 comparison, then recurse on a half of size ⌊n/2⌋ ⇒ gW(n) = gW(⌊n/2⌋) + 1.',
+    'For n = 2ᵏ you can halve k times, so gW(2ᵏ) = k + 1 = log₂n + 1. Use this as the ansatz to prove in general.',
+    'Claim: gW(n) = ⌊log₂n⌋ + 1. Prove by induction on n.',
+    'Base n=1: ⌊log₂1⌋ + 1 = 0 + 1 = 1 ✓ (one comparison checks the lone element).',
+    'Step: gW(n+1) = gW(⌊(n+1)/2⌋) + 1; substitute the hypothesis for the smaller size.',
+    'If n+1 even: ⌊(n+1)/2⌋ = (n+1)/2, log₂((n+1)/2) = log₂(n+1) − 1, so gW = (log₂(n+1) − 1) + 1 + 1 = log₂(n+1) + 1 ✓',
+    'If n+1 odd: ⌊(n+1)/2⌋ = n/2, giving gW = log₂(n) + 1 = ⌊log₂(n+1)⌋ + 1 ✓. Ansatz proved.',
+  ];
+  let step=0;const body=document.getElementById('bind-body');
+  function render(){body.innerHTML=steps.map((s,i)=>'<div class="step'+(i<=step?' on':'')+'">'+s+'</div>').join('');
+    const v=document.getElementById('bind-verd');if(step>=steps.length-1){v.style.display='flex';v.className='verdict ok';v.innerHTML='<span class="tag">result</span> gW(n) = ⌊log₂n⌋ + 1 ⇒ O(log₂n).';}else v.style.display='none';}
+  document.getElementById('bind-next').onclick=()=>{if(step<steps.length-1)step++;render();};
+  document.getElementById('bind-prev').onclick=()=>{if(step>0)step--;render();};render();
+})();
+
+/* =============== FINAL PLOT =============== */
+(function(){
+  const P=new Plot(document.getElementById('cv-final'),{xMax:64});P.setHeight(300);
+  P.o.yMax=64;
+  P.onDraw(()=>{P.bg();P.grid();
+    P.curve(x=>x,'#db4a55',2.8);                                  // linear = n
+    P.curve(x=> x<1?null:Math.floor(Math.log2(x))+1,'#3fa96a',2.8); // bisection
+  });
+  document.getElementById('ro-final').innerHTML='At n = 64: linear worst = <b style="color:#c33">64</b> comparisons · bisection worst = <b style="color:#2f8f56">'+(Math.floor(Math.log2(64))+1)+'</b>. The gap only widens with n.';
+})();
+</script>
+</body>
+</html>
