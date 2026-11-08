@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Short Columns · Part 2</title>
+<meta name="description" content="CIVN3011A 7B — Design of RC Short Columns, interactive lesson">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Stencil+One&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#e3e5e2;--panel:#f4f5f2;--panel2:#eceeea;--ink:#1b2124;--muted:#566064;--line:#c2c8c4;--line2:#d6dad6;
+  --comp:#2a4fb4;--comp-soft:rgba(42,79,180,.14);
+  --tens:#c4471b;--tens-soft:rgba(196,71,27,.14);
+  --ok:#1d8656;--ok-soft:rgba(29,134,86,.13);
+  --bad:#b0165e;--bad-soft:rgba(176,22,94,.12);
+  --hivis:#f1b500;--hivis-soft:rgba(241,181,0,.22);
+  --steel:#394246;--concrete:#b9bdb7;
+  --disp:'Saira Stencil One','Archivo Black',Impact,'Arial Narrow Bold',sans-serif;
+  --body:'Public Sans','Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  --r:6px;color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background-color:var(--bg);color:var(--ink);font:16px/1.62 var(--body);
+  background-image:radial-gradient(circle at 20% 30%,rgba(0,0,0,.05) 0 1px,transparent 1.6px),radial-gradient(circle at 70% 80%,rgba(255,255,255,.55) 0 1px,transparent 1.8px),radial-gradient(circle at 45% 60%,rgba(0,0,0,.035) 0 1.4px,transparent 2.2px);
+  background-size:23px 19px,31px 29px,47px 41px}
+a{color:var(--comp)}
+:focus-visible{outline:3px solid var(--hivis);outline-offset:2px;box-shadow:0 0 0 5px var(--ink)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+.mono,code,output,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+code{font-size:.9em;background:var(--panel2);padding:.05em .35em;border-radius:3px}
+h1,h2,h3{font-family:var(--disp);font-weight:400;letter-spacing:.01em;line-height:1.08;margin:0}
+h3{font-family:var(--body);font-weight:700;font-size:1.12rem;margin:1.6em 0 .4em;letter-spacing:0}
+p{margin:.65em 0}
+.lead{font-size:1.1rem;color:var(--muted);max-width:62ch}
+/* top tag */
+.series{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;font:600 .78rem/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:18px 0 0}
+.series .tag{background:var(--ink);color:var(--hivis);padding:6px 9px;border-radius:3px}
+.series a{color:var(--muted)}
+/* hero */
+.hero{padding:26px 0 30px}
+.hero h1{font-size:clamp(2.6rem,8vw,5.4rem);margin:.18em 0 .12em}
+.hero h1 .stripe{background:repeating-linear-gradient(-45deg,var(--hivis) 0 14px,var(--ink) 14px 28px);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* grid bubbles = signature: structural drawing grid references */
+.sec{padding:40px 0 10px}
+.sechead{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.bub{flex:none;width:58px;height:58px;border:2.5px solid var(--ink);border-radius:50%;display:grid;place-items:center;font:400 1.55rem/1 var(--disp);background:var(--panel)}
+.sechead .gl{flex:1;border-top:2px dashed var(--ink);opacity:.35;min-width:20px}
+.sechead h2{font-size:clamp(1.6rem,4.6vw,2.5rem)}
+.kicker{font:600 .74rem/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:2px 0 4px 72px}
+@media (max-width:600px){.bub{width:46px;height:46px;font-size:1.25rem}.kicker{margin-left:60px}}
+/* figures with formwork tie-holes */
+.fig{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 14px;margin:18px 0}
+.fig::before,.fig::after{content:"";position:absolute;top:8px;width:7px;height:7px;border-radius:50%;background:var(--bg);box-shadow:inset 0 1px 1px rgba(0,0,0,.35)}
+.fig::before{left:8px}.fig::after{right:8px}
+.figt{font:700 .84rem/1.25 var(--mono);letter-spacing:.02em;margin:0 0 10px;padding-left:12px}
+.notice{margin:12px 0 0;padding:9px 12px 9px 38px;background:var(--hivis-soft);border-radius:4px;font-size:.93rem;position:relative}
+.notice::before{content:"👁";position:absolute;left:11px;top:8px;font-size:.95rem}
+.notice b:first-child{font-family:var(--mono);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-right:4px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.fig svg{max-height:470px}
+svg{fill:var(--ink)}
+svg text{font-family:var(--mono);font-size:11px}
+svg .tick{font-size:10px;fill:var(--muted)}
+svg .alab{font-size:11px;fill:var(--muted);font-family:var(--body)}
+svg .grid{stroke:var(--line2);stroke-width:1}
+svg .axis{stroke:var(--ink);stroke-width:1.2}
+svg .comp{stroke:var(--comp);fill:none;stroke-width:2.2}
+svg .tens{stroke:var(--tens);fill:none;stroke-width:2.2}
+svg .okl{stroke:var(--ok);fill:none;stroke-width:2.4}
+svg .badl{stroke:var(--bad);fill:none;stroke-width:2.2}
+svg .faint{stroke:var(--muted);fill:none;stroke-width:1;stroke-dasharray:4 4;opacity:.75}
+svg .conc{fill:var(--concrete);stroke:var(--steel);stroke-width:1.4}
+svg .bar{fill:var(--steel)}
+svg .link{fill:none;stroke:var(--steel);stroke-width:2}
+svg .pt{fill:var(--hivis);stroke:var(--ink);stroke-width:2}
+svg .lbl{font-family:var(--body);font-size:11.5px}
+svg .sm{font-size:9.5px}
+svg .bold{font-weight:700}
+/* controls */
+.ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 18px;margin:6px 0 12px}
+.ctl label{display:flex;flex-direction:column;gap:3px;font-size:.84rem;color:var(--muted)}
+.ctl label span{display:block}
+.ctl label span output{float:right;margin-left:8px}
+.ctl output,.ctl .v{color:var(--ink);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--ink);height:26px;margin:0}
+select,input[type=number]{font:inherit;font-size:.95rem;padding:6px 8px;border:1px solid var(--line);border-radius:4px;background:#fff;color:var(--ink);width:100%}
+.ctl .chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+button{font:600 .86rem/1 var(--body);padding:9px 13px;border-radius:4px;border:1.5px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer;min-height:38px}
+button:hover{background:#fff}
+button[aria-pressed=true],button[aria-selected=true]{background:var(--ink);color:var(--hivis)}
+/* readouts */
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin:10px 0}
+.read div{background:var(--panel2);border-radius:4px;padding:8px 10px;font-size:.78rem;color:var(--muted);line-height:1.3}
+.read b{display:block;font:600 1.08rem/1.25 var(--mono);color:var(--ink);margin-top:2px}
+.read .c b{color:var(--comp)}.read .t b{color:var(--tens)}.read .g b{color:var(--ok)}.read .r b{color:var(--bad)}
+.verdict{font:700 .95rem/1.3 var(--body);padding:10px 12px;border-radius:4px;margin:8px 0;border-left:5px solid}
+.verdict.ok{background:var(--ok-soft);border-color:var(--ok);color:#0f5537}
+.verdict.bad{background:var(--bad-soft);border-color:var(--bad);color:#7a0d40}
+.verdict.mid{background:var(--hivis-soft);border-color:var(--hivis)}
+/* layout */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+.two.wide{grid-template-columns:1.2fr 1fr}
+@media (max-width:760px){.two,.two.wide{grid-template-columns:1fr}}
+/* callouts */
+.co{border-radius:var(--r);padding:12px 16px 12px 16px;margin:16px 0;border:1.5px solid var(--ink);background:var(--panel);position:relative}
+.co>.h{font:700 .72rem/1 var(--mono);text-transform:uppercase;letter-spacing:.1em;display:inline-block;padding:4px 7px;border-radius:3px;margin-bottom:4px}
+.co.def>.h{background:var(--ink);color:var(--hivis)}
+.co.gotcha{border-color:var(--bad)}.co.gotcha>.h{background:var(--bad);color:#fff}
+.co.aha{border-color:var(--hivis);background:linear-gradient(90deg,var(--hivis-soft),var(--panel) 60%)}.co.aha>.h{background:var(--hivis);color:var(--ink)}
+.co p:last-child{margin-bottom:0}
+.eq{font:500 1.02rem/1.6 var(--mono);background:var(--panel2);border-left:4px solid var(--ink);padding:10px 14px;margin:12px 0;overflow-x:auto;white-space:nowrap;border-radius:0 4px 4px 0}
+.eq .tag{float:right;color:var(--muted);font-size:.85rem;margin-left:18px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.8rem;color:var(--muted);margin:6px 0}
+.legend i{display:inline-block;width:14px;height:4px;border-radius:2px;vertical-align:middle;margin-right:5px}
+.k-comp{color:var(--comp);font-weight:600}.k-tens{color:var(--tens);font-weight:600}.k-ok{color:var(--ok);font-weight:600}.k-bad{color:var(--bad);font-weight:600}
+/* tables */
+.tbl{overflow-x:auto;margin:10px 0}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+th{background:var(--panel2);font-weight:600}
+td:first-child,th:first-child{text-align:left}
+td.num,th.num{font-family:var(--mono)}
+td.hit{background:var(--hivis);font-weight:700}
+td.flag{box-shadow:inset 0 0 0 2px var(--bad)}
+tr.sel td{background:var(--hivis-soft)}
+/* stepper */
+.stepper ol{margin:8px 0;padding-left:0;list-style:none;counter-reset:st}
+.stepper li{counter-increment:st;position:relative;padding:10px 12px 10px 46px;border-left:2px solid var(--line);margin-left:16px}
+.stepper li::before{content:counter(st);position:absolute;left:-17px;top:8px;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--hivis);font:700 .85rem/30px var(--mono);text-align:center}
+.stepper li[hidden]{display:none}
+.stepper li.now{background:var(--hivis-soft);border-radius:0 4px 4px 0}
+.ans{font-family:var(--mono);font-weight:700;background:var(--ok-soft);color:#0f5537;padding:1px 6px;border-radius:3px}
+details{background:var(--panel2);border-radius:4px;padding:8px 12px;margin:10px 0}
+summary{cursor:pointer;font-weight:600}
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.card h4{margin:0 0 4px;font-size:1rem}
+.card p{margin:.3em 0;font-size:.92rem}
+/* decision flow */
+.flow{display:grid;gap:8px;counter-reset:fl}
+.flow>div{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+.flow>div::before{counter-increment:fl;content:counter(fl);width:36px;height:36px;border:2px solid var(--ink);border-radius:50%;display:grid;place-items:center;font:400 1rem/1 var(--disp)}
+.flow p{margin:0}
+footer{padding:40px 0 60px;color:var(--muted);font-size:.85rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:600px){svg.wide text{font-size:18px}svg.wide .tick{font-size:16px}svg.wide .sm{font-size:15px}svg.wide .lbl{font-size:17px}.wrap{padding:0 14px}.fig{padding:16px 12px 12px}}
+
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="series"><span class="tag">CIVN3011A · 7B</span><span>Reinforced Concrete Design</span><span>Part 2 of 2 — Columns</span><a href="7A-intro-to-rc-columns.html">← Part 1: Introduction to RC columns</a></div>
+  <div class="hero">
+    <h1>Design of RC <span class="stripe">Short Columns</span></h1>
+    <p class="lead">Part 1 ended with a verdict: <i>short</i>. Now we size the steel. A short column only has to survive its first-order axial load and moment — so design is a matter of finding how much reinforcement pushes the interaction curve out past your design point.</p>
+    <div class="fig" id="hero">
+      <p class="figt">Size the steel in one move — design chart d′/h = 0.20, f<sub>yk</sub> = 500 MPa</p>
+      <div class="two">
+        <div><svg id="heroC" aria-label="Normalised design chart with the design point"></svg></div>
+        <div><svg id="heroS" aria-label="Cross-section with the chosen reinforcement"></svg><div id="heroBars" class="read"></div></div>
+      </div>
+      <div class="ctl">
+        <label><span>N<sub>Ed</sub> <output data-o="N"></output></span><input type="range" name="N" min="0" max="4500" step="25" value="1200" data-u=" kN"></label>
+        <label><span>M<sub>Ed</sub> <output data-o="M"></output></span><input type="range" name="M" min="0" max="400" step="5" value="120" data-u=" kNm"></label>
+        <label><span>b <output data-o="b"></output></span><input type="range" name="b" min="200" max="600" step="25" value="300" data-u=" mm"></label>
+        <label><span>h (bending direction) <output data-o="h"></output></span><input type="range" name="h" min="200" max="800" step="25" value="400" data-u=" mm"></label>
+        <label><span>f<sub>ck</sub> <output data-o="fck"></output></span><input type="range" name="fck" min="20" max="50" step="5" value="30" data-u=" MPa"></label>
+      </div>
+      <div class="read" id="heroRead"></div>
+      <p class="notice"><b>Notice</b> Every section collapses onto one chart once you divide N by bh·f<sub>ck</sub> and M by bh²·f<sub>ck</sub>. The curve passing through your yellow point tells you the steel index A<sub>sc</sub>f<sub>yk</sub>/bhf<sub>ck</sub> — and from that, the bars. Push M up and watch bars appear; make the section deeper and they disappear.</p>
+    </div>
+    <p class="mono" style="font-size:.8rem;color:var(--muted)">Series colour code (as in Part 1): <span class="k-comp">blue = compression</span>, <span class="k-tens">rust = tension / steel pulling</span>, <span class="k-ok">green = capacity / passes</span>, <span class="k-bad">magenta = fails</span>, <span style="background:var(--hivis);padding:0 4px">yellow = you are here</span>.</p>
+  </div>
+</header>
+
+<main class="wrap">
+<!-- 1 -->
+<section class="sec" id="s1">
+  <div class="sechead"><div class="bub">1</div><h2>Three kinds of short column</h2><div class="gl"></div></div>
+  <p class="kicker">Categories of RC short columns</p>
+  <p>Short columns are sorted by how eccentric their loading is: <b>(i)</b> short braced <b>axially loaded</b> columns; <b>(ii)</b> short braced columns supporting an <b>approximately symmetrical arrangement of beams</b>; <b>(iii)</b> short columns <b>resisting moments and axial forces</b>.</p>
+  <div class="fig" id="w1">
+    <div class="two wide">
+      <svg id="w1S" aria-label="Column with beams framing in from both sides"></svg>
+      <div>
+        <div class="ctl" style="grid-template-columns:1fr">
+          <label><span>Load from column above <output data-o="P"></output></span><input type="range" name="P" min="0" max="1500" step="50" value="800" data-u=" kN"></label>
+          <label><span>Left beam reaction <output data-o="RL"></output></span><input type="range" name="RL" min="0" max="400" step="10" value="200" data-u=" kN"></label>
+          <label><span>Right beam reaction <output data-o="RR"></output></span><input type="range" name="RR" min="0" max="400" step="10" value="200" data-u=" kN"></label>
+        </div>
+        <div class="read" id="w1R"></div>
+        <div class="verdict mid" id="w1V"></div>
+      </div>
+    </div>
+    <p class="notice"><b>Notice</b> Beam reactions land at the column faces, not its centre. Equal beams on both sides cancel each other's moment — that's category (ii), nearly axial. Unbalance them (different spans or loads) and a net moment appears: now it's category (iii), the axial + bending problem of Sections 6–9.</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="sec" id="s2">
+  <div class="sechead"><div class="bub">2</div><h2>Detailing rules</h2><div class="gl"></div></div>
+  <p class="kicker">Design requirements of RC short columns</p>
+  <p>Before any strength calculation, a column must satisfy a set of geometric rules. Build a section below and every rule checks itself live.</p>
+  <div class="cards">
+    <div class="card"><h4>Cross-section</h4><p>h ≤ 4b. Meet the fire minimum (Part 1, Tables 7.2/7.3). Cover 25–35 mm by exposure (Chapter 3, Table 3.3). Cover to main bars ≤ 40 mm.</p></div>
+    <div class="card"><h4>Longitudinal steel</h4><p>≥ 4 bars (one per corner; also ≥ 4 in a tied circular column), bar Ø ≥ 12 mm. A<sub>s,min</sub> = 0.1N/0.87f<sub>yk</sub> ≥ 0.002A<sub>c,gross</sub>. A<sub>s,max</sub> = 0.04A<sub>c,gross</sub> (0.08 at laps).</p></div>
+    <div class="card"><h4>Links (ties)</h4><p>Ø ≥ ¼ × bar Ø and ≥ 6 mm. Spacing ≤ least of 20 × smallest bar Ø, least lateral dimension, 400 mm — × 0.6 near beams/slabs and at laps of bars &gt; 14 mm. Every corner bar held. No bar &gt; 150 mm from a restrained bar.</p></div>
+  </div>
+  <div class="fig" id="w2">
+    <p class="figt">Section detailing checker</p>
+    <div class="two">
+      <svg id="w2S" aria-label="Column section drawn to scale"></svg>
+      <div>
+        <div class="ctl" style="grid-template-columns:1fr 1fr">
+          <label><span>b <output data-o="b"></output></span><input type="range" name="b" min="150" max="700" step="25" value="500" data-u=" mm"></label>
+          <label><span>h <output data-o="h"></output></span><input type="range" name="h" min="150" max="900" step="25" value="500" data-u=" mm"></label>
+          <label><span>Cover to links <output data-o="c"></output></span><input type="range" name="c" min="15" max="50" step="5" value="30" data-u=" mm"></label>
+          <label><span>Link Ø <select name="lk"><option>6</option><option>8</option><option selected>10</option><option>12</option></select></span></label>
+          <label><span>Bar Ø <select name="bd"><option>10</option><option>12</option><option>16</option><option>20</option><option selected>25</option><option>32</option></select></span></label>
+          <label><span>Bars per b-face <output data-o="n1"></output></span><input type="range" name="n1" min="2" max="6" value="3"></label>
+          <label><span>Extra bars per h-face <output data-o="n2"></output></span><input type="range" name="n2" min="0" max="4" value="1"></label>
+          <label><span>Link spacing <output data-o="sv"></output></span><input type="range" name="sv" min="75" max="500" step="25" value="300" data-u=" mm"></label>
+          <label><span>N<sub>Ed</sub> <output data-o="N"></output></span><input type="range" name="N" min="0" max="8000" step="100" value="5000" data-u=" kN"></label>
+          <label><span>Zone <select name="zn"><option value="0">General length</option><option value="1">Near beam/slab</option><option value="2">At a lap</option></select></span></label>
+          <label class="chk"><input type="checkbox" name="xl"> Extra links on middle bars</label>
+        </div>
+      </div>
+    </div>
+    <div class="tbl"><table id="w2T"></table></div>
+    <p class="notice"><b>Notice</b> The default reproduces the classwork column (500 × 500, 8H25, H10 @ 300). It passes almost everything — except the 150 mm rule: the mid-face bars sit about 198 mm (centre to centre, assuming 30 mm cover) from the restrained corner bars. Tick "extra links" to fix it. Magenta bars on the drawing are the culprits.</p>
+  </div>
+
+  <h3>Link spacing along the column</h3>
+  <div class="fig" id="w2b">
+    <div class="two wide">
+      <svg id="w2bS" aria-label="Column elevation with link spacing zones"></svg>
+      <div>
+        <div class="ctl" style="grid-template-columns:1fr">
+          <label><span>Smallest bar Ø <select name="bd"><option>12</option><option>16</option><option selected>20</option><option>25</option><option>32</option></select></span></label>
+          <label><span>Column b (least) <output data-o="b"></output></span><input type="range" name="b" min="200" max="600" step="25" value="300" data-u=" mm"></label>
+          <label><span>Column h (larger) <output data-o="h"></output></span><input type="range" name="h" min="200" max="800" step="25" value="450" data-u=" mm"></label>
+          <label class="chk"><input type="checkbox" name="lap" checked> Lap just above the floor</label>
+        </div>
+        <div class="read" id="w2bR"></div>
+      </div>
+    </div>
+    <p class="notice"><b>Notice</b> s<sub>max</sub> is governed by whichever of 20Ø, the least lateral dimension and 400 mm is smallest. Near the slab/beam at each end — over a length equal to the column's <i>larger</i> lateral dimension — and through laps of bars thicker than 14 mm, the spacing tightens to 0.6 s<sub>max</sub>. Those are the zones where bars try hardest to buckle or burst.</p>
+  </div>
+
+  <h3>Splicing bars between storeys</h3>
+  <div class="fig" id="w2c">
+    <div class="btns" role="tablist"><button data-tab="a">(a) Lower bars cranked</button><button data-tab="b">(b) Upper bars cranked</button><button data-tab="c">(c) Dowel bars</button></div>
+    <svg id="w2cS" aria-label="Splice details at a floor"></svg>
+    <div data-panel="a"><p>(a) When the column above is <b>smaller</b>, the lower column's bars are cranked inwards so they fit within the column above, lapping with its bars.</p></div>
+    <div data-panel="b" hidden><p>(b) When both columns are the <b>same size</b>, it's the <b>upper</b> column's bars that are cranked, so they can lap inside the lower bars.</p></div>
+    <div data-panel="c" hidden><p>(c) <b>Separate dowel bars</b> can provide continuity between the two lengths of column instead of cranking the main bars.</p></div>
+    <div class="ctl"><label><span>Crank slope: 1 in <output data-o="sl"></output></span><input type="range" name="sl" min="4" max="20" value="10"></label></div>
+    <div class="verdict" id="w2cV"></div>
+    <p class="notice"><b>Notice</b> A bend in a compression bar pushes sideways at the kink — the links there have to resist that force. If the change of direction is 1 in 12 or gentler, it's small enough to ignore; steeper (like the 1-in-10 crank sketched in the slides) and the link spacing at the crank must be calculated.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="sec" id="s3">
+  <div class="sechead"><div class="bub">3</div><h2>Axially loaded: two shares</h2><div class="gl"></div></div>
+  <p class="kicker">Design equation of axially loaded short columns</p>
+  <div class="eq">N = 0.567 f<sub>ck</sub> A<sub>c</sub> + 0.87 f<sub>yk</sub> A<sub>s</sub> <span class="tag">(7.6)</span></div>
+  <p>A<sub>c</sub> is the <b>net</b> concrete area, A<sub>c</sub> = A<sub>c,gross</sub> − A<sub>s</sub>, with A<sub>c,gross</sub> = bh. The two factors are just design strengths: 0.567 = 0.85/1.5 (long-term factor α<sub>cc</sub> over γ<sub>c</sub>) and 0.87 ≈ 1/1.15 (γ<sub>s</sub>). The column's resistance is the concrete share plus the steel share — nothing more.</p>
+  <div class="fig" id="w3">
+    <svg id="w3S" aria-label="Stacked bar of concrete and steel contributions"></svg>
+    <div class="ctl">
+      <label><span>b <output data-o="b"></output></span><input type="range" name="b" min="200" max="700" step="25" value="500" data-u=" mm"></label>
+      <label><span>h <output data-o="h"></output></span><input type="range" name="h" min="200" max="900" step="25" value="500" data-u=" mm"></label>
+      <label><span>Number of bars <output data-o="n"></output></span><input type="range" name="n" min="4" max="16" step="2" value="8"></label>
+      <label><span>Bar Ø <select name="d"><option>12</option><option>16</option><option>20</option><option selected>25</option><option>32</option></select></span></label>
+      <label><span>f<sub>ck</sub> <output data-o="fck"></output></span><input type="range" name="fck" min="20" max="50" step="5" value="25" data-u=" MPa"></label>
+      <label><span>f<sub>yk</sub> <output data-o="fyk"></output></span><input type="range" name="fyk" min="250" max="550" step="50" value="500" data-u=" MPa"></label>
+    </div>
+    <div class="read" id="w3R"></div>
+    <p class="notice"><b>Notice</b> Steel is only about 1–4% of the area but carries roughly a quarter to over half of the load, because its design stress (435 MPa) is about 30× concrete's (14.2 MPa at f<sub>ck</sub> = 25). The thin grey sliver is the concrete "lost" to the bars — that's why A<sub>c</sub> is net, not gross.</p>
+  </div>
+  <div class="co gotcha"><span class="h">Gotcha</span><p>Use the <b>net</b> concrete area. Using bh instead of bh − A<sub>s</sub> double-counts the space the bars occupy: for the classwork column it overstates N by about 56 kN.</p></div>
+</section>
+
+<!-- 4 -->
+<section class="sec" id="s4">
+  <div class="sechead"><div class="bub">4</div><h2>Worked example 1</h2><div class="gl"></div></div>
+  <p class="kicker">Design an axially loaded short column</p>
+  <div class="fig stepper" id="we1">
+    <p><b>Problem.</b> A short braced column, 350 × 350 mm, carries N<sub>Ed</sub> = 2500 kN axially. f<sub>ck</sub> = 30 MPa, f<sub>yk</sub> = 500 MPa. Find the longitudinal steel and links.</p>
+    <ol>
+      <li>Rearrange eq. 7.6 with A<sub>c</sub> = bh − A<sub>s</sub>: N = 0.567f<sub>ck</sub>(bh − A<sub>s</sub>) + 0.87f<sub>yk</sub>A<sub>s</sub> → A<sub>s</sub> = (N − 0.567f<sub>ck</sub>bh) / (0.87f<sub>yk</sub> − 0.567f<sub>ck</sub>).</li>
+      <li>Concrete alone: 0.567 × 30 × 350 × 350 = 2 083 725 N ≈ 2084 kN. Shortfall = 2 500 000 − 2 083 725 = 416 275 N.</li>
+      <li>A<sub>s</sub> = 416 275 / (435 − 17.01) = <span class="ans">996 mm²</span>.</li>
+      <li>Limits: A<sub>s,min</sub> = 0.1 × 2 500 000 / 435 = 575 mm² (≥ 0.002 × 122 500 = 245) ✓. A<sub>s,max</sub> = 0.04 × 122 500 = 4900 mm² ✓.</li>
+      <li>Provide <span class="ans">4H20 = 1257 mm²</span> — one in each corner. Check: N = 0.567×30×(122 500 − 1257) + 435×1257 = 2609 kN ≥ 2500 kN ✓.</li>
+      <li>Links: Ø ≥ max(20/4, 6) = 6 mm → use H8. Spacing ≤ min(20×20 = 400, 350, 400) = 350 mm → use <span class="ans">H8 @ 300</span>. Corner bars only, so every bar is restrained ✓.</li>
+    </ol>
+    <div class="btns"><button data-a="prev">← Back</button><button data-a="next">Next step →</button><button data-a="all">Show all</button><span class="stc mono" style="align-self:center;font-size:.85rem;color:var(--muted)"></span></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="sec" id="s5">
+  <div class="sechead"><div class="bub">5</div><h2>Classwork</h2><div class="gl"></div></div>
+  <p class="kicker">Axial load resistance of the 500 × 500 column</p>
+  <div class="fig" id="w5">
+    <div class="two wide">
+      <div>
+        <p><b>Question.</b> A concentrically loaded short column, b = h = 500 mm, has 8H25 longitudinal bars and H10 ties at 300 mm. f<sub>ck</sub> = 25 MPa, f<sub>yk</sub> = 500 MPa. Find the axial load resistance N.</p>
+        <label style="display:block;font-size:.9rem;margin:10px 0 4px">Your answer (kN)</label>
+        <div class="btns" style="margin-top:0"><input type="number" id="w5in" placeholder="e.g. 5200" style="max-width:180px"><button id="w5go">Check</button></div>
+        <div class="verdict" id="w5V" hidden></div>
+      </div>
+      <svg id="w5S" aria-label="500 by 500 section with 8H25"></svg>
+    </div>
+    <details><summary>Show the full solution</summary>
+      <ol>
+        <li>A<sub>s</sub> = 8 × π × 25²/4 = 3927 mm² (bar tables often list 3930).</li>
+        <li>A<sub>c</sub> = 500 × 500 − 3927 = 246 073 mm².</li>
+        <li>Concrete: 0.567 × 25 × 246 073 = 3488.1 kN. Steel: 0.87 × 500 × 3927 = 1708.2 kN.</li>
+        <li>N = <span class="ans">5196.3 kN</span>. The slide's 5197.6 kN comes from using the tabulated A<sub>s</sub> = 3930 mm² — both are right; the difference is rounding.</li>
+      </ol>
+      <p style="font-size:.92rem"><b>Detailing sanity check:</b> steel = 1.57% (between 0.2% and 4%) ✓; A<sub>s,min</sub> = 0.1N/435 = 1195 mm² ✓; H10 ≥ 25/4 = 6.25 mm ✓; 300 mm ≤ min(500, 500, 400) ✓. But with only a perimeter link, the mid-face bars are ≈ 198 mm from a corner bar (30 mm cover assumed) — more than 150 mm, so in a real design they'd need extra restraint. Try it in the checker in Section 2.</p>
+    </details>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="sec" id="s6">
+  <div class="sechead"><div class="bub">6</div><h2>Axial load plus moment</h2><div class="gl"></div></div>
+  <p class="kicker">Design equations · design charts</p>
+  <p>Once moment enters, three approaches can find the steel: <b>(i) design charts</b>, <b>(ii) solving the basic design equations</b>, or <b>(iii) an approximate method</b>. Charts suit rectangular or circular sections with <b>symmetrical</b> reinforcement. The basic equations (or approximate methods) are for <b>unsymmetrical</b> steel or <b>non-rectangular</b> sections.</p>
+
+  <h3>6.1 The basic equations — from the stress block</h3>
+  <div class="eq">N = F<sub>cc</sub> + F<sub>sc</sub> + F<sub>s</sub> = 0.567f<sub>ck</sub>bs + f<sub>sc</sub>A′<sub>s</sub> + f<sub>s</sub>A<sub>s</sub> <span class="tag">(7.7)</span></div>
+  <div class="eq">M = F<sub>cc</sub>(h/2 − s/2) + F<sub>sc</sub>(h/2 − d′) − F<sub>s</sub>(d − h/2) <span class="tag">(7.8)</span></div>
+  <p>s = 0.8x is the stress-block depth; A′<sub>s</sub> is the steel in the more highly compressed face, A<sub>s</sub> in the other; f<sub>s</sub> is <b>negative when tensile</b> — that's why the last term has a minus sign: a tensile F<sub>s</sub> adds to M. Moments are taken about the section centroid. Drag the neutral axis and watch every term.</p>
+  <div class="fig" id="w6">
+    <p class="figt">The mechanism: one neutral axis → one (M, N) point</p>
+    <svg id="w6S" aria-label="Section, strain and stress diagrams with forces"></svg>
+    <div class="ctl"><label><span>Neutral axis depth x <output data-o="x"></output></span><input type="range" name="x" min="40" max="1100" step="5" value="260" data-u=" mm"></label></div>
+    <div class="tbl"><table id="w6T"></table></div>
+    <div class="two"><svg id="w6C" aria-label="Interaction curve with the current point"></svg><div class="read" id="w6R" style="align-self:center"></div></div>
+    <p class="notice"><b>Notice</b> Same section as Part 1's demos (300 × 400, 3H20 per face, d′ = 50). Small x: the steel at the bottom is in tension (rust) and helps the moment. Large x: everything is compressed and M shrinks to zero. Once x passes h, the stress block is capped at s = h. You can't solve 7.7 and 7.8 directly for steel — you'd iterate x — which is exactly why charts exist.</p>
+  </div>
+
+  <h3>6.2 Design charts</h3>
+  <p>For symmetrical reinforcement (A′<sub>s</sub> = A<sub>s</sub> = A<sub>sc</sub>/2), equations 7.7 and 7.8 are solved once for a family of steel indices and plotted non-dimensionally: N/bhf<sub>ck</sub> against M/bh²f<sub>ck</sub>. Each curve is one value of A<sub>sc</sub>f<sub>yk</sub>/bhf<sub>ck</sub>. Each chart is for one d′/h — Figure 7.2 is for d′/h = 0.20.</p>
+  <div class="fig" id="w62">
+    <p class="figt">Figure 7.2 rebuilt — tap the chart to read it</p>
+    <svg id="w62S" aria-label="Design chart for rectangular column d prime over h 0.20" style="cursor:crosshair"></svg>
+    <div class="legend"><span><i style="background:var(--ok)"></i>steel index A<sub>sc</sub>f<sub>yk</sub>/bhf<sub>ck</sub> (0 → 1.0)</span><span><i style="background:var(--muted)"></i>neutral axis x/h</span></div>
+    <div class="ctl">
+      <label><span>N/bhf<sub>ck</sub> <output data-o="n"></output></span><input type="range" name="n" min="0" max="1.3" step="0.001" value="0.444" data-d="3"></label>
+      <label><span>M/bh²f<sub>ck</sub> <output data-o="m"></output></span><input type="range" name="m" min="0" max="0.35" step="0.001" value="0.125" data-d="3"></label>
+    </div>
+    <div class="read" id="w62R"></div>
+    <p class="notice"><b>Notice</b> At M = 0 each curve starts at N/bhf<sub>ck</sub> = 0.567 + 0.87 × index — the axial equation (7.6) in disguise (without the net-area deduction). The kink in each curve is its balance point. The dashed x/h lines show the neutral-axis depth: above x/h ≈ 0.49 (the balance depth 0.617d, with d = 0.8h) the section is compression-controlled.</p>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="sec" id="s7">
+  <div class="sechead"><div class="bub">7</div><h2>Worked example 2</h2><div class="gl"></div></div>
+  <p class="kicker">Uniaxial bending with a design chart</p>
+  <div class="fig stepper" id="we2">
+    <p><b>Problem.</b> A short braced column, b = 300 mm, h = 400 mm, carries N<sub>Ed</sub> = 1600 kN and M<sub>Ed</sub> = 180 kNm about its major axis. f<sub>ck</sub> = 30 MPa, f<sub>yk</sub> = 500 MPa. Use the d′/h = 0.20 chart and symmetrical steel.</p>
+    <ol>
+      <li>Non-dimensionalise: N/bhf<sub>ck</sub> = 1 600 000 / (300 × 400 × 30) = <span class="ans">0.444</span>.</li>
+      <li>M/bh²f<sub>ck</sub> = 180 × 10⁶ / (300 × 400² × 30) = <span class="ans">0.125</span>.</li>
+      <li>Read the chart (try it above with n = 0.444, m = 0.125): A<sub>sc</sub>f<sub>yk</sub>/bhf<sub>ck</sub> ≈ <span class="ans">0.35</span> (exact solution 0.353).</li>
+      <li>A<sub>sc</sub> = 0.353 × 300 × 400 × 30 / 500 = <span class="ans">2542 mm²</span>.</li>
+      <li>Limits: A<sub>s,min</sub> = max(0.1 × 1 600 000/435, 0.002 × 120 000) = max(368, 240) = 368 ✓; A<sub>s,max</sub> = 4800 ✓.</li>
+      <li>Provide <span class="ans">6H25 = 2945 mm²</span>, three in each of the two faces parallel to b (2.45%).</li>
+      <li>Check by section analysis at N = 1600 kN with 6H25: M<sub>Rd</sub> = 197.8 kNm ≥ 180 ✓. Neutral axis x = 276 mm &gt; x<sub>bal</sub> = 197 mm → compression-controlled.</li>
+    </ol>
+    <div class="btns"><button data-a="prev">← Back</button><button data-a="next">Next step →</button><button data-a="all">Show all</button><span class="stc mono" style="align-self:center;font-size:.85rem;color:var(--muted)"></span></div>
+    <p class="notice"><b>Notice</b> With 30 mm cover, H10 links and H25 bars, the real d′ ≈ 52 mm (d′/h ≈ 0.13). Using the 0.20 chart assumes the bars sit further in — a shorter lever arm — so it errs on the safe side.</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="sec" id="s8">
+  <div class="sechead"><div class="bub">8</div><h2>Biaxial bending</h2><div class="gl"></div></div>
+  <p class="kicker">Moments about both axes</p>
+  <p>Corner columns and columns with unequal beams on both axes see M<sub>z</sub> and M<sub>y</sub> together. The load effectively sits at a point (e<sub>y</sub>, e<sub>z</sub>) off both axes. Two routes:</p>
+  <div class="co def"><span class="h">Separate checks allowed if</span><p>(e<sub>z</sub>/h) / (e<sub>y</sub>/b) ≤ 0.2 &nbsp;or&nbsp; (e<sub>y</sub>/b) / (e<sub>z</sub>/h) ≤ 0.2, where e<sub>y</sub> = M<sub>y</sub>/N<sub>Ed</sub> and e<sub>z</sub> = M<sub>z</sub>/N<sub>Ed</sub> are the first-order eccentricities in the directions of b and h. In words: one eccentricity is so dominant that the column is essentially uniaxial.</p><p style="font-size:.88rem;color:var(--muted)">(The slide prints the second condition as (e<sub>y</sub>/b)/(e<sub>z</sub>/b); it should mirror the first, with h under e<sub>z</sub>.)</p></div>
+  <p>Otherwise, design for a single <b>increased</b> moment about the dominant axis, where h′ and b′ are the effective depths:</p>
+  <div class="eq">(a) if M<sub>z</sub>/h′ ≥ M<sub>y</sub>/b′: &ensp;M′<sub>z</sub> = M<sub>z</sub> + β (h′/b′) M<sub>y</sub><br>(b) if M<sub>z</sub>/h′ &lt; M<sub>y</sub>/b′: &ensp;M′<sub>y</sub> = M<sub>y</sub> + β (b′/h′) M<sub>z</sub></div>
+  <div class="fig" id="w8">
+    <div class="two">
+      <svg id="w8S" aria-label="Section with load eccentricity point and separate-check wedges"></svg>
+      <div>
+        <div class="ctl" style="grid-template-columns:1fr 1fr">
+          <label><span>N<sub>Ed</sub> <output data-o="N"></output></span><input type="range" name="N" min="100" max="3000" step="50" value="1000" data-u=" kN"></label>
+          <label><span>f<sub>ck</sub> <output data-o="fck"></output></span><input type="range" name="fck" min="20" max="50" step="5" value="25" data-u=" MPa"></label>
+          <label><span>M<sub>z</sub> <output data-o="Mz"></output></span><input type="range" name="Mz" min="0" max="300" step="2" value="100" data-u=" kNm"></label>
+          <label><span>M<sub>y</sub> <output data-o="My"></output></span><input type="range" name="My" min="0" max="300" step="2" value="60" data-u=" kNm"></label>
+          <label><span>b <output data-o="b"></output></span><input type="range" name="b" min="200" max="600" step="25" value="300" data-u=" mm"></label>
+          <label><span>h <output data-o="h"></output></span><input type="range" name="h" min="200" max="800" step="25" value="400" data-u=" mm"></label>
+        </div>
+        <p style="font-size:.82rem;color:var(--muted);margin:0">Effective depths taken as h′ = 0.8h, b′ = 0.8b (d′/h = 0.20, matching the chart).</p>
+      </div>
+    </div>
+    <div class="read" id="w8R"></div>
+    <div class="verdict" id="w8V"></div>
+    <p class="notice"><b>Notice</b> The shaded wedges hug the axes: only a load point that lies almost on an axis qualifies for separate checks. Off the wedges, the weaker moment is converted into an equivalent extra moment on the dominant axis — scaled by the depth ratio and by β, which shrinks as the column gets more heavily loaded.</p>
+  </div>
+  <div class="fig" id="w8b">
+    <p class="figt">Coefficient β — Table 7.4 and β = 1 − N<sub>Ed</sub>/(bhf<sub>ck</sub>)</p>
+    <svg id="w8bS" aria-label="Beta against relative axial load"></svg>
+    <div class="tbl"><table>
+      <tr><th>N<sub>Ed</sub>/bhf<sub>ck</sub></th><td class="num">0</td><td class="num">0.1</td><td class="num">0.2</td><td class="num">0.3</td><td class="num">0.4</td><td class="num">0.5</td><td class="num">0.6</td><td class="num">≥ 0.7</td></tr>
+      <tr><th>β</th><td class="num">1.0</td><td class="num">0.9</td><td class="num">0.8</td><td class="num">0.7</td><td class="num">0.6</td><td class="num">0.5</td><td class="num">0.4</td><td class="num">0.3</td></tr>
+    </table></div>
+    <p class="notice"><b>Notice</b> The table is just the straight line β = 1 − N/bhf<sub>ck</sub>, but it stops falling at 0.3: for N/bhf<sub>ck</sub> ≥ 0.7, use β = 0.3 (the formula alone would keep dropping toward zero). The yellow dot tracks the biaxial calculator above.</p>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="sec" id="s9">
+  <div class="sechead"><div class="bub">9</div><h2>Worked example 3</h2><div class="gl"></div></div>
+  <p class="kicker">Biaxial bending</p>
+  <div class="fig stepper" id="we3">
+    <p><b>Problem.</b> A short column, b = 300 mm, h = 400 mm (b′ = 240, h′ = 320 mm), carries N<sub>Ed</sub> = 1000 kN, M<sub>z</sub> = 100 kNm and M<sub>y</sub> = 60 kNm. f<sub>ck</sub> = 25 MPa, f<sub>yk</sub> = 500 MPa. Design the steel. (These are the calculator's defaults above.)</p>
+    <ol>
+      <li>Eccentricities: e<sub>z</sub> = 100×10⁶/1000×10³ = 100 mm; e<sub>y</sub> = 60 mm.</li>
+      <li>Separate checks? (e<sub>z</sub>/h)/(e<sub>y</sub>/b) = 0.25/0.20 = 1.25 &gt; 0.2 and (e<sub>y</sub>/b)/(e<sub>z</sub>/h) = 0.80 &gt; 0.2 → <span class="ans">no — genuinely biaxial</span>.</li>
+      <li>Dominant axis: M<sub>z</sub>/h′ = 100/320 = 0.3125 ≥ M<sub>y</sub>/b′ = 60/240 = 0.25 → case (a), enhance M<sub>z</sub>.</li>
+      <li>N/bhf<sub>ck</sub> = 1 000 000/(300×400×25) = 0.333 → β = 1 − 0.333 = <span class="ans">0.667</span> (Table 7.4 interpolated between 0.7 and 0.6).</li>
+      <li>M′<sub>z</sub> = 100 + 0.667 × (320/240) × 60 = 100 + 53.3 = <span class="ans">153.3 kNm</span>.</li>
+      <li>Chart: N/bhf<sub>ck</sub> = 0.333, M/bh²f<sub>ck</sub> = 153.3×10⁶/(300×400²×25) = 0.128 → A<sub>sc</sub>f<sub>yk</sub>/bhf<sub>ck</sub> = 0.287.</li>
+      <li>A<sub>sc</sub> = 0.287 × 300 × 400 × 25/500 = <span class="ans">1720 mm²</span>. A<sub>s,min</sub> = max(230, 240) = 240 ✓.</li>
+      <li>Provide <span class="ans">4H25 = 1963 mm²</span>, one per corner. Check at N = 1000 kN: M<sub>Rd</sub> = 164.5 kNm ≥ 153.3 ✓.</li>
+    </ol>
+    <div class="btns"><button data-a="prev">← Back</button><button data-a="next">Next step →</button><button data-a="all">Show all</button><span class="stc mono" style="align-self:center;font-size:.85rem;color:var(--muted)"></span></div>
+  </div>
+  <div class="co aha"><span class="h">Practice</span><p>The lecture's worked examples are done in class and in <b>Tutorial 6</b>. Use the calculators here to check your tutorial answers — change the sliders to your numbers and compare.</p></div>
+</section>
+
+<!-- summary -->
+<section class="sec" id="s10">
+  <div class="sechead"><div class="bub">✓</div><h2>Decision guide</h2><div class="gl"></div></div>
+  <div class="flow">
+    <div><p><b>Confirm it's short</b> (Part 1: λ &lt; λ<sub>lim</sub>).</p></div>
+    <div><p><b>Detailing first:</b> h ≤ 4b, fire size, cover 25–35 (≤ 40 to main bars), ≥ 4 bars of Ø ≥ 12, links Ø ≥ ¼ bar & 6 mm at ≤ min(20Ø, least dim, 400), × 0.6 in end and lap zones, 150 mm rule.</p></div>
+    <div><p><b>Purely axial?</b> A<sub>s</sub> = (N − 0.567f<sub>ck</sub>bh)/(0.87f<sub>yk</sub> − 0.567f<sub>ck</sub>) from eq. 7.6.</p></div>
+    <div><p><b>Uniaxial moment, symmetric steel?</b> Chart: N/bhf<sub>ck</sub>, M/bh²f<sub>ck</sub> → index → A<sub>sc</sub> = index × bhf<sub>ck</sub>/f<sub>yk</sub>. Unsymmetrical or odd shape → equations 7.7/7.8.</p></div>
+    <div><p><b>Biaxial?</b> If an eccentricity ratio ≤ 0.2 → separate checks. Else pick the dominant axis by M/h′ vs M/b′, enhance with β = 1 − N/bhf<sub>ck</sub> (≥ 0.3), then use the chart.</p></div>
+    <div><p><b>Finally</b> clamp to A<sub>s,min</sub> = max(0.1N/0.87f<sub>yk</sub>, 0.002bh) and A<sub>s,max</sub> = 0.04bh (0.08 at laps), choose bars, check.</p></div>
+  </div>
+  <p style="margin-top:20px"><a href="7A-intro-to-rc-columns.html"><b>← Back to Part 1 — Introduction to RC columns</b></a></p>
+</section>
+</main>
+<footer class="wrap">CIVN3011A · Chapter 7B · Interactive companion to Prof. A. Khabaz's lecture slides (Wits). Charts are computed live from eq. 7.7/7.8 (0.567f<sub>ck</sub>, s = 0.8x, ε<sub>cu</sub> = 0.0035, steel 0.87f<sub>yk</sub>, E<sub>s</sub> = 200 GPa, f<sub>yk</sub> = 500 MPa for charts). Worked-example numbers were re-run in code.</footer>
+
+<script>
+/* RC column section engine — rectangular stress block (0.567 fck over s = 0.8x),
+   eps_cu = 0.0035, elastic–perfectly-plastic steel capped at ±0.87 fyk, Es = 200 GPa.
+   Section S = {b,h,d1 (d' to A's), d (to As), Asc (A's), As, fck, fyk}. Units: N, mm. */
+var RC = {ES: 200000, ECU: 0.0035};
+RC.fs = function (eps, fyk) { var f = 0.87 * fyk; return Math.max(-f, Math.min(f, eps * RC.ES)); };
+RC.at = function (x, S) {
+  var s = Math.min(0.8 * x, S.h), Fcc = 0.567 * S.fck * S.b * s;
+  var esc = RC.ECU * (x - S.d1) / x, es = RC.ECU * (x - S.d) / x;
+  var fsc = RC.fs(esc, S.fyk), fs = RC.fs(es, S.fyk);
+  var Fsc = fsc * S.Asc, Fs = fs * S.As;
+  return {x: x, s: s, Fcc: Fcc, Fsc: Fsc, Fs: Fs, esc: esc, es: es, fsc: fsc, fs: fs,
+    N: Fcc + Fsc + Fs,
+    M: Fcc * (S.h / 2 - s / 2) + Fsc * (S.h / 2 - S.d1) - Fs * (S.d - S.h / 2)};
+};
+RC.N0 = function (S) { return 0.567 * S.fck * S.b * S.h + 0.87 * S.fyk * (S.Asc + S.As); };
+RC.xbal = function (S) { return RC.ECU * S.d / (RC.ECU + 0.87 * S.fyk / RC.ES); };
+RC.bis = function (f, a, b, n) {
+  n = n || 90; var fa = f(a);
+  for (var i = 0; i < n; i++) { var m = (a + b) / 2, fm = f(m); if ((fm > 0) === (fa > 0)) { a = m; fa = fm; } else b = m; }
+  return (a + b) / 2;
+};
+RC.xForN = function (N, S) { return RC.bis(function (x) { return RC.at(x, S).N - N; }, 1e-4 * S.h, 20 * S.h); };
+RC.xTop = function (S) { return 3 * Math.max(S.h, S.d); };
+/* interaction curve for N >= 0: array of {x,N,M} from pure bending to pure compression */
+RC.curve = function (S, n) {
+  n = n || 140; var x0 = RC.xForN(0, S), x1 = RC.xTop(S), pts = [];
+  for (var i = 0; i <= n; i++) { var t = i / n, x = x0 + (x1 - x0) * Math.pow(t, 2.2); pts.push(RC.at(x, S)); }
+  return pts;
+};
+/* capacity along a radial line of constant eccentricity e (mm) */
+RC.atE = function (e, S) {
+  if (e <= 0) return RC.at(1e9 * S.h, S); /* uniform strain, pure axial */
+  var x0 = RC.xForN(0, S);
+  if (!isFinite(e)) return RC.at(x0, S);
+  var x = RC.bis(function (x) { var r = RC.at(x, S); return r.M - e * r.N; }, x0 * 1.000001 + 1e-9, RC.xTop(S));
+  return RC.at(x, S);
+};
+/* symmetric chart section: b=h=1000, fyk given, total ratio rho = Asc_tot*fyk/(b h fck) */
+RC.chartS = function (rho, dh, fyk) {
+  var b = 1000, h = 1000, fck = 30, A = rho * b * h * fck / fyk;
+  return {b: b, h: h, d1: dh * h, d: h - dh * h, Asc: A / 2, As: A / 2, fck: fck, fyk: fyk};
+};
+/* normalised moment capacity m = M/(b h^2 fck) at normalised axial n = N/(b h fck) */
+RC.mAt = function (rho, n, dh, fyk) {
+  var S = RC.chartS(rho, dh, fyk), k = S.b * S.h * S.fck;
+  if (n * k >= RC.N0(S)) return -1;
+  var x = RC.xForN(n * k, S); return RC.at(x, S).M / (k * S.h);
+};
+RC.solveRho = function (n, m, dh, fyk) {
+  dh = dh || 0.2; fyk = fyk || 500;
+  if (RC.mAt(0, n, dh, fyk) >= m) return 0;
+  if (RC.mAt(3, n, dh, fyk) < m) return NaN;
+  return RC.bis(function (r) { return RC.mAt(r, n, dh, fyk) - m; }, 0, 3, 60);
+};
+RC.barA = function (d) { return Math.PI * d * d / 4; };
+
+/* DOM + SVG helpers shared by the series */
+var $ = function (s, r) { return (r || document).querySelector(s); };
+var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+var NS = 'http://www.w3.org/2000/svg';
+var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function S(t, a, p) { var e = document.createElementNS(NS, t); if (a) for (var k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; }
+function T(p, x, y, s, a) { var o = {x: x, y: y}; if (a) for (var k in a) o[k] = a[k]; var e = S('text', o, p); e.textContent = s; return e; }
+function L(p, x1, y1, x2, y2, cls, extra) { var o = {x1: x1, y1: y1, x2: x2, y2: y2}; if (cls) o['class'] = cls; if (extra) for (var k in extra) o[k] = extra[k]; return S('line', o, p); }
+function P(p, d, cls, extra) { var o = {d: d}; if (cls) o['class'] = cls; if (extra) for (var k in extra) o[k] = extra[k]; return S('path', o, p); }
+function R(p, x, y, w, h, cls, extra) { var o = {x: x, y: y, width: Math.max(0, w), height: Math.max(0, h)}; if (cls) o['class'] = cls; if (extra) for (var k in extra) o[k] = extra[k]; return S('rect', o, p); }
+function C(p, cx, cy, r, cls, extra) { var o = {cx: cx, cy: cy, r: r}; if (cls) o['class'] = cls; if (extra) for (var k in extra) o[k] = extra[k]; return S('circle', o, p); }
+function fmt(v, d) {
+  d = d || 0; if (v === Infinity) return '∞'; if (!isFinite(v)) return '—';
+  var s = Math.abs(v).toFixed(d).split('.'); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return (v < -0.5 * Math.pow(10, -d) ? '−' : '') + s.join('.');
+}
+/* arrow with head; colour via class on group */
+function arrow(p, x1, y1, x2, y2, cls, w) {
+  var g = S('g', {'class': cls || ''}, p), a = Math.atan2(y2 - y1, x2 - x1), hl = w || 9;
+  L(g, x1, y1, x2 - Math.cos(a) * hl * .6, y2 - Math.sin(a) * hl * .6, null, {stroke: 'currentColor', 'stroke-width': 2.4});
+  P(g, 'M' + x2 + ',' + y2 + 'L' + (x2 - hl * Math.cos(a - .42)) + ',' + (y2 - hl * Math.sin(a - .42)) + 'L' + (x2 - hl * Math.cos(a + .42)) + ',' + (y2 - hl * Math.sin(a + .42)) + 'Z', null, {fill: 'currentColor'});
+  return g;
+}
+/* inputs → state object; outputs [data-o=name] get formatted text */
+function bind(root, fn) {
+  var ins = $$('input,select', root);
+  function read() {
+    var o = {};
+    ins.forEach(function (i) {
+      var k = i.name || i.id;
+      o[k] = i.type === 'checkbox' ? i.checked : (i.type === 'range' || i.type === 'number') ? +i.value : i.value;
+      var out = root.querySelector('[data-o="' + k + '"]');
+      if (out && i.type !== 'checkbox') out.textContent = (i.dataset.d ? fmt(+i.value, +i.dataset.d) : i.value) + (i.dataset.u || '');
+    });
+    fn(o);
+  }
+  ins.forEach(function (i) { i.addEventListener('input', read); i.addEventListener('change', read); });
+  read(); return read;
+}
+function setVal(root, name, v) { var i = root.querySelector('[name="' + name + '"]'); if (i) { i.value = v; i.dispatchEvent(new Event('input')); } }
+/* simple plot frame: draws axes once, returns mapping + dynamic layer */
+function Plot(svg, o) {
+  svg.setAttribute('viewBox', '0 0 ' + o.W + ' ' + o.H); svg.innerHTML = '';
+  var l = o.l == null ? 48 : o.l, r = o.r == null ? 14 : o.r, t = o.t == null ? 12 : o.t, b = o.b == null ? 38 : o.b;
+  var X = function (v) { return l + (v - o.x0) / (o.x1 - o.x0) * (o.W - l - r); };
+  var Y = function (v) { return o.H - b - (v - o.y0) / (o.y1 - o.y0) * (o.H - t - b); };
+  var ax = S('g', {}, svg);
+  (o.xt || []).forEach(function (v) { L(ax, X(v), t, X(v), o.H - b, 'grid'); T(ax, X(v), o.H - b + 14, o.xf ? o.xf(v) : v, {'class': 'tick', 'text-anchor': 'middle'}); });
+  (o.yt || []).forEach(function (v) { L(ax, l, Y(v), o.W - r, Y(v), 'grid'); T(ax, l - 5, Y(v) + 3.5, o.yf ? o.yf(v) : v, {'class': 'tick', 'text-anchor': 'end'}); });
+  L(ax, l, t, l, o.H - b, 'axis'); L(ax, l, o.H - b, o.W - r, o.H - b, 'axis');
+  if (o.xl) T(ax, (l + o.W - r) / 2, o.H - 6, o.xl, {'class': 'alab', 'text-anchor': 'middle'});
+  if (o.yl) { var cy = (t + o.H - b) / 2; T(ax, 11, cy, o.yl, {'class': 'alab', 'text-anchor': 'middle', transform: 'rotate(-90 11 ' + cy + ')'}); }
+  var base = S('g', {}, svg), dyn = S('g', {}, svg);
+  return {X: X, Y: Y, base: base, dyn: dyn, l: l, r: r, t: t, b: b, W: o.W, H: o.H, o: o,
+    clear: function () { dyn.innerHTML = ''; },
+    line: function (pts, cls, p, extra) { return P(p || dyn, 'M' + pts.map(function (q) { return X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1); }).join('L'), cls, extra); },
+    dot: function (x, y, rad, cls, p) { return C(p || dyn, X(x), Y(y), rad, cls); }};
+}
+/* tabs */
+function tabs(root, onChange) {
+  var bs = $$('[data-tab]', root);
+  function go(k) {
+    bs.forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === k); });
+    $$('[data-panel]', root).forEach(function (p) { p.hidden = p.dataset.panel !== k; });
+    if (onChange) onChange(k);
+  }
+  bs.forEach(function (b) { b.setAttribute('role', 'tab'); b.addEventListener('click', function () { go(b.dataset.tab); }); });
+  go(bs[0].dataset.tab); return go;
+}
+/* step-through worked examples */
+function stepper(root) {
+  var li = $$('li', root), k = 1, out = $('.stc', root);
+  function show() {
+    li.forEach(function (e, i) { e.hidden = i >= k; e.classList.toggle('now', i === k - 1); });
+    if (out) out.textContent = 'Step ' + k + ' of ' + li.length;
+  }
+  $('[data-a=next]', root).addEventListener('click', function () { if (k < li.length) k++; show(); li[k - 1].scrollIntoView({block: 'nearest', behavior: RM ? 'auto' : 'smooth'}); });
+  $('[data-a=prev]', root).addEventListener('click', function () { if (k > 1) k--; show(); });
+  $('[data-a=all]', root).addEventListener('click', function () { k = li.length; show(); });
+  show();
+}
+/* animation helper honouring reduced motion */
+function animate(dur, step, done) {
+  if (RM) { step(1); if (done) done(); return; }
+  var t0 = performance.now();
+  (function f(t) { var u = Math.min(1, (t - t0) / dur); step(u); if (u < 1) requestAnimationFrame(f); else if (done) done(); })(t0);
+}
+/* draw a rectangular RC section: returns {g, sx, sy} mapping mm→svg */
+function drawSection(p, x, y, sc, b, h, bars, opt) {
+  opt = opt || {};
+  var g = S('g', {}, p);
+  R(g, x, y, b * sc, h * sc, 'conc', {rx: 1});
+  if (opt.link) R(g, x + opt.link * sc, y + opt.link * sc, (b - 2 * opt.link) * sc, (h - 2 * opt.link) * sc, 'link', {rx: 4});
+  (bars || []).forEach(function (q) { C(g, x + q[0] * sc, y + q[1] * sc, Math.max(2.2, q[2] / 2 * sc), q[3] || 'bar'); });
+  return g;
+}
+
+/* ===== Part 2 (7B) interactives ===== */
+const A20 = RC.barA(20);
+const HS = {b: 300, h: 400, d1: 50, d: 350, Asc: 3 * A20, As: 3 * A20, fck: 30, fyk: 500};
+function readout(el, items) { el.innerHTML = items.map(i => `<div class="${i[2] || ''}">${i[0]}<b>${i[1]}</b></div>`).join(''); }
+
+/* normalised chart curves (d'/h = 0.2, fyk = 500), cached */
+const CH = (function () {
+  const out = {curves: [], xh: []};
+  const norm = (p, S) => [p.M / (S.b * S.h * S.h * S.fck), p.N / (S.b * S.h * S.fck)];
+  for (let r = 0; r <= 1.0001; r += 0.1) {
+    const S = RC.chartS(r, 0.2, 500), x0 = r > 0 ? RC.xForN(0, S) : 1e-4 * S.h, x1 = RC.xTop(S), pts = [];
+    for (let i = 0; i <= 120; i++) { const t = i / 120, x = x0 + (x1 - x0) * Math.pow(t, 2.2); pts.push(norm(RC.at(x, S), S)); }
+    out.curves.push({r: +r.toFixed(1), pts});
+  }
+  [0.5, 0.6, 0.7, 0.8, 0.9, 1.0].forEach(xh => {
+    const pts = []; for (let r = 0; r <= 1.0001; r += 0.05) { const S = RC.chartS(r, 0.2, 500); pts.push(norm(RC.at(xh * S.h, S), S)); }
+    out.xh.push({xh, pts});
+  });
+  return out;
+})();
+function curveFor(r) { const S = RC.chartS(r, 0.2, 500), x0 = r > 0 ? RC.xForN(0, S) : 1e-4 * S.h, x1 = RC.xTop(S), pts = []; for (let i = 0; i <= 100; i++) { const x = x0 + (x1 - x0) * Math.pow(i / 100, 2.2), p = RC.at(x, S); pts.push([p.M / (S.b * S.h * S.h * S.fck), p.N / (S.b * S.h * S.fck)]); } return pts; }
+function chartPlot(svg, W, H, opt) {
+  opt = opt || {};
+  const pl = Plot(svg, {W, H, x0: 0, x1: 0.35, y0: 0, y1: 1.45, xt: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35], yt: [0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4], xf: v => v ? v.toFixed(2) : '0', yf: v => v ? v.toFixed(1) : '0', xl: 'M / bh²f_ck', yl: 'N / bhf_ck'});
+  CH.xh.forEach(q => { pl.line(q.pts, 'faint', pl.base); const e = q.pts[q.pts.length - 1]; if (e[0] < 0.35 && e[1] < 1.45 && !opt.min) T(pl.base, pl.X(e[0]) + 3, pl.Y(e[1]) - 3, 'x/h ' + q.xh, {'class': 'sm', fill: 'var(--muted)'}); });
+  CH.curves.forEach(c => { pl.line(c.pts, 'okl', pl.base, {'stroke-width': c.r === 0 ? 1.4 : 1.8, opacity: c.r === 0 ? .6 : 1}); const top = c.pts[c.pts.length - 1]; if (top[1] < 1.45) T(pl.base, pl.X(0) + 4, pl.Y(top[1]) + (c.r ? -3 : 12), c.r.toFixed(1), {'class': 'sm', fill: 'var(--ok)'}); });
+  // label kink area
+  return pl;
+}
+function chooseBars(A) {
+  const opts = [];
+  [16, 20, 25, 32].forEach(d => { for (let n = 4; n <= 12; n += 2) { if (n * RC.barA(d) >= A) { opts.push({n, d, A: n * RC.barA(d)}); break; } } });
+  return opts.sort((a, b) => a.A - b.A || a.n - b.n);
+}
+
+/* ---------- HERO ---------- */
+(function () {
+  const root = $('#hero'), pl = chartPlot($('#heroC'), 400, 380), svg = $('#heroS');
+  bind(root, o => {
+    const n = o.N * 1e3 / (o.b * o.h * o.fck), m = o.M * 1e6 / (o.b * o.h * o.h * o.fck);
+    const r = RC.solveRho(n, m, 0.2, 500), Asc = r * o.b * o.h * o.fck / 500;
+    const Amin = Math.max(0.1 * o.N * 1e3 / 435, 0.002 * o.b * o.h), Amax = 0.04 * o.b * o.h, Areq = Math.max(Asc, Amin);
+    pl.clear();
+    if (isFinite(r) && r > 0) pl.line(curveFor(r), null, pl.dyn, {fill: 'none', stroke: 'var(--hivis)', 'stroke-width': 3, 'stroke-dasharray': '6 4'});
+    pl.dot(Math.min(m, 0.35), Math.min(n, 1.45), 7, 'pt');
+    const opts = isFinite(r) ? chooseBars(Areq) : [], best = opts[0];
+    svg.setAttribute('viewBox', '0 0 300 280'); svg.innerHTML = '';
+    const sc = 220 / Math.max(o.b, o.h), x0 = 150 - o.b * sc / 2, y0 = 135 - o.h * sc / 2;
+    R(svg, x0, y0, o.b * sc, o.h * sc, 'conc');
+    T(svg, 150, y0 - 6, 'compressed face (M about the axis ∥ b)', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    T(svg, x0 + o.b * sc + 6, 140, 'h = ' + o.h, {'class': 'sm'}); T(svg, 150, y0 + o.h * sc + 14, 'b = ' + o.b, {'class': 'sm', 'text-anchor': 'middle'});
+    if (best) {
+      const per = best.n / 2, dp = 0.2 * o.h;
+      [dp, o.h - dp].forEach((yy, j) => { for (let i = 0; i < per; i++) { const xx = dp * o.b / o.h * 0 + (o.b * 0.12) + (o.b * 0.76) * (per === 1 ? .5 : i / (per - 1)); C(svg, x0 + xx * sc, y0 + yy * sc, Math.max(3, best.d / 2 * sc), null, {fill: j ? 'var(--tens)' : 'var(--comp)'}); } });
+      L(svg, x0 - 8, y0 + dp * sc, x0 - 2, y0 + dp * sc, null, {stroke: 'var(--muted)'}); T(svg, x0 - 10, y0 + dp * sc + 3, "d′=0.2h", {'class': 'sm', 'text-anchor': 'end', fill: 'var(--muted)'});
+    } else T(svg, 150, 140, 'section too small', {'text-anchor': 'middle', fill: 'var(--bad)', 'class': 'bold'});
+    readout($('#heroRead'), [['N/bhf_ck', n.toFixed(3)], ['M/bh²f_ck', m.toFixed(3)], ['Steel index A_sc f_yk/bhf_ck', isFinite(r) ? r.toFixed(3) : 'off chart', 'g'], ['A_sc required', isFinite(r) ? fmt(Asc, 0) + ' mm²' : '—'], ['A_s,min / A_s,max', fmt(Amin, 0) + ' / ' + fmt(Amax, 0)]]);
+    $('#heroBars').innerHTML = best ? `<div class="${best.A > Amax ? 'r' : 'g'}">Provide<b>${best.n}H${best.d} = ${fmt(best.A, 0)} mm²</b></div><div>Steel ratio<b>${(best.A / (o.b * o.h) * 100).toFixed(2)} %${best.A > Amax ? ' > 4% ✗' : ''}</b></div>` + (Asc < Amin ? '<div class="t">Governed by<b>A_s,min</b></div>' : '') : '<div class="r">Status<b>Enlarge section</b></div>';
+  });
+})();
+
+/* ---------- 1: categories ---------- */
+(function () {
+  const root = $('#w1'), svg = $('#w1S');
+  bind(root, o => {
+    svg.setAttribute('viewBox', '0 0 340 300'); svg.innerHTML = '';
+    const cx = 170, cw = 44, yb = 150;
+    R(svg, cx - cw / 2, 30, cw, 250, 'conc');
+    R(svg, 20, yb, cx - cw / 2 - 20, 26, 'conc'); R(svg, cx + cw / 2, yb, 320 - cx - cw / 2, 26, 'conc');
+    const sl = v => 10 + v / 400 * 40;
+    if (o.RL > 0) { const g = arrow(svg, cx - cw / 2 - 2, yb - sl(o.RL) - 6, cx - cw / 2 - 2, yb - 2, '', 9); g.style.color = 'var(--comp)'; T(svg, cx - cw / 2 - 8, yb - sl(o.RL) - 10, o.RL + ' kN', {'class': 'sm', 'text-anchor': 'end', fill: 'var(--comp)'}); }
+    if (o.RR > 0) { const g = arrow(svg, cx + cw / 2 + 2, yb - sl(o.RR) - 6, cx + cw / 2 + 2, yb - 2, '', 9); g.style.color = 'var(--comp)'; T(svg, cx + cw / 2 + 8, yb - sl(o.RR) - 10, o.RR + ' kN', {'class': 'sm', fill: 'var(--comp)'}); }
+    if (o.P > 0) { const g = arrow(svg, cx, 2, cx, 28, '', 10); g.style.color = 'var(--ink)'; T(svg, cx + 8, 16, o.P + ' kN', {'class': 'sm'}); }
+    const M = (o.RR - o.RL) * 0.15, N = o.P + o.RL + o.RR;
+    if (Math.abs(M) > 0.5) {
+      const rr = 18 + Math.min(40, Math.abs(M) / 60 * 40), dir = M > 0 ? 1 : 0;
+      P(svg, `M${cx - rr},${yb + 60} A${rr},${rr} 0 0 ${dir} ${cx + rr},${yb + 60}`, null, {fill: 'none', stroke: 'var(--tens)', 'stroke-width': 3});
+      const ex = M > 0 ? cx + rr : cx - rr; const g = arrow(svg, ex, yb + 50, ex, yb + 62, '', 9); g.style.color = 'var(--tens)';
+      T(svg, cx, yb + 100 + rr / 2, 'net M = ' + Math.abs(M).toFixed(1) + ' kNm', {'class': 'sm bold', 'text-anchor': 'middle', fill: 'var(--tens)'});
+    }
+    T(svg, cx, 296, 'beam reactions act at the column faces (±150 mm)', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    readout($('#w1R'), [['Axial N', fmt(N, 0) + ' kN', 'c'], ['Net moment', fmt(Math.abs(M), 1) + ' kNm', 't'], ['e = M/N', N ? fmt(Math.abs(M) * 1000 / N, 0) + ' mm' : '—']]);
+    const mx = Math.max(o.RL, o.RR), v = $('#w1V');
+    if (mx === 0) v.innerHTML = '(i) Axially loaded — load comes straight down the column, no beam moments.';
+    else if (Math.abs(o.RR - o.RL) <= 0.1 * mx) v.innerHTML = '(ii) Approximately symmetrical beams — their moments nearly cancel; the column is essentially axially loaded.';
+    else v.innerHTML = '(iii) Axial force + moment — the unbalanced beams bend the column. Design with interaction charts (Section 6).';
+  });
+})();
+
+/* ---------- 2: detailing checker ---------- */
+(function () {
+  const root = $('#w2'), svg = $('#w2S');
+  bind(root, o => {
+    const b = o.b, h = o.h, c = o.c, lk = +o.lk, bd = +o.bd, off = c + lk + bd / 2;
+    const bars = [];
+    for (let i = 0; i < o.n1; i++) { const x = off + (b - 2 * off) * i / (o.n1 - 1); bars.push({x, y: off, corner: i === 0 || i === o.n1 - 1}); bars.push({x, y: h - off, corner: i === 0 || i === o.n1 - 1}); }
+    for (let j = 1; j <= o.n2; j++) { const y = off + (h - 2 * off) * j / (o.n2 + 1); bars.push({x: off, y, corner: false}); bars.push({x: b - off, y, corner: false}); }
+    bars.forEach(q => q.rest = q.corner || o.xl);
+    const R_ = bars.filter(q => q.rest);
+    let worst = 0;
+    bars.forEach(q => { if (!q.rest) { const d = Math.min.apply(null, R_.map(r => Math.hypot(r.x - q.x, r.y - q.y))); q.dist = d; worst = Math.max(worst, d); } });
+    const nb = bars.length, As = nb * RC.barA(bd), Ag = b * h, N = o.N * 1e3;
+    const Amin = Math.max(0.1 * N / 435, 0.002 * Ag), Amax = (o.zn === '2' ? 0.08 : 0.04) * Ag;
+    const smax0 = Math.min(20 * bd, Math.min(b, h), 400), red = o.zn === '1' || (o.zn === '2' && bd > 14), smax = smax0 * (red ? 0.6 : 1);
+    const lmin = Math.max(bd / 4, 6);
+    const rows = [
+      ['Larger dim ≤ 4 × smaller', (Math.max(b, h) / Math.min(b, h)).toFixed(2), '≤ 4', Math.max(b, h) <= 4 * Math.min(b, h)],
+      ['Cover (to links) for exposure', c + ' mm', '25 – 35 mm', c >= 25 && c <= 35],
+      ['Cover to main bars', (c + lk) + ' mm', '≤ 40 mm', c + lk <= 40],
+      ['Number of bars', nb, '≥ 4 (one per corner)', nb >= 4],
+      ['Bar diameter', bd + ' mm', '≥ 12 mm', bd >= 12],
+      ['A_s ≥ A_s,min', fmt(As, 0) + ' mm²', '≥ ' + fmt(Amin, 0) + ' mm²', As >= Amin],
+      ['A_s ≤ A_s,max' + (o.zn === '2' ? ' (lap: 8%)' : ' (4%)'), fmt(As, 0) + ' mm² (' + (As / Ag * 100).toFixed(2) + ' %)', '≤ ' + fmt(Amax, 0) + ' mm²', As <= Amax],
+      ['Link diameter', lk + ' mm', '≥ max(Ø/4, 6) = ' + lmin.toFixed(1), lk >= lmin],
+      ['Link spacing' + (red ? ' (× 0.6 zone)' : ''), o.sv + ' mm', '≤ ' + fmt(smax, 0) + ' mm' + (o.zn === '2' && bd <= 14 ? ' (bars ≤ 14: no reduction)' : ''), o.sv <= smax + 1e-9],
+      ['Every corner bar held by a link', 'perimeter link', 'yes', true],
+      ['No bar > 150 mm from a restrained bar', worst ? fmt(worst, 0) + ' mm (c/c)' : 'all restrained', '≤ 150 mm', worst <= 150]
+    ];
+    $('#w2T').innerHTML = '<tr><th>Rule</th><th>This section</th><th>Limit</th><th></th></tr>' + rows.map(r => `<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td><td style="font-weight:700;color:${r[3] ? 'var(--ok)' : 'var(--bad)'}">${r[3] ? '✓' : '✗'}</td></tr>`).join('');
+    svg.setAttribute('viewBox', '0 0 300 300'); svg.innerHTML = '';
+    const sc = 250 / Math.max(b, h), x0 = 150 - b * sc / 2, y0 = 150 - h * sc / 2;
+    R(svg, x0, y0, b * sc, h * sc, 'conc');
+    R(svg, x0 + (c + lk / 2) * sc, y0 + (c + lk / 2) * sc, (b - 2 * c - lk) * sc, (h - 2 * c - lk) * sc, 'link', {rx: 5, 'stroke-width': Math.max(1.2, lk * sc)});
+    if (o.xl) bars.filter(q => !q.corner).forEach(q => { if (q.y === off) L(svg, x0 + q.x * sc, y0 + q.y * sc, x0 + q.x * sc, y0 + (h - off) * sc, null, {stroke: 'var(--steel)', 'stroke-width': 1.6}); else if (q.x === off) L(svg, x0 + q.x * sc, y0 + q.y * sc, x0 + (b - off) * sc, y0 + q.y * sc, null, {stroke: 'var(--steel)', 'stroke-width': 1.6}); });
+    bars.forEach(q => C(svg, x0 + q.x * sc, y0 + q.y * sc, Math.max(2.5, bd / 2 * sc), null, {fill: q.rest ? 'var(--steel)' : (q.dist > 150 ? 'var(--bad)' : 'var(--muted)')}));
+    T(svg, 150, y0 + h * sc + 16, b + ' × ' + h + ' · ' + nb + 'H' + bd + ' · H' + lk + ' @ ' + o.sv, {'class': 'sm', 'text-anchor': 'middle'});
+  });
+})();
+
+/* ---------- 2b: link spacing zones ---------- */
+(function () {
+  const root = $('#w2b'), svg = $('#w2bS');
+  bind(root, o => {
+    const bd = +o.bd, smax = Math.min(20 * bd, Math.min(o.b, o.h), 400), sred = 0.6 * smax, lz = Math.max(o.b, o.h), lap = o.lap && bd > 14, lapL = 40 * bd;
+    const Hc = 3000, sc = 340 / Hc, yb = 380, yt = 40, cw = 70, cx = 110;
+    svg.setAttribute('viewBox', '0 0 330 420'); svg.innerHTML = '';
+    R(svg, 20, yt - 20, 200, 20, 'conc'); R(svg, 20, yb, 200, 20, 'conc');
+    T(svg, 214, yt - 6, 'slab/beam', {'class': 'sm', 'text-anchor': 'end'}); T(svg, 214, yb + 14, 'floor', {'class': 'sm', 'text-anchor': 'end'});
+    R(svg, cx - cw / 2, yt, cw, yb - yt, 'conc');
+    [cx - cw / 2 + 10, cx + cw / 2 - 10].forEach(x => L(svg, x, yt - 20, x, yb + 20, null, {stroke: 'var(--steel)', 'stroke-width': 3}));
+    if (o.lap) [cx - cw / 2 + 16, cx + cw / 2 - 16].forEach(x => L(svg, x, yb, x, yb - lapL * sc, null, {stroke: 'var(--steel)', 'stroke-width': 3, opacity: .7}));
+    // links from bottom
+    let y = 0, n = 0, nr = 0;
+    while (y <= Hc + 1) {
+      const inEnd = y <= lz || y >= Hc - lz, inLap = lap && y <= lapL, s = (inEnd || inLap) ? sred : smax;
+      L(svg, cx - cw / 2 + 4, yb - y * sc, cx + cw / 2 - 4, yb - y * sc, null, {stroke: (inEnd || inLap) ? 'var(--tens)' : 'var(--steel)', 'stroke-width': 2});
+      n++; if (inEnd || inLap) nr++; y += s;
+    }
+    const br = (y0, y1, txt, col) => { L(svg, 200, yb - y0 * sc, 200, yb - y1 * sc, null, {stroke: col, 'stroke-width': 4}); T(svg, 208, yb - (y0 + y1) / 2 * sc + 4, txt, {'class': 'sm', fill: col}); };
+    br(Hc - lz, Hc, '0.6 s_max over ' + lz, 'var(--tens)');
+    br(0, lz, '0.6 s_max over ' + lz, 'var(--tens)');
+    if (lap && lapL > lz) br(lz, lapL, 'lap zone (0.6)', 'var(--tens)');
+    br(Math.max(lz, lap ? lapL : 0), Hc - lz, 's_max = ' + Math.round(smax), 'var(--steel)');
+    readout($('#w2bR'), [['s_max = min(20Ø, least dim, 400)', Math.round(smax) + ' mm', 'g'], ['Reduced 0.6 s_max', Math.round(sred) + ' mm', 't'], ['Links per storey (≈)', n], ['Lap reduction applies?', o.lap ? (bd > 14 ? 'yes (Ø > 14)' : 'no (Ø ≤ 14)') : 'no lap']]);
+  });
+  const note = document.createElement('p'); note.style.cssText = 'font-size:.8rem;color:var(--muted);margin:4px 0 0'; note.textContent = 'Elevation: 3 m clear storey to scale. Lap length drawn as 40Ø purely for illustration — lap lengths come from the anchorage rules, not this chapter.';
+  $('.read', root).after(note);
+})();
+
+/* ---------- 2c: splices ---------- */
+(function () {
+  const root = $('#w2c'), svg = $('#w2cS');
+  let tab = 'a';
+  function draw(o) {
+    svg.setAttribute('viewBox', '0 0 520 300'); svg.innerHTML = '';
+    const ys = 150, cx = 200, n = o.sl, d = 16, cl = d * n * 0.5;
+    const small = tab === 'a';
+    const lw = small ? 150 : 110, uw = 110;
+    R(svg, cx - lw / 2, ys + 12, lw, 140, 'conc'); R(svg, cx - uw / 2, 0, uw, ys, 'conc');
+    R(svg, 60, ys, 280, 12, 'conc'); T(svg, 66, ys + 9, 'slab', {'class': 'sm'});
+    const bar = (dd) => P(svg, dd, null, {fill: 'none', stroke: 'var(--steel)', 'stroke-width': 3.5});
+    const lap = 70;
+    if (tab === 'a') {
+      [-1, 1].forEach(s => {
+        const xl = cx + s * (lw / 2 - 14), xu = cx + s * (uw / 2 - 14);
+        bar(`M${xl},300 L${xl},${ys + 14 + cl} L${xu - s * 6},${ys + 14} L${xu - s * 6},${ys - lap}`);
+        bar(`M${xu},${ys + 10} L${xu},0`);
+      });
+      T(svg, cx + lw / 2 + 8, ys + 14 + cl / 2, 'crank 1 in ' + n, {'class': 'sm bold'});
+    } else if (tab === 'b') {
+      [-1, 1].forEach(s => {
+        const x = cx + s * (uw / 2 - 14);
+        bar(`M${x},300 L${x},${ys - lap}`);
+        bar(`M${x - s * 7},${ys + 30} L${x - s * 7},${ys - 6 + 0} L${x},${ys - 6 - cl} L${x},0`);
+      });
+      T(svg, cx + uw / 2 + 8, ys - 6 - cl / 2, 'crank 1 in ' + n, {'class': 'sm bold'});
+    } else {
+      [-1, 1].forEach(s => {
+        const x = cx + s * (uw / 2 - 14);
+        bar(`M${x},300 L${x},${ys + 4}`); bar(`M${x},${ys + 8} L${x},0`);
+        P(svg, `M${x - s * 8},${ys + 70} L${x - s * 8},${ys - lap}`, null, {fill: 'none', stroke: 'var(--tens)', 'stroke-width': 3.5});
+      });
+      T(svg, cx + uw / 2 + 8, ys - 20, 'dowel bars', {'class': 'sm bold', fill: 'var(--tens)'});
+    }
+    T(svg, 470, 60, 'upper column', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    T(svg, 470, 230, 'lower column', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    L(svg, cx - uw / 2 - 30, ys - lap, cx - uw / 2 - 30, ys, null, {stroke: 'var(--muted)'}); T(svg, cx - uw / 2 - 34, ys - lap / 2, 'lap', {'class': 'sm', 'text-anchor': 'end', fill: 'var(--muted)'});
+    const v = $('#w2cV'), ok = n >= 12;
+    if (tab === 'c') { v.className = 'verdict ok'; v.textContent = 'Dowels: main bars stay straight, so there is no change of direction to check.'; }
+    else { v.className = 'verdict ' + (ok ? 'ok' : 'mid'); v.textContent = ok ? `1 in ${n} is no steeper than 1 in 12 → no link calculation needed at the crank.` : `1 in ${n} is steeper than 1 in 12 → calculate the link spacing at the crank for the lateral force the bend produces.`; }
+  }
+  let st = {sl: 10};
+  tabs(root, k => { tab = k; draw(st); });
+  bind($('.ctl', root), o => { st = o; draw(o); });
+})();
+
+/* ---------- 3: axial shares ---------- */
+(function () {
+  const root = $('#w3'), svg = $('#w3S');
+  bind(root, o => {
+    const As = o.n * RC.barA(+o.d), Ag = o.b * o.h, Ac = Ag - As, Fc = 0.567 * o.fck * Ac / 1e3, Fs = 0.87 * o.fyk * As / 1e3, lost = 0.567 * o.fck * As / 1e3, N = Fc + Fs;
+    svg.setAttribute('viewBox', '0 0 620 150'); svg.innerHTML = '';
+    const W = 520, x0 = 90;
+    T(svg, 4, 40, 'Area', {'class': 'lbl bold'}); T(svg, 4, 108, 'Force', {'class': 'lbl bold'});
+    const ac = Ac / Ag * W; R(svg, x0, 24, ac, 26, null, {fill: 'var(--concrete)'}); R(svg, x0 + ac, 24, W - ac, 26, null, {fill: 'var(--steel)'});
+    T(svg, x0 + 6, 41, 'concrete ' + (Ac / Ag * 100).toFixed(1) + '%', {'class': 'sm'}); T(svg, x0 + W, 64, 'steel ' + (As / Ag * 100).toFixed(2) + '% →', {'class': 'sm', 'text-anchor': 'end'});
+    const fc = Fc / N * W; R(svg, x0, 92, fc, 26, null, {fill: 'var(--concrete)'}); R(svg, x0 + fc, 92, W - fc, 26, null, {fill: 'var(--steel)'});
+    T(svg, x0 + 6, 109, fmt(Fc, 0) + ' kN', {'class': 'sm bold'}); T(svg, x0 + fc + 6, 109, fmt(Fs, 0) + ' kN', {'class': 'sm bold', fill: '#fff'});
+    T(svg, x0, 140, 'net-area deduction 0.567f_ck·A_s = ' + fmt(lost, 1) + ' kN', {'class': 'sm', fill: 'var(--muted)'});
+    readout($('#w3R'), [['A_s', fmt(As, 0) + ' mm²'], ['A_c (net)', fmt(Ac, 0) + ' mm²'], ['Concrete share', fmt(Fc, 1) + ' kN', 'c'], ['Steel share', fmt(Fs, 1) + ' kN'], ['N (eq. 7.6)', fmt(N, 1) + ' kN', 'g'], ['Steel carries', (Fs / N * 100).toFixed(0) + ' % of N']]);
+  });
+})();
+
+stepper($('#we1')); stepper($('#we2')); stepper($('#we3'));
+
+/* ---------- 5: classwork ---------- */
+(function () {
+  const svg = $('#w5S'); svg.setAttribute('viewBox', '0 0 240 250');
+  const sc = 0.4, x0 = 20, y0 = 10, off = 52.5, bars = [];
+  [off, 250, 500 - off].forEach(x => [off, 500 - off].forEach(y => bars.push([x, y, 25])));
+  bars.push([off, 250, 25]); bars.push([500 - off, 250, 25]);
+  const uniq = bars.filter((b, i) => bars.findIndex(c => c[0] === b[0] && c[1] === b[1]) === i);
+  drawSection(svg, x0, y0, sc, 500, 500, uniq, {link: 35});
+  T(svg, x0 + 100, y0 + 216, '500 × 500 · 8H25 · H10 @ 300', {'class': 'sm', 'text-anchor': 'middle'});
+  $('#w5go').addEventListener('click', () => {
+    const v = +$('#w5in').value, el = $('#w5V'); el.hidden = false;
+    if (Math.abs(v - 5196.3) <= 8 || Math.abs(v - 5197.6) <= 8) { el.className = 'verdict ok'; el.textContent = 'Correct ✓ — N ≈ 5196 kN (5197.6 kN with A_s = 3930 mm² from bar tables).'; }
+    else if (Math.abs(v - 5252) <= 10) { el.className = 'verdict bad'; el.textContent = 'Close — but you used the gross area bh. Subtract A_s from the concrete area (net A_c).'; }
+    else { el.className = 'verdict bad'; el.textContent = 'Not quite. Hint: A_s = 8 × 491 mm², A_c = bh − A_s, then N = 0.567f_ck·A_c + 0.87f_yk·A_s.'; }
+  });
+})();
+
+/* ---------- 6: mechanism of eq 7.7 / 7.8 ---------- */
+(function () {
+  const root = $('#w6'), svg = $('#w6S'), cur = RC.curve(HS);
+  const pl = Plot($('#w6C'), {W: 330, H: 300, x0: 0, x1: 250, y0: 0, y1: 3000, xt: [0, 100, 200], yt: [0, 1000, 2000, 3000], xl: 'M (kNm)', yl: 'N (kN)'});
+  pl.line(cur.map(q => [q.M / 1e6, q.N / 1e3]), 'okl', pl.base);
+  const xb = RC.xbal(HS), B = RC.at(xb, HS); pl.dot(B.M / 1e6, B.N / 1e3, 4, null, pl.base).setAttribute('fill', 'var(--ink)'); T(pl.base, pl.X(B.M / 1e6) + 6, pl.Y(B.N / 1e3) + 4, 'b', {'class': 'bold'});
+  bind(root, o => {
+    const x = o.x, p = RC.at(x, HS);
+    svg.setAttribute('viewBox', '0 0 640 300'); svg.innerHTML = '';
+    const sc = 0.6, y0 = 36, hp = HS.h * sc, Y = u => y0 + u * sc;
+    // section
+    R(svg, 30, y0, 120, hp, 'conc'); T(svg, 90, y0 - 10, 'Section', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    [[HS.d1, p.fsc], [HS.d, p.fs]].forEach(q => [55, 90, 125].forEach(xx => C(svg, xx, Y(q[0]), 5, null, {fill: q[1] >= 0 ? 'var(--comp)' : 'var(--tens)'})));
+    if (x < HS.h) { L(svg, 22, Y(x), 600, Y(x), null, {stroke: 'var(--ink)', 'stroke-dasharray': '3 3', opacity: .6}); T(svg, 24, Y(x) - 4, 'NA', {'class': 'sm'}); }
+    L(svg, 22, Y(HS.h / 2), 160, Y(HS.h / 2), null, {stroke: 'var(--muted)', 'stroke-dasharray': '1 3'}); T(svg, 162, Y(HS.h / 2) + 3, 'centroid', {'class': 'sm', fill: 'var(--muted)'});
+    // strain
+    const zx = 270, k = 40 / 0.0035, cl = v => Math.max(-70, Math.min(55, v * k));
+    L(svg, zx, y0, zx, y0 + hp, 'axis'); T(svg, zx, y0 - 10, 'Strain', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    const eb = RC.ECU * (x - HS.h) / x;
+    P(svg, `M${zx},${y0}L${zx + cl(RC.ECU)},${y0}L${zx + cl(eb)},${y0 + hp}L${zx},${y0 + hp}Z`, null, {fill: 'var(--comp-soft)', stroke: 'var(--ink)', 'stroke-width': 1.2});
+    T(svg, zx + cl(RC.ECU) + 4, y0 + 10, '0.0035', {'class': 'sm'});
+    [[HS.d1, p.esc, 'ε_sc'], [HS.d, p.es, 'ε_s']].forEach(q => { L(svg, zx, Y(q[0]), zx + cl(q[1]), Y(q[0]), null, {stroke: q[1] >= 0 ? 'var(--comp)' : 'var(--tens)', 'stroke-width': 3}); T(svg, zx + cl(q[1]) + (q[1] >= 0 ? 4 : -4), Y(q[0]) + 4, (q[1] * 1000).toFixed(2) + '‰', {'class': 'sm', 'text-anchor': q[1] >= 0 ? 'start' : 'end'}); });
+    // stress & forces
+    const sx = 420; T(svg, sx + 40, y0 - 10, 'Stress & forces', {'class': 'sm', 'text-anchor': 'middle', fill: 'var(--muted)'});
+    L(svg, sx, y0, sx, y0 + hp, 'axis');
+    R(svg, sx, y0, 40, p.s * sc, null, {fill: 'var(--comp-soft)', stroke: 'var(--comp)'}); T(svg, sx + 44, y0 + 10, '0.567f_ck', {'class': 'sm', fill: 'var(--comp)'});
+    T(svg, sx + 44, Y(p.s) - 2, 's = 0.8x = ' + Math.round(p.s), {'class': 'sm', fill: 'var(--comp)'});
+    const fa = (u, F, lab) => { const len = Math.max(8, Math.min(80, Math.abs(F) / 1e3 / 16)), yy = Y(u), g = F >= 0 ? arrow(svg, sx + 60 + len, yy, sx + 62, yy, '', 9) : arrow(svg, sx + 62, yy, sx + 62 + len, yy, '', 9); g.style.color = F >= 0 ? 'var(--comp)' : 'var(--tens)'; T(svg, sx + 66 + len, yy - 5, lab + ' ' + fmt(F / 1e3, 0) + ' kN', {'class': 'sm bold', fill: F >= 0 ? 'var(--comp)' : 'var(--tens)'}); };
+    fa(p.s / 2, p.Fcc, 'F_cc'); fa(HS.d1, p.Fsc, 'F_sc'); fa(HS.d, p.Fs, 'F_s');
+    const t = [['F_cc = 0.567f_ck·b·s', p.Fcc, HS.h / 2 - p.s / 2, 'h/2 − s/2', p.Fcc * (HS.h / 2 - p.s / 2)], ['F_sc = f_sc·A′_s  (f_sc = ' + Math.round(p.fsc) + ')', p.Fsc, HS.h / 2 - HS.d1, 'h/2 − d′', p.Fsc * (HS.h / 2 - HS.d1)], ['F_s = f_s·A_s  (f_s = ' + Math.round(p.fs) + ')', p.Fs, -(HS.d - HS.h / 2), '−(d − h/2)', -p.Fs * (HS.d - HS.h / 2)]];
+    $('#w6T').innerHTML = '<tr><th>Term</th><th>Force (kN)</th><th>Lever arm (mm)</th><th>Moment (kNm)</th></tr>' + t.map(r => `<tr><td>${r[0]}</td><td class="num" style="color:${r[1] >= 0 ? 'var(--comp)' : 'var(--tens)'}">${fmt(r[1] / 1e3, 1)}</td><td class="num">${r[3]} = ${fmt(r[2], 0)}</td><td class="num">${fmt(r[4] / 1e6, 1)}</td></tr>`).join('') + `<tr style="font-weight:700"><td>Sum</td><td class="num">N = ${fmt(p.N / 1e3, 1)}</td><td></td><td class="num">M = ${fmt(p.M / 1e6, 1)}</td></tr>`;
+    pl.clear(); if (p.N >= 0) pl.dot(p.M / 1e6, p.N / 1e3, 7, 'pt');
+    readout($('#w6R'), [['N (eq. 7.7)', fmt(p.N / 1e3, 0) + ' kN', 'c'], ['M (eq. 7.8)', fmt(p.M / 1e6, 1) + ' kNm'], ['Region', x > xb ? 'compression-controlled' : 'tension-controlled', x > xb ? 'c' : 't']]);
+  });
+})();
+
+/* ---------- 6.2: design chart ---------- */
+(function () {
+  const root = $('#w62'), svg = $('#w62S'), pl = chartPlot(svg, 640, 440);
+  bind(root, o => {
+    const r = RC.solveRho(o.n, o.m, 0.2, 500);
+    pl.clear();
+    if (isFinite(r) && r > 0) pl.line(curveFor(r), null, pl.dyn, {fill: 'none', stroke: 'var(--hivis)', 'stroke-width': 3, 'stroke-dasharray': '6 4'});
+    L(pl.dyn, pl.X(0), pl.Y(o.n), pl.X(o.m), pl.Y(o.n), null, {stroke: 'var(--hivis)', 'stroke-width': 1.5}); L(pl.dyn, pl.X(o.m), pl.Y(0), pl.X(o.m), pl.Y(o.n), null, {stroke: 'var(--hivis)', 'stroke-width': 1.5});
+    pl.dot(o.m, o.n, 7, 'pt');
+    readout($('#w62R'), [['Steel index A_sc f_yk / bhf_ck', isFinite(r) ? r.toFixed(3) : 'beyond 3', 'g'], ['A_sc for 300×400, f_ck 30', isFinite(r) ? fmt(r * 120000 * 30 / 500, 0) + ' mm²' : '—'], ['Formula', 'A_sc = index × bh·f_ck / f_yk']]);
+  });
+  svg.addEventListener('click', ev => {
+    const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+    const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const m = (q.x - pl.l) / (pl.W - pl.l - pl.r) * 0.35, n = (pl.H - pl.b - q.y) / (pl.H - pl.t - pl.b) * 1.45;
+    if (m < 0 || n < 0) return;
+    setVal(root, 'm', Math.min(0.35, m).toFixed(3)); setVal(root, 'n', Math.min(1.3, n).toFixed(3));
+  });
+})();
+
+/* ---------- 8b: beta plot (needed by 8) ---------- */
+const betaPlot = (function () {
+  const pl = Plot($('#w8bS'), {W: 620, H: 260, x0: 0, x1: 1, y0: 0, y1: 1.05, xt: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1], yt: [0, 0.2, 0.4, 0.6, 0.8, 1], xl: 'N_Ed / bhf_ck', yl: 'β'});
+  pl.line([[0.7, 0.3], [1, 0]], 'faint', pl.base); T(pl.base, pl.X(0.8), pl.Y(0.08) - 4, '1 − n (not used)', {'class': 'sm', fill: 'var(--muted)'});
+  pl.line([[0, 1], [0.7, 0.3], [1, 0.3]], 'okl', pl.base);
+  [0, .1, .2, .3, .4, .5, .6, .7].forEach((n, i) => { const c = pl.dot(n, [1, .9, .8, .7, .6, .5, .4, .3][i], 4, null, pl.base); c.setAttribute('fill', 'var(--panel)'); c.setAttribute('stroke', 'var(--ink)'); });
+  return n => { pl.clear(); pl.dot(Math.min(1, n), n >= 0.7 ? 0.3 : 1 - n, 7, 'pt'); };
+})();
+
+/* ---------- 8: biaxial ---------- */
+(function () {
+  const root = $('#w8'), svg = $('#w8S');
+  bind(root, o => {
+    const N = o.N * 1e3, ez = o.Mz * 1e6 / N, ey = o.My * 1e6 / N, hp = 0.8 * o.h, bp = 0.8 * o.b;
+    const r1 = ey > 0 ? (ez / o.h) / (ey / o.b) : Infinity, r2 = ez > 0 ? (ey / o.b) / (ez / o.h) : Infinity;
+    const sep = r1 <= 0.2 || r2 <= 0.2;
+    const n = N / (o.b * o.h * o.fck), beta = n >= 0.7 ? 0.3 : 1 - n;
+    const caseA = o.Mz / hp >= o.My / bp;
+    const Md = caseA ? o.Mz + beta * hp / bp * o.My : o.My + beta * bp / hp * o.Mz;
+    const bb = caseA ? o.b : o.h, hh = caseA ? o.h : o.b;
+    const m = Md * 1e6 / (bb * hh * hh * o.fck), rho = RC.solveRho(n, m, 0.2, 500), Asc = rho * o.b * o.h * o.fck / 500;
+    betaPlot(n);
+    // drawing
+    svg.setAttribute('viewBox', '0 0 320 320'); svg.innerHTML = '';
+    const cx = 160, cy = 160, sc = 170 / Math.max(o.b, o.h), Rr = 150, k = 0.2 * o.h / o.b;
+    const wedge = (dx, dy, kk, horiz) => { const pts = horiz ? [[0, 0], [dx * Rr, -kk * Rr], [dx * Rr, kk * Rr]] : [[0, 0], [-kk * Rr, dy * Rr], [kk * Rr, dy * Rr]]; P(svg, 'M' + pts.map(p => (cx + p[0]) + ',' + (cy + p[1])).join('L') + 'Z', null, {fill: 'var(--ok-soft)', stroke: 'var(--ok)', 'stroke-width': .8}); };
+    const kz = Math.min(1, k), ky = Math.min(1, 0.2 * o.b / o.h);
+    [1, -1].forEach(s => { wedge(s, 0, kz, true); wedge(0, s, ky, false); });
+    R(svg, cx - o.b * sc / 2, cy - o.h * sc / 2, o.b * sc, o.h * sc, 'conc', {opacity: .85});
+    L(svg, cx - 155, cy, cx + 155, cy, null, {stroke: 'var(--ink)', 'stroke-width': .8}); T(svg, cx + 146, cy - 4, 'Z', {'class': 'sm bold'});
+    L(svg, cx, cy - 155, cx, cy + 155, null, {stroke: 'var(--ink)', 'stroke-width': .8}); T(svg, cx + 4, cy - 146, 'Y', {'class': 'sm bold'});
+    T(svg, cx, cy + o.h * sc / 2 + 14, 'b = ' + o.b, {'class': 'sm', 'text-anchor': 'middle'}); T(svg, cx - o.b * sc / 2 - 4, cy - 4, 'h = ' + o.h, {'class': 'sm', 'text-anchor': 'end'});
+    let px = ey * sc, py = ez * sc; const L_ = Math.hypot(px, py); if (L_ > 145) { px *= 145 / L_; py *= 145 / L_; }
+    L(svg, cx, cy, cx + px, cy - py, null, {stroke: 'var(--ink)', 'stroke-dasharray': '3 3'});
+    C(svg, cx + px, cy - py, 7, 'pt');
+    T(svg, cx + px + 9, cy - py - 6, '(e_y, e_z)', {'class': 'sm bold'});
+    T(svg, 6, 314, 'shaded: separate checks allowed', {'class': 'sm', fill: 'var(--ok)'});
+    readout($('#w8R'), [['e_z = M_z/N', fmt(ez, 0) + ' mm'], ['e_y = M_y/N', fmt(ey, 0) + ' mm'], ['(e_z/h)/(e_y/b)', isFinite(r1) ? r1.toFixed(2) : '∞', r1 <= 0.2 ? 'g' : ''], ['(e_y/b)/(e_z/h)', isFinite(r2) ? r2.toFixed(2) : '∞', r2 <= 0.2 ? 'g' : ''],
+      ['M_z/h′ vs M_y/b′', (o.Mz / hp).toFixed(3) + ' vs ' + (o.My / bp).toFixed(3)], ['N/bhf_ck → β', n.toFixed(3) + ' → ' + beta.toFixed(3)], [sep ? 'Design moments' : (caseA ? "M′_z (case a)" : "M′_y (case b)"), sep ? fmt(o.Mz, 0) + ' & ' + fmt(o.My, 0) + ' kNm' : fmt(Md, 1) + ' kNm', 't'], ['Chart → A_sc', sep ? 'check each axis' : (isFinite(rho) ? fmt(Asc, 0) + ' mm² (index ' + rho.toFixed(3) + ')' : 'off chart'), 'g']]);
+    const v = $('#w8V');
+    if (sep) { v.className = 'verdict ok'; v.textContent = 'One eccentricity dominates (ratio ≤ 0.2): separate uniaxial checks in each principal plane are permitted.'; }
+    else { v.className = 'verdict mid'; v.textContent = (caseA ? 'Case (a): M_z/h′ ≥ M_y/b′ → design about z for M′_z = M_z + β(h′/b′)M_y' : 'Case (b): M_z/h′ < M_y/b′ → design about y for M′_y = M_y + β(b′/h′)M_z') + ' = ' + Md.toFixed(1) + ' kNm.'; }
+  });
+})();
+
+$$('svg').forEach(s => { const vb = s.viewBox && s.viewBox.baseVal; if (vb && vb.width >= 500) s.classList.add('wide'); });
+
+</script>
+</body>
+</html>
