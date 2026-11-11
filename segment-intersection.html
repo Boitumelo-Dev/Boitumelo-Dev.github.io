@@ -1,0 +1,1643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segment Intersection Sweep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Jost:wght@300;400;500;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e8edea; --sheet:#f4f7f5; --ink:#17212b; --ink2:#4a5662; --ink3:#7c8892;
+  --rule:#c3cdc8; --dot:#b4c2bb;
+  --delta:#2a46c8; --delta-t:rgba(42,70,200,.13); --delta-tt:rgba(42,70,200,.06);
+  --best:#0b7f53; --best-t:rgba(11,127,83,.12);
+  --active:#b07400; --active-t:rgba(176,116,0,.14);
+  --waste:#c0263a; --waste-t:rgba(192,38,58,.10);
+  --display:'Jost',system-ui,sans-serif; --body:'Literata',Georgia,serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --prose:42rem; --wide:64rem;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:1.0625rem;line-height:1.68;}
+::selection{background:var(--delta-t)}
+a{color:var(--delta)}
+:focus-visible{outline:2.5px solid var(--delta);outline-offset:3px;border-radius:3px}
+svg :focus-visible{outline:none}
+svg .pt:focus-visible{stroke:var(--active);stroke-width:4}
+
+/* ---------- layout ---------- */
+.wrap{max-width:var(--wide);margin:0 auto;padding:0 1.25rem}
+.prose{max-width:var(--prose)}
+main section{padding:3.5rem 0 1rem}
+p{margin:0 0 1.05rem}
+em{font-style:italic}
+strong{font-weight:600}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.m{font-style:italic;font-family:var(--body);white-space:nowrap}
+sub{font-size:.72em}
+
+/* ---------- hero ---------- */
+header.hero{padding:2.2rem 0 1rem}
+.course{font-family:var(--display);font-weight:400;color:var(--ink2);font-size:1rem;margin:0 0 1.6rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.course .chip{border:1.5px solid var(--rule);border-radius:999px;padding:.12rem .7rem;font-size:.9rem}
+h1{font-family:var(--display);font-weight:300;font-size:clamp(3rem,10vw,7.4rem);line-height:.9;letter-spacing:-.035em;margin:0 0 1.1rem}
+h1 .row2{display:block;font-weight:600;letter-spacing:-.045em}
+.thesis{font-size:clamp(1.1rem,2.1vw,1.32rem);max-width:38rem;color:var(--ink);margin:0 0 1.6rem;line-height:1.5}
+
+/* ---------- section heading with dimension-line signature ---------- */
+h2{font-family:var(--display);font-weight:500;font-size:clamp(1.75rem,3.6vw,2.5rem);line-height:1.1;letter-spacing:-.02em;margin:0 0 1.2rem;display:flex;flex-direction:column;gap:.55rem}
+.dim{display:inline-flex;align-items:center;height:15px;border-left:1.5px solid var(--delta);border-right:1.5px solid var(--delta);color:var(--delta);font-family:var(--mono);font-size:.8rem;font-weight:600;letter-spacing:0;align-self:flex-start}
+.dim i{display:block;width:26px;border-top:1.5px solid var(--delta);position:relative}
+.dim i:first-child::before,.dim i:last-child::after{content:"";position:absolute;top:-4.5px;border:3.5px solid transparent}
+.dim i:first-child::before{left:0;border-right:6px solid var(--delta);border-left:0}
+.dim i:last-child::after{right:0;border-left:6px solid var(--delta);border-right:0}
+.dim b{padding:0 .45rem;font-weight:600}
+h3{font-family:var(--display);font-weight:500;font-size:1.3rem;letter-spacing:-.01em;margin:2.2rem 0 .6rem}
+
+/* ---------- figures ---------- */
+.fig{margin:1.6rem 0 2.2rem;background:var(--sheet);border-radius:14px;padding:.9rem;box-shadow:0 1px 0 var(--rule),0 0 0 1px rgba(23,33,43,.05)}
+.fig.wide{max-width:var(--wide)}
+.fig.narrow{max-width:var(--prose)}
+.plane{display:block;width:100%;height:auto;border-radius:9px;touch-action:none;user-select:none;-webkit-user-select:none;
+  background-color:#fbfcfb;background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.2px);background-size:22px 22px;background-position:11px 11px}
+.plane.noTouchLock{touch-action:pan-y}
+.stack{position:relative}
+.stack canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:9px}
+.stack svg{position:relative;background:transparent!important}
+.stack{background-color:#fbfcfb;background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.2px);background-size:22px 22px;border-radius:9px}
+.controls{display:flex;flex-wrap:wrap;gap:.55rem .7rem;align-items:center;margin:.8rem .1rem .2rem;font-family:var(--display);font-size:.95rem}
+.controls label{display:flex;align-items:center;gap:.5rem;color:var(--ink2)}
+.controls output{font-family:var(--mono);font-size:.85rem;color:var(--ink);min-width:3ch}
+button{font-family:var(--display);font-size:.95rem;font-weight:500;color:var(--ink);background:#fff;border:1.5px solid var(--rule);border-radius:999px;padding:.38rem .95rem;cursor:pointer;line-height:1.2}
+button:hover{border-color:var(--ink3)}
+button:active{transform:translateY(1px)}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button[aria-pressed="true"]{background:var(--delta);border-color:var(--delta);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+.seg{display:inline-flex;gap:0;border:1.5px solid var(--rule);border-radius:999px;overflow:hidden;background:#fff}
+.seg button{border:0;border-radius:0;padding:.38rem .85rem}
+.seg button+button{border-left:1.5px solid var(--rule)}
+input[type=range]{accent-color:var(--delta);width:min(220px,50vw)}
+.readout{font-family:var(--mono);font-size:.84rem;line-height:1.6;color:var(--ink);margin:.6rem .1rem 0;display:flex;flex-wrap:wrap;gap:.35rem 1.4rem}
+.readout .k{color:var(--ink2)}
+.readout .v{font-weight:600}
+.caption{font-family:var(--display);font-size:1.02rem;line-height:1.45;margin:.7rem .1rem 0;min-height:3em;color:var(--ink)}
+.notice{margin:.9rem .1rem 0;padding-top:.75rem;border-top:1px solid var(--rule);font-size:.96rem;color:var(--ink2);line-height:1.55}
+.notice b{font-family:var(--display);font-weight:600;color:var(--ink);margin-right:.35rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem}
+.grid2 .fig{margin:0}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.subhead{font-family:var(--display);font-weight:600;font-size:1.05rem;margin:.1rem .1rem .55rem}
+
+/* colour key */
+.key{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-family:var(--display);font-size:.93rem;color:var(--ink2);margin:.2rem 0 0}
+.key span{display:inline-flex;align-items:center;gap:.45rem}
+.sw{width:22px;height:10px;border-radius:3px;display:inline-block}
+.sw.delta{background:var(--delta-t);border:1.5px solid var(--delta)}
+.sw.best{background:var(--best)}
+.sw.active{background:var(--active)}
+.sw.waste{background:var(--waste)}
+.sw.fill{width:11px;height:11px;border-radius:50%;background:var(--ink)}
+.sw.ring{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);background:#fff}
+
+/* callouts */
+.call{border-radius:12px;padding:1rem 1.15rem;margin:1.4rem 0;max-width:var(--prose)}
+.call>b:first-child{display:block;font-family:var(--display);font-weight:600;font-size:1rem;margin-bottom:.25rem}
+.call p:last-child{margin-bottom:0}
+.call.def{background:var(--delta-tt);box-shadow:inset 0 0 0 1.5px rgba(42,70,200,.25)}
+.call.def>b:first-child{color:var(--delta)}
+.call.gotcha{background:var(--waste-t);box-shadow:inset 0 0 0 1.5px rgba(192,38,58,.25)}
+.call.gotcha>b:first-child{color:var(--waste)}
+.call.aha{background:var(--best-t);box-shadow:inset 0 0 0 1.5px rgba(11,127,83,.25)}
+.call.aha>b:first-child{color:var(--best)}
+
+/* equations */
+.eq{font-family:var(--body);font-style:italic;font-size:1.12rem;background:#fff;border-radius:10px;padding:.8rem 1rem;margin:1rem 0 1.3rem;max-width:var(--prose);overflow-x:auto;line-height:1.9}
+.eq .n{font-style:normal}
+.eq .note{font-family:var(--display);font-style:normal;font-size:.86rem;color:var(--ink2);margin-left:.6rem}
+.eq .t-red{color:var(--waste)} .eq .t-green{color:var(--best)} .eq .t-amber{color:var(--active)}
+
+/* merge-sort stepper */
+.ms{background:#fbfcfb;border-radius:9px;padding:1rem .8rem;min-height:230px;overflow-x:auto}
+.ms-row{display:flex;gap:1.1rem;flex-wrap:nowrap;align-items:flex-start;margin-bottom:1.4rem;min-height:66px}
+.ms-list{display:flex;flex-direction:column;align-items:flex-start;gap:.25rem}
+.ms-cells{display:flex}
+.ms-cell{width:42px;height:38px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:.95rem;background:var(--ink);color:#fff;border-right:1px solid #3a4652}
+.ms-cell:last-child{border-right:0}
+.ms-cell.used{background:#d3dad6;color:var(--ink3)}
+.ms-cell.ptr{background:var(--active);color:#fff}
+.ms-cell.out{background:var(--best)}
+.ms-cell.empty{background:transparent;border:1.5px dashed var(--rule);color:transparent}
+.ms-ptr{font-family:var(--mono);font-size:.8rem;color:var(--active);height:1.1em;display:flex}
+.ms-ptr span{width:42px;text-align:center}
+.ms-label{font-family:var(--display);font-size:.85rem;color:var(--ink2)}
+
+/* pseudocode */
+.codepair{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:760px){.codepair{grid-template-columns:1fr}}
+pre.code{margin:0;background:#fbfcfb;border-radius:9px;padding:.9rem 0;font-family:var(--mono);font-size:.8rem;line-height:1.65;overflow-x:auto}
+pre.code span{display:block;padding:0 1rem;white-space:pre}
+pre.code .kw{display:inline;padding:0;color:var(--delta);font-weight:600}
+.diff pre.code span.minus{background:var(--waste-t);box-shadow:inset 3px 0 0 var(--waste)}
+.diff pre.code span.plus{background:var(--best-t);box-shadow:inset 3px 0 0 var(--best)}
+
+/* dna */
+.dna{font-family:var(--mono);font-size:.86rem;display:flex;flex-direction:column;gap:.3rem;background:#fbfcfb;border-radius:9px;padding:.8rem;overflow-x:auto}
+.dna button{display:flex;align-items:center;gap:.9rem;border-radius:8px;padding:.3rem .6rem;font-family:var(--mono);font-size:.86rem;font-weight:400;text-align:left;width:max-content;min-width:100%}
+.dna button .nm{font-family:var(--display);font-weight:600;width:1.2rem}
+.dna button .hd{margin-left:auto;color:var(--ink2);min-width:6.5rem;text-align:right}
+.dna .x{color:#fff;background:var(--waste);border-radius:2px}
+.dna button.sel{border-color:var(--active);box-shadow:0 0 0 1.5px var(--active)}
+.dna button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.dna .tag{color:var(--best);font-family:var(--display);font-weight:600;min-width:7.5rem;text-align:right}
+
+/* tables */
+table.t{border-collapse:collapse;font-family:var(--mono);font-size:.84rem;margin:.6rem 0 0;width:100%;max-width:34rem}
+table.t th{font-family:var(--display);font-weight:500;text-align:left;color:var(--ink2);padding:.3rem .5rem;border-bottom:1.5px solid var(--rule)}
+table.t td{padding:.3rem .5rem;border-bottom:1px solid var(--rule)}
+table.t td.win{color:var(--best);font-weight:600}
+.guide{width:100%;max-width:var(--prose);border-collapse:collapse;margin:1rem 0 1.5rem;font-size:.98rem}
+.guide th,.guide td{text-align:left;vertical-align:top;padding:.7rem .6rem;border-bottom:1px solid var(--rule)}
+.guide th{font-family:var(--display);font-weight:500;color:var(--ink2);font-size:.92rem}
+.guide td:first-child{font-family:var(--display);font-weight:500;width:38%}
+
+/* takeaways + quiz */
+ol.take{max-width:var(--prose);padding-left:1.3rem}
+ol.take li{margin-bottom:.6rem}
+details.q{max-width:var(--prose);background:var(--sheet);border-radius:10px;padding:.75rem 1rem;margin:.55rem 0}
+details.q summary{cursor:pointer;font-family:var(--display);font-weight:500;font-size:1.02rem}
+details.q[open] summary{margin-bottom:.4rem}
+footer{padding:3rem 0 4rem;color:var(--ink2);font-family:var(--display);font-size:.92rem}
+
+/* svg styling */
+.lbl{font-family:var(--mono);font-size:13px;fill:var(--ink)}
+.lbl-d{font-family:var(--display);font-size:15px;fill:var(--ink2)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media (max-width:560px){body{font-size:1rem}.fig{padding:.6rem;border-radius:12px}.readout{font-size:.78rem;gap:.25rem 1rem}}
+.chip.part{background:var(--delta);color:#fff;border-color:var(--delta)}
+.tline{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.55rem .1rem 0;font-family:var(--mono);font-size:.84rem}
+.tline .k,.runside .k{color:var(--ink2)}
+.tchip{display:inline-block;font-family:var(--mono);font-size:.84rem;padding:.12rem .6rem;border-radius:999px;border:1.5px solid var(--delta);color:var(--delta);background:#fff}
+.tchip.hot{background:var(--delta);color:#fff}
+.qchip{display:block;font-family:var(--mono);font-size:.78rem;padding:.18rem .5rem;border-radius:6px;background:#fff;width:100%}
+.qchip.x{color:var(--active);font-weight:600}
+.qchip i{color:var(--ink3);font-style:normal;margin-left:.3rem;font-weight:400}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:.7rem .1rem 0}
+.ochip{font-family:var(--mono);font-size:.82rem;padding:.25rem .65rem;border-radius:8px;background:#fff;border:1.5px solid var(--rule)}
+.ochip.pos{border-color:var(--delta);color:var(--delta)}
+.ochip.neg{border-color:var(--ink3);color:var(--ink)}
+.ochip.zero{border-color:var(--ink);background:var(--ink);color:#fff}
+.eq.live{font-style:normal;font-family:var(--mono);font-size:.84rem;line-height:1.8;max-width:none;margin:.8rem 0 0}
+.eq.live .note{display:block;margin:0;font-family:var(--display)}
+.handler{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:1rem;align-items:start}
+@media (max-width:640px){.handler{grid-template-columns:1fr}}
+.stackcol{display:flex;flex-direction:column;gap:.4rem;padding-top:.4rem}
+.stackcol>div{display:flex;flex-direction:column;gap:.35rem;align-items:flex-start}
+.runwrap{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:1rem;align-items:start}
+@media (max-width:760px){.runwrap{grid-template-columns:1fr}}
+.runside{display:flex;flex-direction:column;gap:.35rem}
+.runside>div{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.6rem}
+.tablewrap{overflow-x:auto;margin-top:.6rem}
+table.run{max-width:none;font-size:.78rem}
+table.t tr.cur td{background:var(--active-t)}
+table.t tr.win td{color:var(--best);font-weight:600}
+.wirewrap{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:1.2rem;align-items:start}
+@media (max-width:760px){.wirewrap{grid-template-columns:1fr}}
+.pi{font-family:var(--mono);font-size:.95rem;margin:.2rem 0 .3rem}
+.pi .k{color:var(--ink2)}
+.cum{background:#fbfcfb;border-radius:9px;padding:.8rem;overflow-x:auto}
+.crow{display:grid;grid-template-columns:4.2rem repeat(8,minmax(38px,1fr));gap:.3rem;align-items:center;margin-bottom:.35rem;min-width:420px}
+.cc{min-height:42px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;background:#fff;border:1.5px solid var(--rule);border-radius:7px;line-height:1.1;color:var(--ink)}
+.cc small{font-size:.62rem;color:var(--ink3);font-weight:400;display:block}
+.cc.head{background:transparent;border:0;color:var(--ink3);font-weight:400;min-height:22px}
+.cc.blank{background:transparent;border:1.5px dashed #dbe1de}
+.cc.btn{padding:0;cursor:pointer;font-size:.95rem}
+.cc.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.cc.upd{box-shadow:0 0 0 2.5px var(--waste)}
+.cc.rd{box-shadow:0 0 0 2.5px var(--active);background:var(--active-t)}
+.cc.up{box-shadow:0 0 0 2.5px var(--delta)}
+.cc.rd.up{box-shadow:0 0 0 2.5px var(--active),0 0 0 5px var(--delta)}
+.cc.upd.rd{box-shadow:0 0 0 2.5px var(--active),0 0 0 5px var(--waste)}
+.bitrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(40px,1fr));gap:.35rem;margin:.35rem 0 .6rem}
+.bitrow .cc{min-height:46px}
+pre.code .c{display:inline;padding:0;color:var(--ink3);font-weight:400}
+.grid2.text{margin:1rem 0}
+.grid2.text .call{margin:0}
+.guide.wide{max-width:var(--wide)}
+.guide.wide td:first-child{width:auto}
+</style>
+</head>
+<body>
+<header class="hero wrap">
+  <p class="course"><span class="chip">COMS3005A</span><span class="chip part">Part 2</span><span>Advanced Analysis of Algorithms, lecture 8: algorithmic geometry</span></p>
+  <h1>Every segment<span class="row2">intersection</span></h1>
+  <p class="thesis">Part 1 cut the plane with a vertical line that stayed put. This time the line moves. Sweep it left to right and you only ever need to test segments that are <em>next to each other</em> on the line. That one idea finds all <span class="m">K</span> crossings among <span class="m">n</span> segments in <span class="m">O((n + K) log n)</span>.</p>
+
+  <figure class="fig wide" id="f-hero">
+    <svg class="plane" viewBox="0 0 960 430" role="img" aria-label="A vertical sweep line moving across line segments"></svg>
+    <div class="controls">
+      <button class="primary" data-a="play">Play the sweep</button>
+      <button data-a="prev">Previous event</button><button data-a="next">Next event</button>
+      <label>Segments <input type="range" min="4" max="40" value="16" data-k="n"><output data-o="n">16</output></label>
+      <button data-a="new">New segments</button>
+      <button data-a="ghost" aria-pressed="false">Show undiscovered crossings</button>
+    </div>
+    <div class="readout" data-o="stats"></div>
+    <div class="tline" data-o="T"></div>
+    <p class="notice"><b>What to notice</b>Drag anywhere on the plane to move the sweep line ℓ. The blue chips show the status T, the segments ℓ currently crosses, top to bottom. Green dots are crossings already reported. Amber rings are crossings the algorithm has discovered and scheduled but not reached yet. A crossing is always discovered before ℓ gets to it, because by then its two segments have become neighbours in T. Compare the pair-test counter with brute force.</p>
+  </figure>
+  <div class="key" aria-label="Colour key used in every figure">
+    <span><i class="sw delta"></i>sweep line ℓ, status T</span>
+    <span><i class="sw best"></i>crossing found or reported</span>
+    <span><i class="sw active"></i>tested now, or scheduled in Q</span>
+    <span><i class="sw waste"></i>wasted test or wrong answer</span>
+    <span><i class="sw fill"></i>left endpoint (segment starts)</span>
+    <span><i class="sw ring"></i>right endpoint (segment ends)</span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section id="s1">
+  <h2><span class="dim"><i></i><b>01</b><i></i></span>Why this problem: overlaying two maps</h2>
+  <div class="prose">
+    <p>A city's GIS stores its road network as one layer of line segments and its flood-plain boundary as another. To answer "which roads pass through the flood zone?", the system computes the <strong>overlay</strong> of the two layers. Every place a road crosses the flood boundary becomes a new vertex of the combined map, one that existed in neither layer alone.</p>
+    <p>Each layer by itself is simple, but a country's road layer can hold millions of segments. Map overlay is the original motivation for the algorithm in this lecture (Bentley and Ottmann, 1979).</p>
+  </div>
+  <figure class="fig narrow" id="f-map">
+    <svg class="plane" viewBox="0 0 560 330" role="img" aria-label="Road layer and flood boundary layer overlaid"></svg>
+    <div class="controls"><div class="seg" role="group" aria-label="Layers">
+      <button data-l="roads" aria-pressed="true">Roads</button><button data-l="flood" aria-pressed="true">Flood boundary</button></div>
+      <button data-a="overlay" aria-pressed="false">Compute overlay</button></div>
+    <div class="readout" data-o="map"></div>
+    <p class="notice"><b>What to notice</b>Junctions inside each layer (black) are already stored. Turn on the overlay and the new vertices appear (green), one wherever a road crosses the boundary. Finding them is exactly "report every intersection between two sets of segments".</p>
+  </figure>
+  <div class="prose">
+    <p>The same primitive shows up everywhere. VLSI and PCB design rule checks ask whether any two wires on a layer touch. Robot motion planning asks whether a path crosses an obstacle's boundary. Graphics clips one polygon against another edge by edge. Air traffic control checks whether two projected trajectories cross. Graph drawing minimises edge crossings, and line-of-sight checks ask whether a sightline crosses a building outline.</p>
+    <div class="call aha"><b>Key idea</b><p>All of these want every intersection, and the number of crossings <span class="m">K</span> is usually far below <span class="m">n²</span>. A good algorithm's cost should scale with <span class="m">K</span>, not with <span class="m">n²</span>.</p></div>
+  </div>
+</section>
+
+<section id="s2">
+  <h2><span class="dim"><i></i><b>02</b><i></i></span>What exactly is a segment?</h2>
+  <div class="prose">
+    <div class="call def"><b>Definition</b><p>The segment <span class="m">AB</span> is the set of points <span class="m">P(t) = A + t(B − A)</span> for <span class="m">t ∈ [0, 1]</span>.</p></div>
+    <p><span class="m">t = 0</span> gives <span class="m">A</span>, <span class="m">t = 1</span> gives <span class="m">B</span>, and every <span class="m">t</span> in between gives a point strictly between them. Restricting <span class="m">t</span> to <span class="m">[0, 1]</span> is what makes it a segment rather than the infinite line through <span class="m">A</span> and <span class="m">B</span>. That restriction is exactly what makes "do they cross?" a nontrivial question.</p>
+  </div>
+  <figure class="fig narrow" id="f-param">
+    <svg class="plane" viewBox="0 0 560 260" role="img" aria-label="A point moving along a line by parameter t"></svg>
+    <div class="controls"><label>t <input type="range" min="-0.6" max="1.6" step="0.01" value="0.62" data-k="t"><output data-o="t">0.62</output></label></div>
+    <div class="readout" data-o="param"></div>
+    <p class="notice"><b>What to notice</b>The dashed grey line is every value of <span class="m">t</span>. The solid blue part is <span class="m">t ∈ [0, 1]</span>, the segment itself. Push <span class="m">t</span> below 0 or above 1: the point is still on the line, but it has left the segment (red).</p>
+  </figure>
+</section>
+
+<section id="s3">
+  <h2><span class="dim"><i></i><b>03</b><i></i></span>The naïve test: solve for t and s</h2>
+  <div class="prose">
+    <p>Every application asks the same question: does segment <span class="m">AB</span> cross segment <span class="m">CD</span>? The obvious approach:</p>
+    <ol>
+      <li>Write each segment parametrically: <span class="m">P(t) = A + t(B − A)</span> and <span class="m">Q(s) = C + s(D − C)</span>.</li>
+      <li>Set <span class="m">P(t) = Q(s)</span>. That's two linear equations (one for <span class="m">x</span>, one for <span class="m">y</span>) in two unknowns. Solve by inverting the 2×2 matrix.</li>
+      <li>The segments cross exactly when the solution has both <span class="m">t ∈ [0, 1]</span> and <span class="m">s ∈ [0, 1]</span>.</li>
+    </ol>
+    <div class="call def"><b>Cramer's rule</b><p>The system <span class="m">a₁₁t + a₁₂s = b₁</span>, <span class="m">a₂₁t + a₂₂s = b₂</span> has a unique solution exactly when <span class="m">D = a₁₁a₂₂ − a₁₂a₂₁ ≠ 0</span>. Then <span class="m">t = (b₁a₂₂ − a₁₂b₂)/D</span> and <span class="m">s = (a₁₁b₂ − b₁a₂₁)/D</span>. Replace the column of the variable you want with <span class="m">b</span>, take that determinant, and divide by <span class="m">D</span>.</p></div>
+  </div>
+  <figure class="fig wide" id="f-cramer">
+    <svg class="plane" viewBox="0 0 900 360" role="img" aria-label="Two draggable segments solved with Cramer's rule"></svg>
+    <div class="controls"><button data-a="lecture">Lecture example</button><button data-a="para">Nearly parallel</button></div>
+    <div class="eq live" data-o="cramer"></div>
+    <p class="notice"><b>What to notice</b>Drag the four endpoints. They snap to whole-number coordinates. The lecture example (A = (0,0), B = (4,2), C = (1,−1), D = (2,4)) gives <span class="m">D = −18</span> and <span class="m">t = s = 1/3</span>, so they cross at <span class="m">(4/3, 2/3)</span>. Now try "Nearly parallel": <span class="m">D</span> shrinks toward 0, and <span class="m">t</span> and <span class="m">s</span> come from dividing by almost nothing.</p>
+  </figure>
+  <div class="prose">
+    <h3>Where the naïve approach breaks down</h3>
+    <p>Step 2 divides by the determinant. In the example it was −18, but it's exactly zero whenever the segments are parallel. With floating-point coordinates, a near-parallel pair has a determinant hovering near zero, and rounding error can push it across zero and flip the yes/no answer. Worse, a sweep line usually doesn't want a crossing point at all. It wants a cheaper question: is this segment above or below that one right now? Solving a 2×2 system just to answer that is overkill.</p>
+    <p>What we actually need is one primitive that never divides (only multiplies and subtracts), returns an exact <em>sign</em> rather than a coordinate, and answers both "do they cross?" and "which is higher?". That's the orientation predicate.</p>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="dim"><i></i><b>04</b><i></i></span>The orientation test</h2>
+  <div class="eq">Orientation(p, q, r) = (q<sub>x</sub> − p<sub>x</sub>)(r<sub>y</sub> − p<sub>y</sub>) − (q<sub>y</sub> − p<sub>y</sub>)(r<sub>x</sub> − p<sub>x</sub>)</div>
+  <div class="prose">
+    <p>It returns a positive number when <span class="m">r</span> is to the <strong>left</strong> of the ray <span class="m">p → q</span> (a counter-clockwise turn), a negative number when <span class="m">r</span> is to the right (clockwise), and zero when the three points are collinear. What it really measures is twice the signed area of triangle <span class="m">pqr</span>.</p>
+    <p>Where does it come from? Form two vectors from <span class="m">p</span>: <span class="m">u = q − p</span> and <span class="m">v = r − p</span>. The 2D cross product <span class="m">u × v = u<sub>x</sub>v<sub>y</sub> − u<sub>y</sub>v<sub>x</sub></span> is the determinant of those two vectors. Since <span class="m">u × v = |u||v| sin θ</span>, its sign is the sign of <span class="m">sin θ</span>, where <span class="m">θ</span> is the angle you rotate <span class="m">u</span> counter-clockwise to reach <span class="m">v</span>.</p>
+  </div>
+  <figure class="fig wide" id="f-orient">
+    <svg class="plane" viewBox="0 0 900 340" role="img" aria-label="Orientation of three points with signed area"></svg>
+    <div class="controls"><button data-a="lecture">Lecture example</button><button data-a="line">Put r on the line</button></div>
+    <div class="eq live" data-o="orient"></div>
+    <p class="notice"><b>What to notice</b>Drag <span class="m">r</span>, and <span class="m">p</span> and <span class="m">q</span> too. The triangle is blue when the value is positive (left turn) and grey when it's negative (right turn), and it vanishes when the points are collinear. The arc shows <span class="m">θ</span>: under 180° counter-clockwise means <span class="m">sin θ &gt; 0</span>. With <span class="m">p = (0,0)</span>, <span class="m">q = (4,0)</span>, <span class="m">r = (2,3)</span> you get <span class="m">4·3 − 0·2 = 12 &gt; 0</span>. The answer uses only multiplication and subtraction, so with integer coordinates it's exact.</p>
+  </figure>
+  <div class="call gotcha"><b>Gotcha</b><p>One slide line says a positive value means "rotate clockwise from q to r". It's the other way round: positive means counter-clockwise, a left turn, as the first bullet on that same slide and the 12 &gt; 0 example both show.</p></div>
+</section>
+
+<section id="s5">
+  <h2><span class="dim"><i></i><b>05</b><i></i></span>Do two segments cross? Four orientation calls</h2>
+  <div class="prose">
+    <p>Segments <span class="m">AB</span> and <span class="m">CD</span> properly cross if and only if <span class="m">C</span> and <span class="m">D</span> are on opposite sides of line <span class="m">AB</span>, <em>and</em> <span class="m">A</span> and <span class="m">B</span> are on opposite sides of line <span class="m">CD</span>. In orientation terms, <span class="m">Orient(A,B,C)</span> and <span class="m">Orient(A,B,D)</span> have opposite signs, and so do <span class="m">Orient(C,D,A)</span> and <span class="m">Orient(C,D,B)</span>.</p>
+    <p>If one call returns 0, that point lies on the <em>line</em> through the other two, but not necessarily on the segment. Check with a bounding box: its <span class="m">x</span> must lie between the segment's endpoint <span class="m">x</span>'s, and its <span class="m">y</span> between their <span class="m">y</span>'s. If all four are 0, the segments are collinear, and they intersect only if they overlap.</p>
+  </div>
+  <figure class="fig wide" id="f-four">
+    <svg class="plane" viewBox="0 0 900 340" role="img" aria-label="Two segments with their four orientation signs"></svg>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Presets"><button data-p="cross">Crossing</button><button data-p="miss">Miss</button><button data-p="touch">Endpoint on segment</button><button data-p="apart">Collinear, apart</button><button data-p="over">Collinear, overlapping</button></div>
+    </div>
+    <div class="chips" data-o="four"></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Drag the endpoints (they snap to the grid, so exact zeros can happen). Each chip is one orientation call, and the verdict uses only their signs plus a bounding-box check when a sign is 0. Try "Miss": one pair of signs differs but the other doesn't. That's two lines crossing outside the segments. The whole test is a constant number of calls, so it costs <span class="m">O(1)</span>.</p>
+  </figure>
+</section>
+
+<section id="s6">
+  <h2><span class="dim"><i></i><b>06</b><i></i></span>The problem, and brute force</h2>
+  <div class="prose">
+    <p>Input: a set <span class="m">S</span> of <span class="m">n</span> line segments in the plane, with <span class="m">K</span> intersecting pairs. There are three versions of increasing difficulty:</p>
+    <table class="guide">
+      <thead><tr><th>Version</th><th>Question and best known bound</th></tr></thead>
+      <tbody>
+        <tr><td>Detect</td><td>Is there any intersecting pair? Can be done in <span class="m">O(n log n)</span>, which is optimal.</td></tr>
+        <tr><td>Count</td><td>How many pairs intersect? Output the integer <span class="m">K</span>.</td></tr>
+        <tr><td>Report</td><td>List every intersecting pair and its crossing point. Needs <span class="m">Ω(n log n + K)</span>, since you can't beat the time it takes to write the output. Today's sweep achieves <span class="m">O((n + K) log n)</span>.</td></tr>
+      </tbody>
+    </table>
+    <p>Brute force tests every pair: <span class="m">(n−1) + (n−2) + … + 1 = n(n−1)/2</span> calls to the crossing test, always, even when <span class="m">K = 0</span>. It's only optimal when <span class="m">K = Θ(n²)</span>, a dense arrangement.</p>
+  </div>
+  <figure class="fig wide" id="f-brute">
+    <svg class="plane" viewBox="0 0 900 340" role="img" aria-label="Random short segments with brute-force test counts"></svg>
+    <div class="controls"><label>Segments <input type="range" min="5" max="120" value="30" data-k="n"><output data-o="n">30</output></label><label>Length <input type="range" min="20" max="400" value="90" data-k="len"><output data-o="len">90</output></label><button data-a="new">New segments</button></div>
+    <div class="readout" data-o="brute"></div>
+    <p class="notice"><b>What to notice</b>Short segments rarely meet, so almost every brute-force test is wasted (red counter). Make them long and dense and <span class="m">K</span> climbs toward <span class="m">n²</span>. Only then is brute force a fair deal. The goal: spend work only on pairs that are vertically adjacent at some <span class="m">x</span>.</p>
+  </figure>
+  <div class="prose"><p>For scale: 10 segments need 45 tests, 1,000 need about 5×10⁵, and 1,000,000 need about 5×10¹¹. A country's road layer has millions of segments, so brute force is simply not computable there.</p></div>
+</section>
+
+<section id="s7">
+  <h2><span class="dim"><i></i><b>07</b><i></i></span>The plane sweep</h2>
+  <div class="prose">
+    <p>Turn a static 2D problem into a 1D problem that evolves over time. Imagine a vertical line <span class="m">ℓ</span> moving from <span class="m">x = −∞</span> to <span class="m">+∞</span>. At any moment it crosses some subset of the segments. Order that subset top to bottom by the <span class="m">y</span>-coordinate of the crossing. That order is the <strong>sweep-line status</strong>.</p>
+    <p>The status changes only at a few discrete <strong>event points</strong>. Between events nothing interesting happens, so the algorithm jumps from event to event. There are three kinds:</p>
+    <ul>
+      <li>the <strong>start</strong> of a segment (known at the beginning, because we're given the segments),</li>
+      <li>the <strong>end</strong> of a segment (also known up front),</li>
+      <li>the <strong>intersection</strong> of two segments, which we <em>don't</em> know up front.</li>
+    </ul>
+    <p>The core idea: we don't know where the intersections are initially, but we can discover them with the orientation test whenever two segments become neighbours in the status.</p>
+  </div>
+  <figure class="fig wide" id="f-events">
+    <svg class="plane" viewBox="0 0 900 380" role="img" aria-label="Four segments with the sweep line and event ticks"></svg>
+    <div class="controls"><button data-a="prev">Previous event</button><button class="primary" data-a="next">Next event</button><button data-a="reset">Reset</button></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>The ticks under the plane are the event queue. The endpoint ticks (filled for starts, rings for ends) are there from the beginning. Intersection ticks only appear when the algorithm discovers them, as an amber ring the moment their segments become neighbours, and they turn green once ℓ reaches them. Drag ℓ between two ticks: the status order never changes there.</p>
+  </figure>
+</section>
+
+<section id="s8">
+  <h2><span class="dim"><i></i><b>08</b><i></i></span>Two data structures</h2>
+  <div class="grid2 text">
+    <div class="call def"><b>Event queue Q</b><p>Future event points, ordered by <span class="m">x</span>, then by <span class="m">y</span> to break ties. Initialised with all <span class="m">2n</span> endpoints. Intersection points are inserted as they're discovered. Operations, each <span class="m">O(log n)</span>: extract the next minimum, insert a newly found crossing, and check membership so duplicates are skipped.</p></div>
+    <div class="call def"><b>Status T</b><p>The segments currently crossing <span class="m">ℓ</span>, kept in a balanced BST ordered by their <span class="m">y</span> at the current <span class="m">x</span>. Operations, each <span class="m">O(log n)</span>: insert, delete, swap two neighbours, and find the neighbour above or below. The comparator uses the orientation predicate, not stored <span class="m">y</span> values, because the <span class="m">y</span>'s change as <span class="m">ℓ</span> moves.</p></div>
+  </div>
+  <div class="prose"><p>Q says where to move to next. T says which segments are next to each other on the sweep line. Here is T's comparator at work when a new segment starts.</p></div>
+  <figure class="fig wide" id="f-bst">
+    <svg class="plane" viewBox="0 0 900 380" role="img" aria-label="Inserting a new left endpoint into a balanced BST using orientation"></svg>
+    <div class="readout" data-o="bst"></div>
+    <p class="notice"><b>What to notice</b>Drag the new left endpoint <span class="m">p</span> up and down ℓ. At each tree node, one orientation call, <span class="m">Orient(t.left, t.right, p)</span>, says whether <span class="m">p</span> is above (positive, go left) or below (negative, go right) that segment. The path (amber) is at most 3 comparisons for 7 segments: <span class="m">O(log n)</span>. No <span class="m">y</span>-values are ever stored, so the tree stays valid as ℓ moves.</p>
+  </figure>
+</section>
+
+<section id="s9">
+  <h2><span class="dim"><i></i><b>09</b><i></i></span>The adjacency lemma: why this can work</h2>
+  <div class="prose">
+    <div class="call def"><b>Lemma</b><p>Let segments <span class="m">s<sub>i</sub></span> and <span class="m">s<sub>j</sub></span> cross at point <span class="m">p</span>, with no third segment through <span class="m">p</span>. Then there is a position of <span class="m">ℓ</span> strictly left of <span class="m">p</span> at which <span class="m">s<sub>i</sub></span> and <span class="m">s<sub>j</sub></span> are adjacent in T.</p></div>
+    <p>Why: walk <span class="m">ℓ</span> back from <span class="m">p</span>. Just left of <span class="m">p</span>, nothing can be strictly between the two segments, since they're about to meet. Further left, segments between them can only appear or disappear at an event. So the last such segment to leave, or the later of <span class="m">s<sub>i</sub></span> and <span class="m">s<sub>j</sub></span> to start, is exactly where they become neighbours.</p>
+  </div>
+  <figure class="fig wide" id="f-lemma">
+    <svg class="plane" viewBox="0 0 900 360" role="img" aria-label="Two crossing segments with others between them"></svg>
+    <div class="controls"><label>Sweep position <input type="range" min="40" max="640" value="160" data-k="x"><output data-o="x">160</output></label></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Slide ℓ to the right toward <span class="m">p</span>. The grey segments sit between <span class="m">s<sub>i</sub></span> and <span class="m">s<sub>j</sub></span> in T, and each one leaves at its right endpoint, which is an event. When the last one leaves, <span class="m">s<sub>i</sub></span> and <span class="m">s<sub>j</sub></span> become neighbours. The algorithm tests them right then, well before ℓ reaches <span class="m">p</span>.</p>
+  </figure>
+  <div class="call aha"><b>Consequence</b><p>If at every event we test each pair that has just become adjacent, every crossing <span class="m">p</span> gets scheduled in Q before the sweep reaches it. Inserting a segment creates at most two new adjacent pairs (above and below it). Deleting one creates one (its former neighbours). That's <span class="m">O(1)</span> new tests per event, and no intersection is missed.</p></div>
+</section>
+
+<section id="s10">
+  <h2><span class="dim"><i></i><b>10</b><i></i></span>Three kinds of event</h2>
+  <figure class="fig wide" id="f-handlers">
+    <div class="controls" style="margin-top:0"><div class="seg" role="group" aria-label="Event type"><button data-h="L" aria-pressed="true">Left endpoint</button><button data-h="R" aria-pressed="false">Right endpoint</button><button data-h="X" aria-pressed="false">Intersection</button></div>
+      <div class="seg" role="group" aria-label="Before or after"><button data-w="before" aria-pressed="true">Before</button><button data-w="after" aria-pressed="false">After</button></div></div>
+    <div class="handler">
+      <svg class="plane" viewBox="0 0 560 310" role="img" aria-label="Event handler before and after"></svg>
+      <div class="stackcol"><span class="ms-label">T, top to bottom</span><div data-o="stack"></div></div>
+    </div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Flip between before and after for each event type. A <strong>left endpoint</strong> inserts <span class="m">s<sub>i</sub></span> and tests it against its new neighbours above and below. A <strong>right endpoint</strong> deletes <span class="m">s<sub>i</sub></span>, which makes its old neighbours adjacent, so they get tested. An <strong>intersection</strong> is reported, then <span class="m">s<sub>i</sub></span> and <span class="m">s<sub>j</sub></span> swap places, and each gets tested against its new outer neighbour.</p>
+  </figure>
+  <div class="prose">
+    <p>At an intersection, <span class="m">s<sub>i</sub></span> was above <span class="m">s<sub>j</sub></span> before <span class="m">p</span> and is below it after. So <span class="m">s<sub>i</sub></span> is now next to <span class="m">s<sub>j</sub></span>'s old lower neighbour <span class="m">b</span>, and <span class="m">s<sub>j</sub></span> is next to <span class="m">s<sub>i</sub></span>'s old upper neighbour <span class="m">a</span>. By the adjacency lemma, any future crossing involving either of them must first show up as one of these two new pairs, so those are exactly the ones to test.</p>
+    <p>When a left endpoint separates <span class="m">a</span> and <span class="m">b</span>, they're no longer adjacent. If a crossing of <span class="m">a</span> and <span class="m">b</span> is already queued to the right of <span class="m">ℓ</span>, it stays valid, because they may still meet. No action is needed.</p>
+    <p>T is a balanced BST holding at most <span class="m">n</span> segments, so each operation on it costs <span class="m">O(log n)</span>. Every event triggers a constant number of those operations and a constant number of <span class="m">O(1)</span> orientation tests, so each event costs <span class="m">O(log n)</span>.</p>
+  </div>
+</section>
+
+<section id="s11">
+  <h2><span class="dim"><i></i><b>11</b><i></i></span>The Bentley–Ottmann algorithm</h2>
+  <figure class="fig wide">
+<pre class="code"><span>Q ← all 2n endpoints, tagged left/right with their segment     <b class="c"># ordered by x, then y</b></span><span>T ← ∅</span><span><b class="kw">while</b> Q ≠ ∅:</span><span>    p ← Q.extract_min()                                        <b class="c"># next event point</b></span><span>    U ← { s : left endpoint of s is p }                         <b class="c"># segments starting at p</b></span><span>    L ← { s : right endpoint of s is p }                        <b class="c"># segments ending at p</b></span><span>    C ← { s ∈ T : p is in the interior of s }                   <b class="c"># segments passing through p</b></span><span>    <b class="kw">if</b> |U ∪ L ∪ C| ≥ 2: report p with all of U ∪ L ∪ C        <b class="c"># two or more segments meet at p</b></span><span>    delete L ∪ C from T                                         <b class="c"># they end, or must reorder, at p</b></span><span>    insert U ∪ C into T                                         <b class="c"># C re-inserted, so its order reverses</b></span><span>    <b class="kw">if</b> U ∪ C = ∅:                                              <b class="c"># p was only right endpoints</b></span><span>        a, b ← p's former upper and lower neighbours in T;  FIND-NEW-EVENT(a, b, p)</span><span>    <b class="kw">else</b>:</span><span>        s ← lowest of U ∪ C in T;   b ← neighbour below s;   FIND-NEW-EVENT(s, b, p)</span><span>        s′ ← highest of U ∪ C in T; a ← neighbour above s′;  FIND-NEW-EVENT(a, s′, p)</span><span></span><span>FIND-NEW-EVENT(s, t, p):</span><span>    <b class="kw">if</b> s and t cross at q, q comes after p in Q's order, and q ∉ Q:  Q.insert(q)</span></pre>
+  </figure>
+  <div class="call gotcha"><b>Gotcha</b><p>The slide's condition reads "q right of p, or q below p on ℓ". "Below" is from de Berg's textbook, which sweeps top to bottom. With this lecture's left-to-right sweep and Q ordered by <span class="m">x</span> then <span class="m">y</span>, the safe way to say it is "q comes after p in Q's order". The handler for a bundle of segments takes the lowest and highest of U ∪ C after the reorder, so all new adjacencies get tested.</p></div>
+  <div class="prose"><h3>Worked run</h3><p>Three segments: <span class="m">s₁</span> from (1, 2) to (11, 6), <span class="m">s₂</span> from (1, 7) to (9, 3), <span class="m">s₃</span> from (3, 1) to (6, 9). The event queue starts with all 6 endpoints sorted by <span class="m">x</span>. Step through it. Every number below is computed from these coordinates.</p></div>
+  <figure class="fig wide" id="f-run">
+    <div class="runwrap">
+      <svg class="plane" viewBox="0 0 600 420" role="img" aria-label="Worked run of the sweep"></svg>
+      <div class="runside"><span class="ms-label">T, top to bottom</span><div data-o="T"></div><span class="ms-label">Q, next events</span><div data-o="Q"></div></div>
+    </div>
+    <div class="controls"><button data-a="back">Back</button><button class="primary" data-a="next">Next event</button><button data-a="play">Play</button><button data-a="reset">Reset</button><button data-a="rand">Random segments</button><button data-a="lect">Lecture input</button></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <div class="tablewrap"><table class="t run" data-o="table"></table></div>
+    <p class="notice"><b>What to notice</b>The table fills one row per event. At <span class="m">x = 4.58</span>, testing <span class="m">s₂</span> against <span class="m">s₁</span> finds a crossing that's already queued, so the membership check stops a duplicate. The right endpoint of <span class="m">s₃</span> at <span class="m">x = 6</span> comes <em>before</em> the <span class="m">s₁×s₂</span> crossing at <span class="m">x ≈ 6.56</span>. Nine events in total: 6 endpoints plus <span class="m">K = 3</span> crossings.</p>
+  </figure>
+  <div class="call gotcha"><b>Gotcha</b><p>The slide's table rounds the crossings to <span class="m">x</span> = 4, 5 and 5.5. The exact values are 3.79, 4.58 and 6.56, so the <span class="m">s₁×s₂</span> crossing actually comes after <span class="m">s₃</span> ends at <span class="m">x</span> = 6, not before. Its "T after" column also lists segments bottom to top, by increasing <span class="m">y</span>. Here, T is always shown top to bottom.</p></div>
+</section>
+
+<section id="s12">
+  <h2><span class="dim"><i></i><b>12</b><i></i></span>Degeneracies</h2>
+  <figure class="fig wide" id="f-degen">
+    <div class="controls" style="margin-top:0"><div class="seg" role="group" aria-label="Case"><button data-c="bundle" aria-pressed="true">Many through one point</button><button data-c="vert" aria-pressed="false">Vertical segment</button><button data-c="touch" aria-pressed="false">Shared endpoint</button><button data-c="overlap" aria-pressed="false">Collinear overlap</button></div></div>
+    <svg class="plane" viewBox="0 0 900 300" role="img" aria-label="Degenerate cases for the sweep"></svg>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Real data is full of these cases. The fix is always the same shape: decide one rule, then apply it everywhere. For a bundle through one point, handle all of U ∪ L ∪ C as a single event, because swapping them two at a time can miss pairs.</p>
+  </figure>
+</section>
+
+<section id="s13">
+  <h2><span class="dim"><i></i><b>13</b><i></i></span>Running time</h2>
+  <div class="prose">
+    <p><strong>Events:</strong> <span class="m">2n</span> endpoint events, seeded up front, plus <span class="m">K</span> intersection events, one per crossing. That's <span class="m">O(n + K)</span> events.</p>
+    <p><strong>Cost per event:</strong> <span class="m">O(1)</span> orientation tests plus a constant number of operations on the balanced BSTs. T holds at most <span class="m">n</span> segments and Q at most <span class="m">2n + K ≤ 2n + n²</span> events, so each operation costs <span class="m">O(log n)</span>, because <span class="m">log(n²) = 2 log n</span>.</p>
+  </div>
+  <div class="eq">O(n + K) events × O(log n) each = <span class="t-green">O((n + K) log n)</span></div>
+  <figure class="fig wide" id="f-cost">
+    <div class="controls" style="margin-top:0"><label>n = <input type="range" min="1" max="6" step="0.05" value="4" data-k="n"><output data-o="n">10,000</output></label><label>k, where K = n<sup>k</sup> <input type="range" min="0" max="2" step="0.02" value="1" data-k="k"><output data-o="k">1.00</output></label></div>
+    <svg class="plane noTouchLock" viewBox="0 0 900 170" role="img" aria-label="Brute force versus sweep cost"></svg>
+    <div class="readout" data-o="cost"></div>
+    <p class="notice"><b>What to notice</b>With few crossings, the sweep wins by orders of magnitude. Push <span class="m">k</span> toward 2 (almost every pair crosses) and the sweep's <span class="m">K log n</span> overtakes brute force's <span class="m">n²/2</span>. That's the honest reading of "brute force is optimal only when <span class="m">K = Θ(n²)</span>". The bars use a log scale.</p>
+  </figure>
+  <div class="prose">
+    <p><strong>Space:</strong> as written, <span class="m">O(n + K)</span>. T never exceeds <span class="m">n</span> segments, but Q can hold every future crossing discovered so far. A known refinement keeps only crossings of currently adjacent pairs in Q, which brings space down to <span class="m">O(n)</span>.</p>
+    <p>The log factor comes from the balanced BSTs. Removing it, to <span class="m">O(n log n + K)</span>, needs fundamentally different machinery.</p>
+  </div>
+  <table class="guide wide">
+    <thead><tr><th>Algorithm</th><th>Time</th><th>Space</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Brute force</td><td>O(n²)</td><td>O(n)</td><td></td></tr>
+      <tr><td>Bentley–Ottmann (1979)</td><td>O((n + K) log n)</td><td>O(n)</td><td>with the refinement above</td></tr>
+      <tr><td>Chazelle–Edelsbrunner (1992)</td><td>O(n log n + K)</td><td>O(n + K)</td><td>first optimal, intricate</td></tr>
+      <tr><td>Clarkson–Shor, randomized</td><td>O(n log n + K) expected</td><td>O(n)</td><td>simple, randomized</td></tr>
+      <tr><td>Balaban (1995)</td><td>O(n log n + K)</td><td>O(n)</td><td>optimal and deterministic</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="s14">
+  <h2><span class="dim"><i></i><b>14</b><i></i></span>A restricted problem: wires between two lines</h2>
+  <div class="prose">
+    <p>Constrain the geometry. Put every segment's left endpoint on the line <span class="m">x = 0</span> and its right endpoint on <span class="m">x = 1</span>. Call segment <span class="m">i</span> wire <span class="m">w<sub>i</sub></span>: it runs from height <span class="m">a<sub>i</sub></span> on the left to height <span class="m">b<sub>i</sub></span> on the right, so a wire is just the pair of numbers <span class="m">(a<sub>i</sub>, b<sub>i</sub>)</span>. No two wires share a height on either side.</p>
+    <p>The geometry becomes purely combinatorial: only the <em>order</em> of the <span class="m">a</span>'s and of the <span class="m">b</span>'s matters, not the exact coordinates. Two wires cross exactly when they start in one vertical order and finish in the opposite one:</p>
+  </div>
+  <div class="eq">w<sub>i</sub> and w<sub>j</sub> cross ⟺ (a<sub>i</sub> − a<sub>j</sub>) · (b<sub>i</sub> − b<sub>j</sub>) &lt; 0</div>
+  <div class="prose">
+    <p>Now apply the usual trick: sort the wires by left position, so wire <span class="m">i</span> sits at left position <span class="m">i</span> (counting from the top). Let <span class="m">π(i)</span> be the rank of wire <span class="m">i</span>'s right endpoint, also counting from the top. In short, π is indexed by left order and returns right rank. Then for <span class="m">i &lt; j</span>, the wires cross exactly when <span class="m">π(i) &gt; π(j)</span>. That's an <strong>inversion</strong> of the permutation π.</p>
+  </div>
+  <figure class="fig wide" id="f-wires">
+    <div class="wirewrap">
+      <svg class="plane noTouchLock" viewBox="0 0 420 340" role="img" aria-label="Five wires between two vertical lines"></svg>
+      <div class="wireside"><div data-o="pi" class="pi"></div><div class="tablewrap"><table class="t" data-o="pairs"></table></div></div>
+    </div>
+    <div class="controls"><button data-a="lect">Lecture example</button><button data-a="shuf">Shuffle</button><button data-a="id">No crossings</button><button data-a="rev">Everything crosses</button></div>
+    <p class="notice"><b>What to notice</b>Click one right endpoint, then another, to swap them. Every crossing (green dot) matches exactly one row of the table where <span class="m">π(i) &gt; π(j)</span>, an inversion. The lecture's <span class="m">π = [1, 3, 0, 4, 2]</span> has 4: (0,2), (1,2), (1,4) and (3,4). Reversing everything gives all <span class="m">n(n−1)/2 = 10</span>. The double loop over pairs is still <span class="m">O(n²)</span>, though.</p>
+  </figure>
+</section>
+
+<section id="s15">
+  <h2><span class="dim"><i></i><b>15</b><i></i></span>Counting faster: cumulative sums</h2>
+  <div class="prose">
+    <p>Process the wires top to bottom. When wire <span class="m">i</span> arrives with right rank <span class="m">v = π(i)</span>, its new crossings are the earlier wires with a <em>larger</em> rank. Exactly <span class="m">i</span> values have been inserted so far, so that's <span class="m">i minus the number of inserted values that are ≤ v</span>. In picture terms: does this wire slope upward, and if so, how many earlier wires does it cut across?</p>
+    <p>So we need a structure that records "value <span class="m">v</span> was seen" and answers "how many seen values are <span class="m">≤ v</span>?". Keep an indicator array <span class="m">A</span>, with <span class="m">A[k] = 1</span> when value <span class="m">k − 1</span> has been inserted (shifted by 1 to land on positions 1..n). The question is a prefix sum, <span class="m">S[k] = A[1] + … + A[k]</span>.</p>
+  </div>
+  <figure class="fig wide" id="f-cum">
+    <div class="controls" style="margin-top:0"><div class="seg" role="group" aria-label="Structure"><button data-m="one" aria-pressed="true">One running sum</button><button data-m="half" aria-pressed="false">Split in half</button><button data-m="bit" aria-pressed="false">Fenwick tree</button></div>
+      <label>Query S(k), k <input type="range" min="1" max="8" value="7" data-k="k"><output data-o="k">7</output></label></div>
+    <div class="cum" data-o="cum"></div>
+    <div class="readout" data-o="cumr"></div>
+    <p class="notice"><b>What to notice</b>Click a cell of <span class="m">A</span> to insert or remove a value. Red outlines are the stored entries that update had to change. Amber ones are the entries the query reads. With one running sum, a query reads 1 entry, but an update near the front rewrites almost all of them: <span class="m">O(n)</span>. Splitting in half caps an update at its own half, and <span class="m">S(7) = S<sub>L</sub>(4) + S<sub>R</sub>(3) = 1 + 2 = 3</span>. Keep splitting and both operations touch only <span class="m">O(log n)</span> entries. That's the Fenwick tree.</p>
+  </figure>
+</section>
+
+<section id="s16">
+  <h2><span class="dim"><i></i><b>16</b><i></i></span>The Fenwick tree (binary indexed tree)</h2>
+  <div class="prose">
+    <p>A Fenwick tree is a small array that answers running-total questions fast. It supports <span class="m">update(pos, Δ)</span>, which adds <span class="m">Δ</span> at position <span class="m">pos</span>, and <span class="m">query(pos)</span>, which returns the total at positions <span class="m">≤ pos</span>. Both are <span class="m">O(log n)</span>. It collapses the recursive halving into one flat array indexed 1..n, where position <span class="m">i</span> stores the sum of a range of length <span class="m">lowbit(i) = i &amp; (−i)</span>, the value of <span class="m">i</span>'s lowest set bit.</p>
+    <div class="call def"><b>The range rule</b><p><span class="m">BIT[i]</span> covers <span class="m">[i − lowbit(i) + 1, i]</span>: the <span class="m">lowbit(i)</span> entries ending at <span class="m">i</span>. For example, <span class="m">BIT[6]</span> covers <span class="m">[5, 6]</span> and <span class="m">BIT[4]</span> covers <span class="m">[1, 4]</span>.</p></div>
+    <p>Why <span class="m">i &amp; (−i)</span>? Two's complement negation flips every bit and adds 1. For <span class="m">6 = 0110₂</span>, <span class="m">−6 = 1010₂</span>, and <span class="m">0110 &amp; 1010 = 0010₂ = 2</span>. Everything below the lowest 1-bit cancels to 0, everything above it cancels too, and just that one bit survives. We index from 1 because 0 has no set bit, so it could never own a range.</p>
+  </div>
+  <figure class="fig wide" id="f-bit">
+    <svg class="plane noTouchLock" viewBox="0 0 900 400" role="img" aria-label="Fenwick tree ranges and tree"></svg>
+    <div class="controls"><div class="seg" role="group" aria-label="Operation"><button data-m="q" aria-pressed="true">query(pos): walk down</button><button data-m="u" aria-pressed="false">update(pos): walk up</button></div>
+      <label>pos <input type="range" min="1" max="8" value="7" data-k="pos"><output data-o="pos">7</output></label>
+      <div class="seg" role="group" aria-label="Size"><button data-n="8" aria-pressed="true">n = 8</button><button data-n="16" aria-pressed="false">n = 16</button></div></div>
+    <div class="readout" data-o="lowbit"></div>
+    <div class="tablewrap"><table class="t" data-o="steps"></table></div>
+    <p class="notice"><b>What to notice</b>The bars are the ranges each <span class="m">BIT[i]</span> covers, and the tree below links each <span class="m">i</span> to its parent <span class="m">i + lowbit(i)</span>. A <strong>query</strong> walks down with <span class="m">pos ← pos − lowbit(pos)</span>, clearing the lowest set bit each time, and its bars tile <span class="m">[1, pos]</span> exactly. A <strong>update</strong> walks up with <span class="m">pos ← pos + lowbit(pos)</span>, touching exactly the ranges that contain <span class="m">pos</span>. The array holds the lecture's data (values 1, 4 and 6 inserted), so <span class="m">query(7) = BIT[7] + BIT[6] + BIT[4] = 3</span>, and <span class="m">update(3)</span> touches 3, 4 and 8.</p>
+  </figure>
+  <div class="call gotcha"><b>Gotcha</b><p>One slide writes the range as <span class="m">[pos − lowbit(pos), pos]</span>. That's off by one: <span class="m">pos = 2</span> would give <span class="m">[0, 2]</span>, three entries for a length-2 range. The table on that same slide uses the correct <span class="m">[pos − lowbit(pos) + 1, pos]</span>.</p></div>
+</section>
+
+<section id="s17">
+  <h2><span class="dim"><i></i><b>17</b><i></i></span>Counting inversions with a Fenwick tree</h2>
+<figure class="fig wide"><pre class="code"><span><b class="kw">function</b> count_inversions(π):</span><span>    total ← 0;  BIT ← all zeros</span><span>    <b class="kw">for</b> i = 0 <b class="kw">to</b> n − 1:</span><span>        v ← π[i]</span><span>        total ← total + (i − query(v + 1))     <b class="c"># i inserted so far, minus those ≤ v, leaves those &gt; v</b></span><span>        update(v + 1, +1)                      <b class="c"># mark v as inserted</b></span><span>    <b class="kw">return</b> total</span></pre></figure>
+  <div class="prose"><p>By step <span class="m">i</span>, exactly <span class="m">i</span> values sit in the tree, and <span class="m">query(v + 1)</span> counts how many are <span class="m">≤ v</span>. So <span class="m">i − query(v + 1)</span> is precisely the number of earlier indices with a larger value: the new inversions where <span class="m">i</span> is the later index. Summing over every <span class="m">i</span> counts each inversion exactly once. The +1 shift maps values <span class="m">0..n−1</span> onto the tree's positions <span class="m">1..n</span>.</p></div>
+  <figure class="fig wide" id="f-inv">
+    <div class="wirewrap">
+      <svg class="plane noTouchLock" viewBox="0 0 420 340" role="img" aria-label="Wires processed one by one with a Fenwick tree"></svg>
+      <div class="wireside"><span class="ms-label">BIT array after this step</span><div class="bitrow" data-o="bit"></div><div class="tablewrap"><table class="t" data-o="rows"></table></div></div>
+    </div>
+    <div class="controls"><button data-a="back">Back</button><button class="primary" data-a="next">Next wire</button><button data-a="play">Play</button><button data-a="reset">Reset</button><button data-a="lect">Lecture π</button><button data-a="rand">Random π, n = 8</button></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>The current wire is amber. Its new crossings (green dots) are exactly the earlier wires that end below it, and their count is <span class="m">i − query(π[i] + 1)</span>. In the BIT row, amber outlines are the cells <span class="m">query</span> read and blue ones are the cells <span class="m">update</span> changed: about <span class="m">log n</span> each. For the lecture's π, the totals go 0, 0, 2, 2, 4.</p>
+  </figure>
+  <div class="eq">n iterations × O(log n) each = <span class="t-green">O(n log n)</span>, down from Θ(n²) for the double loop</div>
+  <div class="call aha"><b>Why the lecture calls this dynamic programming</b><p>DP means breaking a problem into overlapping subproblems, solving each once and reusing the cached result. Here the subproblem always has the same shape: how many values <span class="m">≤ v</span> have been inserted so far? Each <span class="m">BIT[pos]</span> caches the answer for one fixed range, and that cached value is reused by every later query whose range includes it. Any prefix sum is assembled from <span class="m">O(log n)</span> of those cached pieces, never rebuilt from scratch. For example, <span class="m">query(4)</span> is <span class="m">BIT[4]</span> alone, and <span class="m">query(5) = BIT[5] + BIT[4]</span> reuses that same piece. The DP table is the BIT array itself.</p></div>
+</section>
+
+<section id="s18">
+  <h2><span class="dim"><i></i><b>18</b><i></i></span>Wrap-up</h2>
+  <table class="guide wide">
+    <thead><tr><th>Variant</th><th>Technique</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>Any n segments, detect a crossing</td><td>Partial plane sweep: stop at the first crossing found</td><td>Θ(n log n), optimal</td></tr>
+      <tr><td>Any n segments, report all K</td><td>Bentley–Ottmann sweep</td><td>O((n + K) log n)</td></tr>
+      <tr><td>Any n segments, report all K optimally</td><td>Balaban, or Chazelle–Edelsbrunner</td><td>O(n log n + K)</td></tr>
+      <tr><td>Parallel-line wires, count crossings</td><td>Inversions with a Fenwick tree (DP)</td><td>Θ(n log n)</td></tr>
+      <tr><td>Almost every pair crosses (K ≈ n²)</td><td>Brute force is just as good: you have to list K things anyway</td><td>O(n²)</td></tr>
+    </tbody>
+  </table>
+  <h3>Takeaways</h3>
+  <ol class="take">
+    <li>A segment is <span class="m">A + t(B − A)</span> with <span class="m">t ∈ [0, 1]</span>. Solving for <span class="m">t</span> and <span class="m">s</span> works, but it divides by a determinant that vanishes for parallel segments.</li>
+    <li>The orientation test is one sign, computed with only multiplication and subtraction. Four calls decide whether two segments cross, in <span class="m">O(1)</span>.</li>
+    <li>Plane sweep turns a 2D problem into a 1D one that changes only at events: starts, ends and crossings.</li>
+    <li>Adjacency lemma: two segments that cross must be neighbours in T just before they cross. So testing only new neighbours is enough.</li>
+    <li>Q (events by <span class="m">x</span>, then <span class="m">y</span>) and T (status by <span class="m">y</span>, compared with orientation) are both balanced BSTs. That's <span class="m">O(log n)</span> per event, and <span class="m">O((n + K) log n)</span> overall.</li>
+    <li>When every segment spans two parallel lines, crossings are exactly the inversions of a permutation.</li>
+    <li>A Fenwick tree caches range sums of length <span class="m">lowbit(i)</span>, so prefix queries and updates are both <span class="m">O(log n)</span>. That counts inversions in <span class="m">O(n log n)</span>.</li>
+  </ol>
+  <h3>How it connects to part 1</h3>
+  <p class="prose">Both lectures order points along a vertical line. Closest pair split the plane once per level and examined a y-sorted strip around the line. Bentley–Ottmann <em>moves</em> the line and keeps the y-order alive in a BST. In both, a geometric fact (packing there, adjacency here) limits each step to a constant amount of work.</p>
+  <h3>Check yourself</h3>
+  <details class="q"><summary>Orient(p, q, r) = −5. Which way do you turn going p → q → r?</summary><p>Right: a clockwise turn. <span class="m">r</span> lies to the right of the ray <span class="m">p → q</span>.</p></details>
+  <details class="q"><summary>Orient(A,B,C) and Orient(A,B,D) have opposite signs, but Orient(C,D,A) and Orient(C,D,B) are both positive. Do the segments cross?</summary><p>No. Line AB separates C from D, but A and B are on the same side of line CD. The lines cross somewhere outside segment CD.</p></details>
+  <details class="q"><summary>A segment's right endpoint is processed. How many new pairs are tested?</summary><p>At most one: its former upper and lower neighbours, which have just become adjacent. If it was at the top or bottom of T, there's nothing to test.</p></details>
+  <details class="q"><summary>Why can't Bentley–Ottmann miss a crossing that's discovered late?</summary><p>By the adjacency lemma, the two segments are neighbours in T at some sweep position strictly left of the crossing. They're tested the moment they become neighbours, so the crossing is in Q before ℓ reaches it.</p></details>
+  <details class="q"><summary>π = [2, 0, 3, 1]. How many wire crossings are there?</summary><p>3 inversions: (0,1) since 2 &gt; 0, (0,3) since 2 &gt; 1, and (2,3) since 3 &gt; 1. So 3 crossings.</p></details>
+  <details class="q"><summary>Which BIT entries does query(6) read, and which does update(5) touch, for n = 8?</summary><p>query(6) reads BIT[6], which covers [5, 6], then BIT[4], which covers [1, 4]. update(5) touches BIT[5], BIT[6] and BIT[8]: 5 → 5 + 1 = 6 → 6 + 2 = 8.</p></details>
+</section>
+</main>
+<footer class="wrap">Part 2 of the COMS3005A series, based on the lecture 8 slides. Part 1 covered closest pair of points. Every figure on this page runs the algorithm it shows.</footer>
+
+<script>
+/* ===== Core: orientation, segment tests, Bentley–Ottmann (logged), Fenwick tree ===== */
+const G = (() => {
+  const orient = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  const sgn = v => (v > 0 ? 1 : v < 0 ? -1 : 0);
+  const onBox = (p, q, r) => Math.min(p.x, q.x) <= r.x && r.x <= Math.max(p.x, q.x) && Math.min(p.y, q.y) <= r.y && r.y <= Math.max(p.y, q.y);
+  /* Classify segments AB and CD using only orientation tests (exact for integer coordinates). */
+  function classify(A, B, C, D) {
+    const o1 = orient(A, B, C), o2 = orient(A, B, D), o3 = orient(C, D, A), o4 = orient(C, D, B);
+    const s = [sgn(o1), sgn(o2), sgn(o3), sgn(o4)], o = [o1, o2, o3, o4];
+    if (s.every(v => v === 0)) {
+      const overlap = onBox(A, B, C) || onBox(A, B, D) || onBox(C, D, A) || onBox(C, D, B);
+      return { o, s, kind: overlap ? 'collinear-overlap' : 'collinear-apart', hit: overlap };
+    }
+    if (s[0] * s[1] < 0 && s[2] * s[3] < 0) return { o, s, kind: 'proper', hit: true };
+    if ((s[0] === 0 && onBox(A, B, C)) || (s[1] === 0 && onBox(A, B, D)) || (s[2] === 0 && onBox(C, D, A)) || (s[3] === 0 && onBox(C, D, B)))
+      return { o, s, kind: 'touch', hit: true };
+    return { o, s, kind: 'none', hit: false };
+  }
+  /* Intersection point of two segments (assumes they properly cross) */
+  function point(A, B, C, D) {
+    const den = (B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x);
+    const t = ((C.x - A.x) * (D.y - C.y) - (C.y - A.y) * (D.x - C.x)) / den;
+    return { x: A.x + t * (B.x - A.x), y: A.y + t * (B.y - A.y) };
+  }
+  const crosses = (s, t) => classify(s.a, s.b, t.a, t.b).kind === 'proper';
+  const yAt = (s, x) => s.a.y + (s.b.y - s.a.y) * (x - s.a.x) / (s.b.x - s.a.x);
+
+  function brute(segs) {
+    const out = []; let tests = 0;
+    for (let i = 0; i < segs.length; i++) for (let j = i + 1; j < segs.length; j++) {
+      tests++;
+      if (crosses(segs[i], segs[j])) out.push({ s: segs[i], t: segs[j], p: point(segs[i].a, segs[i].b, segs[j].a, segs[j].b) });
+    }
+    return { out, tests };
+  }
+
+  /* Bentley–Ottmann for segments in general position (no verticals, no shared x among events,
+     no three segments through a point). Status T is kept top→bottom. Every event is logged. */
+  function sweep(segs) {
+    const Q = [], key = (s, t) => s.id < t.id ? s.id + '|' + t.id : t.id + '|' + s.id, inQ = new Set();
+    for (const s of segs) { Q.push({ x: s.a.x, y: s.a.y, type: 'L', s }); Q.push({ x: s.b.x, y: s.b.y, type: 'R', s }); }
+    const order = (e, f) => (e.x - f.x) || (e.y - f.y);
+    Q.sort(order);
+    const T = [], log = [], found = [];
+    let tests = 0;
+    while (Q.length) {
+      const e = Q.shift();
+      const tested = [], gained = [];
+      const test = (s, t) => {
+        if (!s || !t) return;
+        tests++;
+        const hit = crosses(s, t);
+        let p = null, isNew = false;
+        if (hit) {
+          p = point(s.a, s.b, t.a, t.b);
+          const k = key(s, t);
+          // schedule only if it comes after the current event in Q's order
+          if (order(p, e) > 0 && !inQ.has(k)) {
+            inQ.add(k); isNew = true;
+            const ev = { x: p.x, y: p.y, type: 'X', s: yAt(s, e.x + 1e-7) > yAt(t, e.x + 1e-7) ? s : t, t: null };
+            ev.t = ev.s === s ? t : s; // ev.s is the upper one before the crossing
+            Q.push(ev); Q.sort(order); gained.push(ev);
+          }
+        }
+        tested.push({ s, t, hit, p, isNew });
+      };
+      let note = '';
+      if (e.type === 'L') {
+        // binary-search style insertion using orientation: p above t  <=>  orient(t.a, t.b, p) > 0
+        let i = 0; while (i < T.length && orient(T[i].a, T[i].b, e.s.a) < 0) i++;
+        T.splice(i, 0, e.s);
+        test(T[i - 1], e.s); test(e.s, T[i + 1]);
+      } else if (e.type === 'R') {
+        const i = T.indexOf(e.s), a = T[i - 1], b = T[i + 1];
+        T.splice(i, 1);
+        test(a, b);
+      } else {
+        const i = T.indexOf(e.s), j = T.indexOf(e.t);
+        found.push(e);
+        // swap: the upper one (index i) moves below
+        T[i] = e.t; T[j] = e.s;
+        const top = Math.min(i, j), bot = Math.max(i, j);
+        test(T[top - 1], T[top]); test(T[bot], T[bot + 1]);
+      }
+      log.push({ e, T: T.slice(), tested, gained, Q: Q.slice(), found: found.slice(), tests });
+    }
+    return { log, found, tests };
+  }
+
+  /* Fenwick tree with logged walks */
+  const lowbit = i => i & (-i);
+  function fenwick(n) {
+    const bit = new Array(n + 1).fill(0);
+    return {
+      bit, n,
+      update(pos, d) { const path = []; while (pos <= n) { bit[pos] += d; path.push(pos); pos += lowbit(pos); } return path; },
+      query(pos) { let s = 0; const path = []; while (pos > 0) { s += bit[pos]; path.push(pos); pos -= lowbit(pos); } return { s, path }; },
+    };
+  }
+  function inversionsBrute(p) { const out = []; for (let i = 0; i < p.length; i++) for (let j = i + 1; j < p.length; j++) if (p[i] > p[j]) out.push([i, j]); return out; }
+  function inversionsBIT(p) {
+    const F = fenwick(p.length), rows = []; let total = 0;
+    p.forEach((v, i) => {
+      const q = F.query(v + 1), add = i - q.s; total += add;
+      const up = F.update(v + 1, 1);
+      rows.push({ i, v, pos: v + 1, q: q.s, qpath: q.path, add, total, upath: up, bit: F.bit.slice() });
+    });
+    return { total, rows };
+  }
+  return { orient, sgn, classify, point, crosses, yAt, brute, sweep, lowbit, fenwick, inversionsBrute, inversionsBIT };
+})();
+
+
+</script>
+<script>
+/* ===== Shared helpers ===== */
+const NS = 'http://www.w3.org/2000/svg';
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = { ink: '#17212b', ink2: '#4a5662', ink3: '#7c8892', rule: '#c3cdc8', paper: '#fbfcfb',
+  delta: '#2a46c8', deltaT: 'rgba(42,70,200,.13)', deltaTT: 'rgba(42,70,200,.06)',
+  best: '#0b7f53', bestT: 'rgba(11,127,83,.12)', active: '#b07400', activeT: 'rgba(176,116,0,.12)',
+  waste: '#c0263a', wasteT: 'rgba(192,38,58,.12)' };
+function S(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) { if (k === 'text') e.textContent = attrs[k]; else if (attrs[k] != null) e.setAttribute(k, attrs[k]); }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const $ = (root, sel) => root.querySelector(sel);
+const $$ = (root, sel) => Array.from(root.querySelectorAll(sel));
+const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const fmt = (n, d = 0) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function vb(svg) { const v = svg.viewBox.baseVal; return { W: v.width, H: v.height }; }
+function toData(svg, e) {
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  const q = p.matrixTransform(svg.getScreenCTM().inverse());
+  return { x: q.x, y: vb(svg).H - q.y };
+}
+/* A point drawn in y-up data coords. Returns the group. */
+function dot(parent, p, i, H, o = {}) {
+  const g = S('g', { 'data-idx': i, class: 'pt' + (o.drag ? ' drag' : '') }, parent);
+  if (o.drag) {
+    g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', (o.label || 'Point ' + (i + 1)) + '. Arrow keys move it.');
+    S('circle', { cx: p.x, cy: H - p.y, r: o.hit || 15, fill: 'transparent' }, g);
+  } else if (o.hit) S('circle', { cx: p.x, cy: H - p.y, r: o.hit, fill: 'transparent' }, g);
+  S('circle', { class: 'vis', cx: p.x, cy: H - p.y, r: o.r || 5.5, fill: o.ring ? '#fff' : (o.fill || C.ink),
+    stroke: o.stroke || C.ink, 'stroke-width': o.ring ? (o.sw || 2) : (o.sw || 0), opacity: o.op ?? 1 }, g);
+  return g;
+}
+/* Drag + keyboard behaviour for point sets */
+function draggable(svg, o) {
+  let drag = null;
+  svg.addEventListener('pointerdown', e => {
+    const t = e.target.closest('[data-idx]');
+    if (t && +t.dataset.idx >= 0 && (!o.can || o.can(+t.dataset.idx))) { drag = +t.dataset.idx; svg.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+    if (o.onEmpty) o.onEmpty(toData(svg, e), e);
+  });
+  svg.addEventListener('pointermove', e => {
+    if (drag == null) { if (o.onHover) o.onHover(toData(svg, e)); return; }
+    const p = toData(svg, e), q = o.pts()[drag];
+    q.x = p.x; q.y = p.y; if (o.clamp) o.clamp(q, drag); o.draw();
+  });
+  const up = () => { drag = null; };
+  svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  svg.addEventListener('pointerleave', () => { if (drag == null && o.onLeave) o.onLeave(); });
+  svg.addEventListener('keydown', e => {
+    const t = e.target.closest('[data-idx]'); if (!t || +t.dataset.idx < 0) return;
+    const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (!k) return;
+    e.preventDefault();
+    const i = +t.dataset.idx, q = o.pts()[i], s = (o.step || 4) * (e.shiftKey ? 5 : 1);
+    q.x += k[0] * s; q.y += k[1] * s; if (o.clamp) o.clamp(q, i); o.draw();
+    const n = svg.querySelector(`[data-idx="${i}"]`); if (n) n.focus();
+  });
+}
+const clampBox = (x0, y0, x1, y1) => q => { q.x = Math.max(x0, Math.min(x1, q.x)); q.y = Math.max(y0, Math.min(y1, q.y)); };
+/* Dimension lines — the page's signature mark. Screen coords. */
+function arrowHead(g, x, y, dir, col) { // dir: 'l','r','u','d'
+  const s = 6, w = 3.5;
+  const pts = { l: [[x, y], [x + s, y - w], [x + s, y + w]], r: [[x, y], [x - s, y - w], [x - s, y + w]],
+    u: [[x, y], [x - w, y + s], [x + w, y + s]], d: [[x, y], [x - w, y - s], [x + w, y - s]] }[dir];
+  S('polygon', { points: pts.map(p => p.join(',')).join(' '), fill: col }, g);
+}
+function dimH(g, x1, x2, y, label, col = C.delta, above = true) {
+  if (x2 < x1) [x1, x2] = [x2, x1];
+  S('line', { x1, x2, y1: y, y2: y, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1, x2: x1, y1: y - 6, y2: y + 6, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1: x2, x2, y1: y - 6, y2: y + 6, stroke: col, 'stroke-width': 1.4 }, g);
+  if (x2 - x1 > 16) { arrowHead(g, x1, y, 'l', col); arrowHead(g, x2, y, 'r', col); }
+  if (label) S('text', { x: (x1 + x2) / 2, y: above ? y - 8 : y + 18, 'text-anchor': 'middle', class: 'lbl', fill: col, text: label }, g);
+}
+function dimV(g, x, y1, y2, label, col = C.delta, left = true) {
+  if (y2 < y1) [y1, y2] = [y2, y1];
+  S('line', { x1: x, x2: x, y1, y2, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1: x - 6, x2: x + 6, y1, y2: y1, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1: x - 6, x2: x + 6, y1: y2, y2, stroke: col, 'stroke-width': 1.4 }, g);
+  if (y2 - y1 > 16) { arrowHead(g, x, y1, 'u', col); arrowHead(g, x, y2, 'd', col); }
+  if (label) S('text', { x: left ? x - 9 : x + 9, y: (y1 + y2) / 2 + 4, 'text-anchor': left ? 'end' : 'start', class: 'lbl', fill: col, text: label }, g);
+}
+function seg(g, a, b, H, o = {}) {
+  return S('line', { x1: a.x, y1: H - a.y, x2: b.x, y2: H - b.y, stroke: o.c || C.ink, 'stroke-width': o.w || 2,
+    'stroke-dasharray': o.dash || null, opacity: o.op ?? 1, 'stroke-linecap': 'round' }, g);
+}
+function label(g, x, y, text, o = {}) {
+  const t = S('text', { x, y, 'text-anchor': o.anchor || 'middle', class: o.cls || 'lbl', fill: o.c || C.ink, text }, g);
+  if (o.halo !== false) { t.setAttribute('paint-order', 'stroke'); t.setAttribute('stroke', '#fbfcfb'); t.setAttribute('stroke-width', '4'); t.setAttribute('stroke-linejoin', 'round'); }
+  return t;
+}
+function subText(g, x, y, main, sub, rest = '', o = {}) {
+  const t = S('text', { x, y, 'text-anchor': o.anchor || 'middle', class: o.cls || 'lbl-d', fill: o.c || C.ink2 }, g);
+  t.appendChild(document.createTextNode(main)); S('tspan', { 'baseline-shift': 'sub', 'font-size': '11', text: sub }, t);
+  if (rest) t.appendChild(document.createTextNode(rest)); return t;
+}
+function player(btn, stepFn, ms = 650) {
+  let id = null;
+  const stop = () => { if (id) { clearInterval(id); id = null; btn.textContent = 'Play'; } };
+  btn.addEventListener('click', () => {
+    if (id) return stop();
+    btn.textContent = 'Pause';
+    id = setInterval(() => { if (!stepFn()) stop(); }, RM ? Math.max(ms, 900) : ms);
+  });
+  return stop;
+}
+function randomPoints(n, W, H, m, minD, r = Math.random) {
+  const P = []; let tries = 0;
+  while (P.length < n && tries < 20000) {
+    tries++;
+    const p = { id: P.length, x: m + r() * (W - 2 * m), y: m + r() * (H - 2 * m) };
+    if (P.every(q => CP.dist(p, q) > minD)) P.push(p);
+  }
+  return P;
+}
+const lg = x => Math.log2(x);
+function human(us) {
+  const s = us / 1e6;
+  if (s < 1e-3) return fmt(us, 0) + ' µs';
+  if (s < 1) return fmt(s * 1e3, 1) + ' ms';
+  if (s < 120) return fmt(s, 1) + ' s';
+  if (s < 7200) return fmt(s / 60, 1) + ' min';
+  if (s < 172800) return fmt(s / 3600, 1) + ' hours';
+  if (s < 3.15e7 * 2) return fmt(s / 86400, 1) + ' days';
+  return fmt(s / 3.156e7, 1) + ' years';
+}
+
+
+/* ===== Part 2 helpers ===== */
+const SUBD = '₀₁₂₃₄₅₆₇₈₉';
+const subN = n => String(n).split('').map(c => SUBD[+c]).join('');
+const nm = s => 's' + subN(s.id);
+const pairName = (s, t) => s.id < t.id ? `${nm(s)}×${nm(t)}` : `${nm(t)}×${nm(s)}`;
+/* random segments in general position inside [x0,x1]×[y0,y1] */
+function genSegs(n, x0, x1, y0, y1, minLen, maxLen, gap) {
+  for (let tries = 0; tries < 400; tries++) {
+    const S = [];
+    let guard = 0;
+    while (S.length < n && guard++ < 5000) {
+      const len = minLen + Math.random() * (maxLen - minLen), ang = (Math.random() - .5) * Math.PI * .8;
+      const ax = x0 + Math.random() * (x1 - x0), ay = y0 + Math.random() * (y1 - y0);
+      const bx = ax + len * Math.cos(ang), by = ay + len * Math.sin(ang);
+      if (bx > x1 || by < y0 || by > y1 || bx - ax < gap * 4) continue;
+      S.push({ id: S.length + 1, a: { x: ax, y: ay }, b: { x: bx, y: by } });
+    }
+    const xs = []; S.forEach(s => xs.push(s.a.x, s.b.x));
+    const X = G.brute(S).out; X.forEach(o => xs.push(o.p.x));
+    xs.sort((p, q) => p - q);
+    let ok = S.length === n;
+    for (let i = 1; i < xs.length && ok; i++) if (xs[i] - xs[i - 1] < gap) ok = false;
+    for (let i = 0; i < X.length && ok; i++) for (let j = i + 1; j < X.length; j++) if (Math.hypot(X[i].p.x - X[j].p.x, X[i].p.y - X[j].p.y) < gap * 2) { ok = false; break; }
+    if (ok) return S;
+  }
+  return null;
+}
+/* draw a sweep scene at position X using a G.sweep() result */
+function sweepState(res, X) { let k = -1; for (let i = 0; i < res.log.length; i++) if (res.log[i].e.x <= X) k = i; return k; }
+function drawSweep(svg, segs, res, X, o) {
+  const H = o.H, map = o.map || (p => p), sx = x => map({ x, y: 0 }).x;
+  const k = o.k != null ? o.k : sweepState(res, X), L = k >= 0 ? res.log[k] : null;
+  const T = L ? L.T : [], found = L ? L.found : [], pending = L ? L.Q.filter(e => e.type === 'X') : [];
+  const tset = new Set(T);
+  for (const s of segs) {
+    const A = map(s.a), B = map(s.b), act = tset.has(s);
+    S('line', { x1: A.x, y1: H - A.y, x2: B.x, y2: H - B.y, stroke: act ? C.ink : C.ink3, 'stroke-width': act ? 2.3 : 1.5, opacity: act ? 1 : (s.b.x < X ? .5 : .38), 'stroke-linecap': 'round' }, svg);
+    S('circle', { cx: A.x, cy: H - A.y, r: o.er || 3.8, fill: C.ink, opacity: act ? 1 : .5 }, svg);
+    S('circle', { cx: B.x, cy: H - B.y, r: o.er || 3.8, fill: '#fff', stroke: C.ink, 'stroke-width': 1.6, opacity: act ? 1 : .5 }, svg);
+    if (o.labels) label(svg, A.x - 6, H - A.y + 4, nm(s), { anchor: 'end', c: act ? C.ink : C.ink3 });
+  }
+  if (o.ghost) {
+    const known = new Set([...found, ...pending].map(e => pairName(e.s, e.t)));
+    for (const g of o.all) if (!known.has(pairName(g.s, g.t))) { const P = map(g.p); S('circle', { cx: P.x, cy: H - P.y, r: 3.5, fill: C.ink3, opacity: .5 }, svg); }
+  }
+  for (const e of pending) { const P = map(e); S('circle', { cx: P.x, cy: H - P.y, r: 6.5, fill: 'none', stroke: C.active, 'stroke-width': 2.4 }, svg); }
+  for (const e of found) { const P = map(e); S('circle', { cx: P.x, cy: H - P.y, r: 5.5, fill: C.best }, svg); }
+  const lx = sx(X);
+  S('line', { x1: lx, x2: lx, y1: o.top ?? 0, y2: o.bottom ?? H, stroke: C.delta, 'stroke-width': 2.2 }, svg);
+  S('rect', { x: lx - 11, y: (o.top ?? 0), width: 22, height: 18, rx: 4, fill: C.delta }, svg);
+  S('text', { x: lx, y: (o.top ?? 0) + 13.5, 'text-anchor': 'middle', class: 'lbl', fill: '#fff', text: 'ℓ' }, svg);
+  T.forEach(s => { const P = map({ x: X, y: G.yAt(s, X) }); S('circle', { cx: lx, cy: H - P.y, r: 3.3, fill: C.delta }, svg); });
+  return { k, L, T, found, pending };
+}
+const chipsT = T => T.length ? T.map(s => `<span class="tchip">${nm(s)}</span>`).join('') : '<span class="k">empty</span>';
+
+/* ===== Hero: live sweep ===== */
+(function () {
+  const f = document.getElementById('f-hero'), svg = $(f, 'svg');
+  const narrow = svg.getBoundingClientRect().width < 600;
+  if (narrow) svg.setAttribute('viewBox', '0 0 480 560');
+  const { W, H } = vb(svg);
+  const sl = $(f, '[data-k=n]');
+  let segs, res, all, X = 0, ghost = false, raf = null;
+  function load() {
+    const n = +sl.value; $(f, '[data-o=n]').textContent = n;
+    segs = genSegs(n, 20, W - 20, 24, H - 16, 60, narrow ? 240 : 380, 0.6) || genSegs(n, 20, W - 20, 24, H - 16, 40, 200, 0.3);
+    res = G.sweep(segs); all = G.brute(segs).out; X = 6;
+  }
+  function draw() {
+    svg.textContent = '';
+    const st = drawSweep(svg, segs, res, X, { H, labels: segs.length <= 18, ghost, all, top: 0 });
+    const n = segs.length, tests = st.L ? st.L.tests : 0;
+    $(f, '[data-o=stats]').innerHTML = `<span><span class="k">segments</span> <span class="v">${n}</span></span>` +
+      `<span><span class="k">events so far</span> <span class="v">${st.k + 1} / ${res.log.length}</span></span>` +
+      `<span><span class="k">crossings reported</span> <span class="v" style="color:var(--best)">${st.found.length}</span> <span class="k">of K = ${all.length}</span></span>` +
+      `<span><span class="k">pair tests by the sweep</span> <span class="v" style="color:var(--active)">${tests}</span></span>` +
+      `<span><span class="k">brute force tests</span> <span class="v" style="color:var(--waste)">${n * (n - 1) / 2}</span></span>`;
+    $(f, '[data-o=T]').innerHTML = `<span class="k">T at ℓ, top to bottom:</span> ${chipsT(st.T)}`;
+  }
+  const stop = () => { if (raf) { cancelAnimationFrame(raf); clearInterval(raf); raf = null; $(f, '[data-a=play]').textContent = 'Play the sweep'; } };
+  $(f, '[data-a=play]').onclick = () => {
+    if (raf) return stop();
+    if (X >= W - 5) X = 0;
+    $(f, '[data-a=play]').textContent = 'Pause';
+    if (RM) { raf = setInterval(() => { const nx = res.log.find(L => L.e.x > X + 1e-6); if (!nx) return stop(); X = nx.e.x + 0.01; draw(); }, 700); return; }
+    let last = performance.now();
+    const tick = t => { X += (t - last) * W / 9000; last = t; if (X >= W) { X = W; draw(); return stop(); } draw(); raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+  };
+  $(f, '[data-a=next]').onclick = () => { stop(); const nx = res.log.find(L => L.e.x > X + 1e-6); if (nx) { X = nx.e.x + 0.01; draw(); } };
+  $(f, '[data-a=prev]').onclick = () => { stop(); const pv = res.log.filter(L => L.e.x < X - 0.02).pop(); X = pv ? pv.e.x + 0.01 : 0; if (pv) { const pp = res.log.filter(L => L.e.x < pv.e.x - 1e-6).pop(); X = pp ? pp.e.x + 0.01 : 0; } draw(); };
+  $(f, '[data-a=new]').onclick = () => { stop(); load(); draw(); };
+  sl.addEventListener('input', () => { stop(); load(); draw(); });
+  const gb = $(f, '[data-a=ghost]'); gb.onclick = () => { ghost = !ghost; gb.setAttribute('aria-pressed', ghost); draw(); };
+  let dragging = false;
+  svg.addEventListener('pointerdown', e => { stop(); dragging = true; svg.setPointerCapture(e.pointerId); X = Math.max(0, Math.min(W, toData(svg, e).x)); draw(); });
+  svg.addEventListener('pointermove', e => { if (dragging) { X = Math.max(0, Math.min(W, toData(svg, e).x)); draw(); } });
+  svg.addEventListener('pointerup', () => dragging = false);
+  svg.setAttribute('tabindex', '0');
+  svg.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); stop(); X = Math.max(0, Math.min(W, X + (e.key === 'ArrowRight' ? 8 : -8) * (e.shiftKey ? 5 : 1))); draw(); } });
+  load(); X = W * 0.42; draw();
+})();
+
+/* ===== 1 Map overlay ===== */
+(function () {
+  const f = document.getElementById('f-map'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const roads = [[[20, 60], [150, 120], [300, 110], [450, 180], [540, 200]], [[80, 310], [150, 120], [200, 20]], [[300, 110], [330, 250], [420, 310]], [[450, 180], [500, 40]]];
+  const flood = [[230, 40], [380, 60], [470, 140], [420, 250], [280, 270], [200, 180]];
+  const P = ([x, y]) => ({ x, y });
+  const rsegs = []; roads.forEach(r => { for (let i = 1; i < r.length; i++) rsegs.push([P(r[i - 1]), P(r[i])]); });
+  const fsegs = flood.map((p, i) => [P(p), P(flood[(i + 1) % flood.length])]);
+  const newV = []; let tests = 0;
+  for (const [a, b] of rsegs) for (const [c, d] of fsegs) { tests++; const k = G.classify(a, b, c, d); if (k.kind === 'proper') newV.push(G.point(a, b, c, d)); }
+  const junctions = [[150, 120], [300, 110], [450, 180]];
+  let show = { roads: true, flood: true }, over = false;
+  function draw() {
+    svg.textContent = '';
+    if (show.flood) S('polygon', { points: flood.map(([x, y]) => `${x},${H - y}`).join(' '), fill: C.deltaTT, stroke: C.delta, 'stroke-width': 2, 'stroke-dasharray': '7 4' }, svg);
+    if (show.flood) label(svg, 400, H - 24, 'flood boundary', { c: C.delta, cls: 'lbl-d' });
+    if (show.roads) {
+      roads.forEach(r => S('polyline', { points: r.map(([x, y]) => `${x},${H - y}`).join(' '), fill: 'none', stroke: C.ink, 'stroke-width': 3.2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg));
+      junctions.forEach(([x, y]) => S('circle', { cx: x, cy: H - y, r: 5.5, fill: C.ink, stroke: '#fff', 'stroke-width': 2 }, svg));
+      label(svg, 60, H - 82, 'roads', { cls: 'lbl-d', c: C.ink2 });
+    }
+    if (over && show.roads && show.flood) newV.forEach(p => S('circle', { cx: p.x, cy: H - p.y, r: 6.5, fill: C.best, stroke: '#fff', 'stroke-width': 2 }, svg));
+    $(f, '[data-o=map]').innerHTML = `<span><span class="k">road segments</span> <span class="v">${rsegs.length}</span></span><span><span class="k">boundary edges</span> <span class="v">${fsegs.length}</span></span>` +
+      `<span><span class="k">existing junctions</span> <span class="v">${junctions.length}</span></span><span><span class="k">new overlay vertices</span> <span class="v" style="color:var(--best)">${over ? newV.length : '?'}</span></span><span><span class="k">pairs a brute-force overlay tests</span> <span class="v">${tests}</span></span>`;
+  }
+  $$(f, '[data-l]').forEach(b => b.onclick = () => { show[b.dataset.l] = !show[b.dataset.l]; b.setAttribute('aria-pressed', show[b.dataset.l]); draw(); });
+  const ob = $(f, '[data-a=overlay]'); ob.onclick = () => { over = !over; ob.setAttribute('aria-pressed', over); draw(); };
+  draw();
+})();
+
+/* ===== 2 Parametric segment ===== */
+(function () {
+  const f = document.getElementById('f-param'), svg = $(f, 'svg'), { W, H } = vb(svg), sl = $(f, '[data-k=t]');
+  const s = 58, X = u => 60 + u * s, Yp = v => H - 40 - v * s;
+  const A = { x: 1, y: 0.5 }, B = { x: 6, y: 2.75 };
+  function draw() {
+    svg.textContent = '';
+    const t = +sl.value; $(f, '[data-o=t]').textContent = t.toFixed(2);
+    const at = t => ({ x: A.x + t * (B.x - A.x), y: A.y + t * (B.y - A.y) });
+    const L0 = at(-0.9), L1 = at(1.75);
+    S('line', { x1: X(L0.x), y1: Yp(L0.y), x2: X(L1.x), y2: Yp(L1.y), stroke: C.ink3, 'stroke-width': 1.4, 'stroke-dasharray': '6 5' }, svg);
+    S('line', { x1: X(A.x), y1: Yp(A.y), x2: X(B.x), y2: Yp(B.y), stroke: C.delta, 'stroke-width': 4, 'stroke-linecap': 'round' }, svg);
+    S('circle', { cx: X(A.x), cy: Yp(A.y), r: 6, fill: C.ink }, svg); S('circle', { cx: X(B.x), cy: Yp(B.y), r: 6, fill: C.ink }, svg);
+    label(svg, X(A.x) - 2, Yp(A.y) + 24, 'A (t = 0)', { c: C.ink }); label(svg, X(B.x) + 2, Yp(B.y) - 14, 'B (t = 1)', { c: C.ink });
+    const P = at(t), inside = t >= 0 && t <= 1;
+    S('circle', { cx: X(P.x), cy: Yp(P.y), r: 8.5, fill: inside ? C.delta : C.waste, stroke: '#fff', 'stroke-width': 2.5 }, svg);
+    label(svg, X(P.x), Yp(P.y) - 16, `P(${t.toFixed(2)})`, { c: inside ? C.delta : C.waste });
+    // t ruler
+    const r0 = 60, r1 = W - 40, ry = H - 14, tx = t => r0 + (t + 0.6) / 2.2 * (r1 - r0);
+    S('line', { x1: r0, x2: r1, y1: ry, y2: ry, stroke: C.ink3, 'stroke-width': 1 }, svg);
+    S('line', { x1: tx(0), x2: tx(1), y1: ry, y2: ry, stroke: C.delta, 'stroke-width': 4 }, svg);
+    for (const v of [0, 1]) label(svg, tx(v), ry - 8, v, { c: C.delta });
+    S('circle', { cx: tx(t), cy: ry, r: 5, fill: inside ? C.delta : C.waste }, svg);
+    $(f, '[data-o=param]').innerHTML = `<span><span class="k">P(t) = A + t(B − A) =</span> <span class="v">(${(P.x).toFixed(2)}, ${(P.y).toFixed(2)})</span></span><span class="v" style="color:${inside ? 'var(--delta)' : 'var(--waste)'}">${inside ? 'on the segment' : 'on the line, but not the segment'}</span>`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== grid figures with integer snapping ===== */
+function unitGrid(svg, W, H, s, ox, oy, u0, u1, v0, v1) {
+  const X = u => ox + u * s, Yp = v => H - oy - v * s;
+  for (let u = u0; u <= u1; u++) S('line', { x1: X(u), x2: X(u), y1: Yp(v0), y2: Yp(v1), stroke: u === 0 ? C.ink3 : '#dde3e0', 'stroke-width': u === 0 ? 1.3 : 1 }, svg);
+  for (let v = v0; v <= v1; v++) S('line', { x1: X(u0), x2: X(u1), y1: Yp(v), y2: Yp(v), stroke: v === 0 ? C.ink3 : '#dde3e0', 'stroke-width': v === 0 ? 1.3 : 1 }, svg);
+  for (let u = u0; u <= u1; u += 2) S('text', { x: X(u), y: Yp(v0) + 15, 'text-anchor': 'middle', class: 'lbl', fill: C.ink3, 'font-size': 11, text: u }, svg);
+  for (let v = v0; v <= v1; v += 2) S('text', { x: X(u0) - 8, y: Yp(v) + 4, 'text-anchor': 'end', class: 'lbl', fill: C.ink3, 'font-size': 11, text: v }, svg);
+  return { X, Yp };
+}
+function gridDrag(svg, H, pts, s, ox, oy, box, draw) {
+  // pts are in unit coords; interaction converts screen <-> units and snaps
+  let drag = null;
+  const toU = e => { const p = toData(svg, e); return { x: Math.round((p.x - ox) / s), y: Math.round((p.y - oy) / s) }; };
+  const clamp = q => { q.x = Math.max(box[0], Math.min(box[1], q.x)); q.y = Math.max(box[2], Math.min(box[3], q.y)); };
+  svg.addEventListener('pointerdown', e => { const t = e.target.closest('[data-idx]'); if (!t || +t.dataset.idx < 0) return; drag = +t.dataset.idx; svg.setPointerCapture(e.pointerId); e.preventDefault(); });
+  svg.addEventListener('pointermove', e => { if (drag == null) return; const u = toU(e), q = pts()[drag]; if (u.x !== q.x || u.y !== q.y) { q.x = u.x; q.y = u.y; clamp(q); draw(); } });
+  svg.addEventListener('pointerup', () => drag = null); svg.addEventListener('pointercancel', () => drag = null);
+  svg.addEventListener('keydown', e => {
+    const t = e.target.closest('[data-idx]'); if (!t) return;
+    const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (!k) return;
+    e.preventDefault(); const i = +t.dataset.idx, q = pts()[i]; q.x += k[0]; q.y += k[1]; clamp(q); draw();
+    const n = svg.querySelector(`[data-idx="${i}"]`); if (n) n.focus();
+  });
+}
+function handle(svg, X, Yp, p, i, name, col = C.ink, ring = false) {
+  const g = S('g', { 'data-idx': i, class: 'pt drag', tabindex: 0, role: 'button', 'aria-label': `Point ${name} at (${p.x}, ${p.y}). Arrow keys move it.` }, svg);
+  S('circle', { cx: X(p.x), cy: Yp(p.y), r: 15, fill: 'transparent' }, g);
+  S('circle', { class: 'vis', cx: X(p.x), cy: Yp(p.y), r: 6.5, fill: ring ? '#fff' : col, stroke: col, 'stroke-width': ring ? 2.2 : 0 }, g);
+  label(svg, X(p.x) + 10, Yp(p.y) - 9, `${name}(${p.x}, ${p.y})`, { anchor: 'start', c: col });
+}
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
+function frac(n, d) { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d); n /= g; d /= g; return d === 1 ? `${n}` : `${n}/${d}`; }
+
+/* ===== 3 Cramer ===== */
+(function () {
+  const f = document.getElementById('f-cramer'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const s = 36, ox = 110, oy = 70;
+  let P = [{ x: 0, y: 0 }, { x: 4, y: 2 }, { x: 1, y: -1 }, { x: 2, y: 4 }];
+  function draw() {
+    svg.textContent = '';
+    const { X, Yp } = unitGrid(svg, W, H, s, ox, oy, -2, 20, -1, 7);
+    const [A, B, Cc, D] = P;
+    S('line', { x1: X(A.x), y1: Yp(A.y), x2: X(B.x), y2: Yp(B.y), stroke: C.ink, 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
+    S('line', { x1: X(Cc.x), y1: Yp(Cc.y), x2: X(D.x), y2: Yp(D.y), stroke: C.ink2, 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
+    // system: t(B−A) − s(D−C) = C − A
+    const a11 = B.x - A.x, a12 = -(D.x - Cc.x), a21 = B.y - A.y, a22 = -(D.y - Cc.y), b1 = Cc.x - A.x, b2 = Cc.y - A.y;
+    const det = a11 * a22 - a12 * a21, nt = b1 * a22 - a12 * b2, ns = a11 * b2 - b1 * a21;
+    let html = `<div>P(t) = (${A.x} + ${a11}t, ${A.y} + ${a21}t), &nbsp; Q(s) = (${Cc.x} + ${-a12}s, ${Cc.y} + ${-a22}s)</div>` +
+      `<div>${a11}t ${a12 < 0 ? '−' : '+'} ${Math.abs(a12)}s = ${b1}, &nbsp; ${a21}t ${a22 < 0 ? '−' : '+'} ${Math.abs(a22)}s = ${b2}</div>` +
+      `<div>D = (${a11})(${a22}) − (${a12})(${a21}) = <b style="color:${det === 0 ? 'var(--waste)' : 'var(--ink)'}">${det}</b></div>`;
+    if (det === 0) {
+      html += `<div style="color:var(--waste)">D = 0: the segments are parallel, so Cramer's rule would divide by zero. It can't say whether they overlap.</div>`;
+    } else {
+      const t = nt / det, sv = ns / det, inT = t >= 0 && t <= 1, inS = sv >= 0 && sv <= 1;
+      const ix = A.x + t * a11, iy = A.y + t * a21;
+      const sin = Math.abs(det) / (Math.hypot(a11, a21) * Math.hypot(a12, a22));
+      html += `<div>t = ${nt}/${det} = <b>${frac(nt, det)}</b> ≈ ${t.toFixed(3)} ${inT ? '∈' : '∉'} [0, 1], &nbsp; s = ${ns}/${det} = <b>${frac(ns, det)}</b> ≈ ${sv.toFixed(3)} ${inS ? '∈' : '∉'} [0, 1]</div>` +
+        `<div style="color:${inT && inS ? 'var(--best)' : 'var(--waste)'}">${inT && inS ? `They cross at P(${frac(nt, det)}) = (${frac(A.x * det + nt * a11, det)}, ${frac(A.y * det + nt * a21, det)}).` : 'The infinite lines meet, but outside at least one segment: no crossing.'}</div>` +
+        `<div class="note">|D| relative to the segment lengths is sin θ = ${sin.toFixed(3)}. Near 0 means nearly parallel.</div>`;
+      if (ix > -3 && ix < 21 && iy > -2 && iy < 8) S('circle', { cx: X(ix), cy: Yp(iy), r: 7, fill: inT && inS ? C.best : 'none', stroke: inT && inS ? C.best : C.waste, 'stroke-width': 2.2 }, svg);
+      if (!(inT && inS)) {
+        const ext = (p, q) => S('line', { x1: X(p.x - (q.x - p.x) * 3), y1: Yp(p.y - (q.y - p.y) * 3), x2: X(q.x + (q.x - p.x) * 3), y2: Yp(q.y + (q.y - p.y) * 3), stroke: C.ink3, 'stroke-width': 1, 'stroke-dasharray': '5 5' }, svg);
+        ext(A, B); ext(Cc, D);
+      }
+    }
+    ['A', 'B', 'C', 'D'].forEach((n, i) => handle(svg, X, Yp, P[i], i, n, i < 2 ? C.ink : C.ink2));
+    $(f, '[data-o=cramer]').innerHTML = html;
+  }
+  gridDrag(svg, H, () => P, s, ox, oy, [-2, 20, -1, 7], draw);
+  $(f, '[data-a=lecture]').onclick = () => { P = [{ x: 0, y: 0 }, { x: 4, y: 2 }, { x: 1, y: -1 }, { x: 2, y: 4 }]; draw(); };
+  $(f, '[data-a=para]').onclick = () => { P = [{ x: 0, y: 1 }, { x: 18, y: 3 }, { x: 0, y: 2 }, { x: 19, y: 4 }]; draw(); };
+  draw();
+})();
+
+/* ===== 4 Orientation ===== */
+(function () {
+  const f = document.getElementById('f-orient'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const s = 40, ox = 120, oy = 66;
+  let P = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 2, y: 3 }];
+  function draw() {
+    svg.textContent = '';
+    const { X, Yp } = unitGrid(svg, W, H, s, ox, oy, -2, 17, -1, 6);
+    const [p, q, r] = P, val = G.orient(p, q, r), sg = Math.sign(val);
+    S('polygon', { points: [p, q, r].map(a => `${X(a.x)},${Yp(a.y)}`).join(' '), fill: sg > 0 ? C.deltaT : sg < 0 ? 'rgba(23,33,43,.12)' : 'none', stroke: sg > 0 ? C.delta : sg < 0 ? C.ink3 : C.ink, 'stroke-width': 1.5 }, svg);
+    const arrow = (a, b, col) => {
+      const x1 = X(a.x), y1 = Yp(a.y), x2 = X(b.x), y2 = Yp(b.y), ang = Math.atan2(y2 - y1, x2 - x1);
+      S('line', { x1, y1, x2: x2 - 8 * Math.cos(ang), y2: y2 - 8 * Math.sin(ang), stroke: col, 'stroke-width': 2.6 }, svg);
+      S('polygon', { points: [[x2, y2], [x2 - 12 * Math.cos(ang - .35), y2 - 12 * Math.sin(ang - .35)], [x2 - 12 * Math.cos(ang + .35), y2 - 12 * Math.sin(ang + .35)]].map(z => z.join(',')).join(' '), fill: col }, svg);
+    };
+    arrow(p, q, C.ink); arrow(p, r, C.active);
+    // angle arc from u to v, counter-clockwise
+    const au = Math.atan2(q.y - p.y, q.x - p.x), av = Math.atan2(r.y - p.y, r.x - p.x);
+    let th = av - au; while (th < 0) th += 2 * Math.PI; while (th >= 2 * Math.PI) th -= 2 * Math.PI;
+    if ((q.x !== p.x || q.y !== p.y) && (r.x !== p.x || r.y !== p.y)) {
+      const R = 30, pts = []; for (let k = 0; k <= 30; k++) { const a = au + th * k / 30; pts.push(`${X(p.x) + R * Math.cos(a)},${Yp(p.y) - R * Math.sin(a)}`); }
+      S('polyline', { points: pts.join(' '), fill: 'none', stroke: C.delta, 'stroke-width': 1.6 }, svg);
+      const am = au + th / 2; label(svg, X(p.x) + 46 * Math.cos(am), Yp(p.y) - 46 * Math.sin(am) + 4, 'θ', { c: C.delta, cls: 'lbl-d' });
+    }
+    label(svg, (X(p.x) + X(q.x)) / 2, (Yp(p.y) + Yp(q.y)) / 2 + 18, 'u', { cls: 'lbl-d', c: C.ink });
+    label(svg, (X(p.x) + X(r.x)) / 2 - 12, (Yp(p.y) + Yp(r.y)) / 2, 'v', { cls: 'lbl-d', c: C.active });
+    ['p', 'q', 'r'].forEach((n, i) => handle(svg, X, Yp, P[i], i, n, i === 2 ? C.active : C.ink));
+    const ux = q.x - p.x, uy = q.y - p.y, vx = r.x - p.x, vy = r.y - p.y;
+    const mag = Math.hypot(ux, uy) * Math.hypot(vx, vy);
+    const thDeg = th * 180 / Math.PI;
+    const meaning = sg > 0 ? 'positive: r is LEFT of p → q, a counter-clockwise turn' : sg < 0 ? 'negative: r is RIGHT of p → q, a clockwise turn' : 'zero: p, q, r are collinear';
+    $(f, '[data-o=orient]').innerHTML = `<div>(${q.x} − ${p.x})(${r.y} − ${p.y}) − (${q.y} − ${p.y})(${r.x} − ${p.x}) = (${ux})(${vy}) − (${uy})(${vx}) = <b style="color:${sg > 0 ? 'var(--delta)' : 'var(--ink)'}">${val}</b></div>` +
+      `<div style="color:${sg > 0 ? 'var(--delta)' : 'var(--ink)'}">${meaning}</div>` +
+      (mag > 0 ? `<div class="note">|u||v| sin θ = ${mag.toFixed(2)} × sin ${thDeg.toFixed(1)}° = ${(mag * Math.sin(th)).toFixed(2)}, the same number. Triangle area = |value| / 2 = ${(Math.abs(val) / 2)}.</div>` : '');
+  }
+  gridDrag(svg, H, () => P, s, ox, oy, [-2, 17, -1, 6], draw);
+  $(f, '[data-a=lecture]').onclick = () => { P = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 2, y: 3 }]; draw(); };
+  $(f, '[data-a=line]').onclick = () => { P = [{ x: 0, y: 0 }, { x: 4, y: 2 }, { x: 10, y: 5 }]; draw(); };
+  draw();
+})();
+
+/* ===== 5 Four orientation calls ===== */
+(function () {
+  const f = document.getElementById('f-four'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const s = 46, ox = 90, oy = 40;
+  const presets = { cross: [[1, 4], [9, 1], [2, 0], [8, 6]], miss: [[1, 1], [5, 3], [6, 0], [8, 6]], touch: [[1, 1], [9, 5], [5, 3], [6, 6]], apart: [[1, 1], [3, 2], [5, 3], [9, 5]], over: [[1, 1], [7, 4], [5, 3], [11, 6]] };
+  let P;
+  const load = k => { P = presets[k].map(([x, y]) => ({ x, y })); $$(f, '[data-p]').forEach(b => b.setAttribute('aria-pressed', b.dataset.p === k)); };
+  function draw() {
+    svg.textContent = '';
+    const { X, Yp } = unitGrid(svg, W, H, s, ox, oy, -1, 16, 0, 6);
+    const [A, B, Cc, D] = P, r = G.classify(A, B, Cc, D);
+    if (r.kind === 'none') {
+      const den = (B.x - A.x) * (D.y - Cc.y) - (B.y - A.y) * (D.x - Cc.x);
+      const ext = (p, q) => S('line', { x1: X(p.x - (q.x - p.x) * 4), y1: Yp(p.y - (q.y - p.y) * 4), x2: X(q.x + (q.x - p.x) * 4), y2: Yp(q.y + (q.y - p.y) * 4), stroke: C.ink3, 'stroke-width': 1, 'stroke-dasharray': '5 5' }, svg);
+      ext(A, B); ext(Cc, D);
+      if (den !== 0) { const I = G.point(A, B, Cc, D); if (I.x > -1.5 && I.x < 16.5 && I.y > -1 && I.y < 7) { const x = X(I.x), y = Yp(I.y); S('path', { d: `M${x - 6},${y - 6}L${x + 6},${y + 6}M${x - 6},${y + 6}L${x + 6},${y - 6}`, stroke: C.waste, 'stroke-width': 2.4 }, svg); label(svg, x + 10, y - 8, 'the lines meet here', { anchor: 'start', c: C.waste }); } }
+    }
+    S('line', { x1: X(A.x), y1: Yp(A.y), x2: X(B.x), y2: Yp(B.y), stroke: C.ink, 'stroke-width': 3.2, 'stroke-linecap': 'round' }, svg);
+    S('line', { x1: X(Cc.x), y1: Yp(Cc.y), x2: X(D.x), y2: Yp(D.y), stroke: C.ink2, 'stroke-width': 3.2, 'stroke-linecap': 'round', 'stroke-dasharray': r.kind.startsWith('collinear') ? '10 6' : null }, svg);
+    if (r.kind === 'proper') { const I = G.point(A, B, Cc, D); S('circle', { cx: X(I.x), cy: Yp(I.y), r: 8, fill: C.best }, svg); }
+    if (r.kind === 'touch') { const on = [Cc, D, A, B].find((p, i) => r.s[i < 2 ? i : i] === 0 && true); const cands = [[r.s[0], Cc], [r.s[1], D], [r.s[2], A], [r.s[3], B]].filter(([v]) => v === 0).map(([, p]) => p); for (const p of cands) S('circle', { cx: X(p.x), cy: Yp(p.y), r: 10, fill: 'none', stroke: C.best, 'stroke-width': 3 }, svg); }
+    if (r.kind === 'collinear-overlap') {
+      const all = [A, B, Cc, D].map(p => p.x * 1000 + p.y), seg1 = [A, B].sort((p, q) => (p.x - q.x) || (p.y - q.y)), seg2 = [Cc, D].sort((p, q) => (p.x - q.x) || (p.y - q.y));
+      const lo = ((seg1[0].x - seg2[0].x) || (seg1[0].y - seg2[0].y)) > 0 ? seg1[0] : seg2[0], hi = ((seg1[1].x - seg2[1].x) || (seg1[1].y - seg2[1].y)) < 0 ? seg1[1] : seg2[1];
+      S('line', { x1: X(lo.x), y1: Yp(lo.y), x2: X(hi.x), y2: Yp(hi.y), stroke: C.best, 'stroke-width': 8, 'stroke-linecap': 'round', opacity: .7 }, svg);
+    }
+    ['A', 'B', 'C', 'D'].forEach((n, i) => handle(svg, X, Yp, P[i], i, n, i < 2 ? C.ink : C.ink2));
+    const names = ['Orient(A, B, C)', 'Orient(A, B, D)', 'Orient(C, D, A)', 'Orient(C, D, B)'];
+    $(f, '[data-o=four]').innerHTML = r.o.map((v, i) => `<span class="ochip ${v > 0 ? 'pos' : v < 0 ? 'neg' : 'zero'}">${names[i]} = ${v} <b>${v > 0 ? '+' : v < 0 ? '−' : '0'}</b></span>`).join('');
+    const opp1 = r.s[0] * r.s[1] < 0, opp2 = r.s[2] * r.s[3] < 0;
+    const msg = {
+      proper: 'Both pairs have opposite signs, so the segments properly cross (green).',
+      none: `${opp1 ? 'C and D are on opposite sides of AB' : 'C and D are on the same side of AB'}, and ${opp2 ? 'A and B are on opposite sides of CD' : 'A and B are on the same side of CD'}. Both conditions are needed, so there's no crossing.`,
+      touch: 'One call returns 0, and the bounding-box check puts that point on the other segment, so they touch at an endpoint. Whether that counts as an intersection is a rule you choose (section 12).',
+      'collinear-apart': 'All four calls are 0, so the segments are collinear. As 1D intervals they don\'t overlap, so they don\'t intersect.',
+      'collinear-overlap': 'All four calls are 0, so the segments are collinear. Their intervals overlap (green), so they intersect along a whole stretch.',
+    }[r.kind];
+    $(f, '[data-o=cap]').textContent = msg;
+  }
+  gridDrag(svg, H, () => P, s, ox, oy, [-1, 16, 0, 6], () => { $$(f, '[data-p]').forEach(b => b.setAttribute('aria-pressed', false)); draw(); });
+  $$(f, '[data-p]').forEach(b => b.onclick = () => { load(b.dataset.p); draw(); });
+  load('cross'); draw();
+})();
+
+/* ===== 6 Brute force ===== */
+(function () {
+  const f = document.getElementById('f-brute'), svg = $(f, 'svg'), { W, H } = vb(svg), sn = $(f, '[data-k=n]'), sL = $(f, '[data-k=len]');
+  let segs;
+  function load() {
+    const n = +sn.value, L = +sL.value; segs = [];
+    for (let i = 0; i < n; i++) { const ang = Math.random() * Math.PI, cx = 20 + Math.random() * (W - 40), cy = 20 + Math.random() * (H - 40); const dx = Math.cos(ang) * L / 2, dy = Math.sin(ang) * L / 2; segs.push({ id: i + 1, a: { x: cx - dx, y: cy - dy }, b: { x: cx + dx, y: cy + dy } }); }
+  }
+  function draw() {
+    $(f, '[data-o=n]').textContent = sn.value; $(f, '[data-o=len]').textContent = sL.value;
+    svg.textContent = '';
+    const r = G.brute(segs);
+    for (const s of segs) S('line', { x1: s.a.x, y1: H - s.a.y, x2: s.b.x, y2: H - s.b.y, stroke: C.ink, 'stroke-width': 1.8, 'stroke-linecap': 'round' }, svg);
+    for (const o of r.out) S('circle', { cx: o.p.x, cy: H - o.p.y, r: 4.5, fill: C.best }, svg);
+    const K = r.out.length, waste = r.tests - K;
+    $(f, '[data-o=brute]').innerHTML = `<span><span class="k">brute-force tests n(n−1)/2</span> <span class="v">${fmt(r.tests)}</span></span><span><span class="k">crossings K</span> <span class="v" style="color:var(--best)">${K}</span></span>` +
+      `<span><span class="k">wasted tests</span> <span class="v" style="color:var(--waste)">${fmt(waste)} (${r.tests ? (100 * waste / r.tests).toFixed(1) : 0}%)</span></span>`;
+  }
+  sn.addEventListener('input', () => { load(); draw(); }); sL.addEventListener('input', () => { load(); draw(); });
+  $(f, '[data-a=new]').onclick = () => { load(); draw(); };
+  load(); draw();
+})();
+
+/* ===== 7 Events on a fixed set ===== */
+(function () {
+  const f = document.getElementById('f-events'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]');
+  const segs = [{ id: 1, a: { x: 70, y: 330 }, b: { x: 820, y: 230 } }, { id: 2, a: { x: 140, y: 250 }, b: { x: 700, y: 330 } }, { id: 3, a: { x: 220, y: 80 }, b: { x: 860, y: 290 } }, { id: 4, a: { x: 330, y: 205 }, b: { x: 640, y: 120 } }];
+  const res = G.sweep(segs);
+  let X = 40;
+  const tickY = H - 16;
+  function draw() {
+    svg.textContent = '';
+    S('line', { x1: 20, x2: W - 20, y1: tickY, y2: tickY, stroke: C.rule, 'stroke-width': 1.4 }, svg);
+    const st = drawSweep(svg, segs, res, X, { H, labels: true, bottom: H - 30 });
+    // ticks: endpoints always; crossings once discovered
+    for (const s of segs) { S('circle', { cx: s.a.x, cy: tickY, r: 4.5, fill: C.ink }, svg); S('circle', { cx: s.b.x, cy: tickY, r: 4.5, fill: '#fff', stroke: C.ink, 'stroke-width': 1.6 }, svg); }
+    for (const e of st.pending) S('circle', { cx: e.x, cy: tickY, r: 6, fill: 'none', stroke: C.active, 'stroke-width': 2.4 }, svg);
+    for (const e of st.found) S('circle', { cx: e.x, cy: tickY, r: 5.5, fill: C.best }, svg);
+    const nx = res.log.find(L => L.e.x > X + 1e-6);
+    const evName = e => e.type === 'L' ? `start of ${nm(e.s)}` : e.type === 'R' ? `end of ${nm(e.s)}` : `crossing ${pairName(e.s, e.t)}`;
+    let t = st.L ? `Last event: ${evName(st.L.e)} at x = ${f1(st.L.e.x)}. ` : 'Before any event. ';
+    t += `T = ${st.T.length ? st.T.map(nm).join(', ') : 'empty'}. `;
+    t += nx ? `Nothing changes until the next event, ${evName(nx.e)} at x = ${f1(nx.e.x)}.` : 'The sweep is done.';
+    if (st.L && st.L.gained.length) t += ` Just discovered: ${st.L.gained.map(g => pairName(g.s, g.t)).join(', ')}.`;
+    cap.textContent = t;
+  }
+  const jump = dir => { if (dir > 0) { const nx = res.log.find(L => L.e.x > X + 1e-6); if (nx) X = nx.e.x + 0.01; } else { const pv = res.log.filter(L => L.e.x < X - 0.02); pv.pop(); X = pv.length ? pv[pv.length - 1].e.x + 0.01 : 40; } draw(); };
+  $(f, '[data-a=next]').onclick = () => jump(1); $(f, '[data-a=prev]').onclick = () => jump(-1); $(f, '[data-a=reset]').onclick = () => { X = 40; draw(); };
+  let dragging = false;
+  svg.addEventListener('pointerdown', e => { dragging = true; svg.setPointerCapture(e.pointerId); X = Math.max(0, Math.min(W, toData(svg, e).x)); draw(); });
+  svg.addEventListener('pointermove', e => { if (dragging) { X = Math.max(0, Math.min(W, toData(svg, e).x)); draw(); } });
+  svg.addEventListener('pointerup', () => dragging = false);
+  draw();
+})();
+
+/* ===== 8 BST comparator ===== */
+(function () {
+  const f = document.getElementById('f-bst'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const LX = 280;
+  const yL = [345, 300, 255, 205, 160, 110, 60], yR = [330, 285, 230, 190, 150, 100, 45];
+  const T = yL.map((y, i) => ({ id: i + 1, a: { x: 30, y }, b: { x: 520, y: yR[i] } }));
+  const p = { x: LX, y: 180 }; const pts = [p];
+  // balanced BST over indices 0..6
+  function build(lo, hi, d) { if (lo > hi) return null; const m = (lo + hi) >> 1; return { m, d, l: build(lo, m - 1, d + 1), r: build(m + 1, hi, d + 1) }; }
+  const root = build(0, 6, 0);
+  const pos = { }; (function place(t, x0, x1) { if (!t) return; pos[t.m] = { x: (x0 + x1) / 2, y: 80 + t.d * 95 }; place(t.l, x0, (x0 + x1) / 2); place(t.r, (x0 + x1) / 2, x1); })(root, 570, 890);
+  function draw() {
+    svg.textContent = '';
+    T.forEach(s => { seg(svg, s.a, s.b, H, { c: C.ink, w: 2 }); label(svg, s.b.x + 8, H - s.b.y + 4, nm(s), { anchor: 'start', c: C.ink2 }); });
+    S('line', { x1: LX, x2: LX, y1: 0, y2: H, stroke: C.delta, 'stroke-width': 2.2 }, svg);
+    S('rect', { x: LX - 11, y: 0, width: 22, height: 18, rx: 4, fill: C.delta }, svg);
+    S('text', { x: LX, y: 13.5, 'text-anchor': 'middle', class: 'lbl', fill: '#fff', text: 'ℓ' }, svg);
+    // search
+    const path = []; let t = root, slot = 0;
+    while (t) { const s = T[t.m], o = G.orient(s.a, s.b, p); path.push({ t, o }); if (o > 0) { slot = t.m; t = t.l; } else { slot = t.m + 1; t = t.r; } }
+    const onPath = new Set(path.map(q => q.t.m));
+    // tree edges
+    (function edges(t) { if (!t) return; for (const c of [t.l, t.r]) if (c) { const hot = onPath.has(t.m) && onPath.has(c.m); S('line', { x1: pos[t.m].x, y1: pos[t.m].y, x2: pos[c.m].x, y2: pos[c.m].y, stroke: hot ? C.active : C.ink3, 'stroke-width': hot ? 3 : 1.3 }, svg); edges(c); } })(root);
+    for (let m = 0; m < 7; m++) {
+      const hot = onPath.has(m), q = path.find(z => z.t.m === m);
+      S('circle', { cx: pos[m].x, cy: pos[m].y, r: 17, fill: hot ? C.active : '#fff', stroke: hot ? C.active : C.ink, 'stroke-width': 1.6 }, svg);
+      S('text', { x: pos[m].x, y: pos[m].y + 4.5, 'text-anchor': 'middle', class: 'lbl', fill: hot ? '#fff' : C.ink, text: nm(T[m]) }, svg);
+      if (q) label(svg, pos[m].x, pos[m].y - 24, q.o > 0 ? '+ above, go left' : '− below, go right', { c: C.active });
+    }
+    label(svg, 730, H - 24, 'T as a balanced BST (in-order = top to bottom)', { cls: 'lbl-d', c: C.ink2, halo: false });
+    // highlight segments compared
+    path.forEach(q => { const s = T[q.t.m]; const y = G.yAt(s, LX); S('circle', { cx: LX, cy: H - y, r: 4, fill: C.active }, svg); });
+    // new segment preview from p
+    S('line', { x1: p.x, y1: H - p.y, x2: 520, y2: H - (p.y - 25), stroke: C.active, 'stroke-width': 2.2, 'stroke-dasharray': '6 4' }, svg);
+    dot(svg, p, 0, H, { drag: true, r: 8, fill: C.active, stroke: C.active, label: 'New left endpoint p' });
+    label(svg, p.x - 14, H - p.y + 5, 'p', { anchor: 'end', cls: 'lbl-d', c: C.active });
+    const above = slot > 0 ? nm(T[slot - 1]) : 'nothing', below = slot < 7 ? nm(T[slot]) : 'nothing';
+    $(f, '[data-o=bst]').innerHTML = `<span><span class="k">comparisons</span> <span class="v" style="color:var(--active)">${path.length}</span> <span class="k">(⌈log₂ 8⌉ = 3)</span></span>` +
+      path.map(q => `<span><span class="k">Orient(${nm(T[q.t.m])})</span> <span class="v">${q.o > 0 ? '+' : '−'}${fmt(Math.abs(q.o))}</span></span>`).join('') +
+      `<span><span class="k">insert between</span> <span class="v">${above}</span> <span class="k">and</span> <span class="v">${below}</span></span>`;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: q => { q.x = LX; q.y = Math.max(20, Math.min(H - 12, q.y)); }, step: 6 });
+  draw();
+})();
+
+/* ===== 9 Adjacency lemma ===== */
+(function () {
+  const f = document.getElementById('f-lemma'), svg = $(f, 'svg'), { W, H } = vb(svg), sl = $(f, '[data-k=x]'), cap = $(f, '[data-o=cap]');
+  const si = { id: 'i', a: { x: 40, y: 340 }, b: { x: 860, y: 120 } }, sj = { id: 'j', a: { x: 40, y: 30 }, b: { x: 860, y: 170 } };
+  const p = G.point(si.a, si.b, sj.a, sj.b);
+  const mid = [{ a: { x: 80, y: 200 }, b: { x: 330, y: 215 } }, { a: { x: 180, y: 170 }, b: { x: 480, y: 175 } }, { a: { x: 260, y: 140 }, b: { x: 620, y: 160 } }];
+  const out = [{ a: { x: 100, y: 18 }, b: { x: 520, y: 10 } }, { a: { x: 300, y: 352 }, b: { x: 700, y: 345 } }];
+  sl.max = Math.floor(p.x) - 2;
+  const lastEnd = Math.max(...mid.map(s => s.b.x));
+  function draw() {
+    const X = +sl.value; $(f, '[data-o=x]').textContent = X;
+    svg.textContent = '';
+    const between = mid.filter(s => s.a.x <= X && X <= s.b.x);
+    for (const s of out) seg(svg, s.a, s.b, H, { c: C.ink3, w: 1.5 });
+    for (const s of mid) { const act = between.includes(s); seg(svg, s.a, s.b, H, { c: act ? C.ink2 : C.ink3, w: act ? 3 : 1.4, op: act ? 1 : .5 }); S('circle', { cx: s.b.x, cy: H - s.b.y, r: 4, fill: '#fff', stroke: C.ink2, 'stroke-width': 1.6 }, svg); }
+    for (const [s, n] of [[si, 'sᵢ'], [sj, 'sⱼ']]) { seg(svg, s.a, s.b, H, { c: C.ink, w: 2.8 }); label(svg, s.a.x + 14, H - s.a.y + (n === 'sᵢ' ? -10 : 22), n, { cls: 'lbl-d', c: C.ink, anchor: 'start' }); }
+    const adj = between.length === 0 && X >= lastEnd;
+    S('circle', { cx: p.x, cy: H - p.y, r: 8, fill: 'none', stroke: adj ? C.active : C.ink3, 'stroke-width': 2.4, 'stroke-dasharray': adj ? null : '3 3' }, svg);
+    label(svg, p.x - 6, H - p.y - 18, adj ? 'p, already queued' : 'p, not known yet', { anchor: 'end', c: adj ? C.active : C.ink3 });
+    S('line', { x1: X, x2: X, y1: 0, y2: H, stroke: C.delta, 'stroke-width': 2.2 }, svg);
+    S('rect', { x: X - 11, y: 0, width: 22, height: 18, rx: 4, fill: C.delta }, svg);
+    S('text', { x: X, y: 13.5, 'text-anchor': 'middle', class: 'lbl', fill: '#fff', text: 'ℓ' }, svg);
+    for (const s of [si, sj, ...between]) S('circle', { cx: X, cy: H - G.yAt(s, X), r: 3.5, fill: C.delta }, svg);
+    cap.textContent = between.length ? `${between.length} segment${between.length > 1 ? 's sit' : ' sits'} between sᵢ and sⱼ in T at x = ${X}, so they aren't neighbours yet.`
+      : X >= lastEnd ? `Nothing between them: sᵢ and sⱼ have been adjacent since the last in-between segment ended at x = ${lastEnd}. They were tested then, and p (x ≈ ${f1(p.x)}) went into Q.`
+      : `Nothing between them right now, but more segments start later, so they're adjacent only until the next one starts.`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 10 Event handlers ===== */
+(function () {
+  const f = document.getElementById('f-handlers'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]'), stackEl = $(f, '[data-o=stack]');
+  const mk = (n, ax, ay, bx, by) => ({ n, a: { x: ax, y: ay }, b: { x: bx, y: by } });
+  const scenes = {
+    L: { x: 200, segs: { a: mk('a', 20, 250, 540, 228), si: mk('sᵢ', 200, 150, 540, 275), b: mk('b', 20, 60, 540, 92) },
+      before: ['a', 'b'], after: ['a', 'si', 'b'], tests: [['a', 'si'], ['si', 'b']], changed: ['si'],
+      capB: 'ℓ reaches the left endpoint of sᵢ. T holds a above b.', capA: 'Insert sᵢ by its y on ℓ, between a and b. Test it against both new neighbours.' },
+    R: { x: 250, segs: { a: mk('a', 20, 240, 540, 140), si: mk('sᵢ', 20, 160, 250, 170), b: mk('b', 20, 80, 540, 210) },
+      before: ['a', 'si', 'b'], after: ['a', 'b'], tests: [['a', 'b']], changed: ['a', 'b'],
+      capB: 'ℓ reaches the right endpoint of sᵢ, which sits between a and b.', capA: 'Delete sᵢ. Its former neighbours a and b are now adjacent, so test that one pair.' },
+    X: { x: 220, segs: { a: mk('a', 20, 280, 540, 195), si: mk('sᵢ', 20, 200, 540, 70), sj: mk('sⱼ', 20, 100, 540, 230), b: mk('b', 20, 40, 540, 55) },
+      before: ['a', 'si', 'sj', 'b'], after: ['a', 'sj', 'si', 'b'], tests: [['a', 'sj'], ['si', 'b']], changed: ['si', 'sj'],
+      capB: 'ℓ reaches the crossing of sᵢ and sⱼ. It was queued earlier, when they became neighbours.', capA: 'Report p, then swap sᵢ and sⱼ in T. Each now has a new outer neighbour: test (a, sⱼ) and (sᵢ, b).' },
+  };
+  let h = 'L', w = 'before';
+  function draw() {
+    const sc = scenes[h], after = w === 'after';
+    svg.textContent = '';
+    const segs = sc.segs, keys = Object.keys(segs);
+    const tested = after ? sc.tests : [];
+    for (const k of keys) {
+      const s = segs[k], hotT = tested.some(pr => pr.includes(k));
+      if (hotT) seg(svg, s.a, s.b, H, { c: C.active, w: 7, op: .3 });
+      const gone = h === 'R' && after && k === 'si';
+      seg(svg, s.a, s.b, H, { c: k === 'si' || k === 'sj' ? C.ink : C.ink2, w: k === 'si' || k === 'sj' ? 2.8 : 2, op: gone ? .3 : 1 });
+      S('circle', { cx: s.a.x, cy: H - s.a.y, r: 4, fill: C.ink }, svg); S('circle', { cx: s.b.x, cy: H - s.b.y, r: 4, fill: '#fff', stroke: C.ink, 'stroke-width': 1.6 }, svg);
+      label(svg, Math.min(s.b.x, 540) - 4, H - s.b.y - 10, s.n, { cls: 'lbl-d', c: C.ink, anchor: 'end' });
+    }
+    if (h === 'X') { const p = G.point(segs.si.a, segs.si.b, segs.sj.a, segs.sj.b); S('circle', after ? { cx: p.x, cy: H - p.y, r: 7, fill: C.best } : { cx: p.x, cy: H - p.y, r: 7, fill: 'none', stroke: C.active, 'stroke-width': 2.4 }, svg); label(svg, p.x - 12, H - p.y + 4, 'p', { anchor: 'end', cls: 'lbl-d', c: after ? C.best : C.active }); }
+    const results = [];
+    for (const [u, v] of tested) {
+      const s = segs[u], t = segs[v], hit = G.crosses(s, t);
+      results.push(`(${s.n}, ${t.n}): ${hit ? 'they cross to the right, so queue it' : 'no crossing'}`);
+      if (hit) { const q = G.point(s.a, s.b, t.a, t.b); S('circle', { cx: q.x, cy: H - q.y, r: 7, fill: 'none', stroke: C.active, 'stroke-width': 2.6 }, svg); label(svg, q.x, H - q.y - 14, 'queued', { c: C.active }); }
+    }
+    S('line', { x1: sc.x, x2: sc.x, y1: 0, y2: H, stroke: C.delta, 'stroke-width': 2.2 }, svg);
+    S('rect', { x: sc.x - 11, y: 0, width: 22, height: 18, rx: 4, fill: C.delta }, svg);
+    S('text', { x: sc.x, y: 13.5, 'text-anchor': 'middle', class: 'lbl', fill: '#fff', text: 'ℓ' }, svg);
+    const list = after ? sc.after : sc.before;
+    stackEl.innerHTML = list.map(k => `<span class="tchip${after && sc.changed.includes(k) ? ' hot' : ''}">${segs[k].n}</span>`).join('');
+    cap.textContent = (after ? sc.capA : sc.capB) + (after ? ' Results: ' + results.join('; ') + '.' : '');
+  }
+  $$(f, '[data-h]').forEach(b => b.onclick = () => { h = b.dataset.h; $$(f, '[data-h]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
+  $$(f, '[data-w]').forEach(b => b.onclick = () => { w = b.dataset.w; $$(f, '[data-w]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
+  draw();
+})();
+
+/* ===== 11 Worked run ===== */
+(function () {
+  const f = document.getElementById('f-run'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]');
+  const sx = 45, ox = 30, sy = 36, oy = 34;
+  const map = p => ({ x: ox + p.x * sx, y: oy + p.y * sy });
+  const LECT = [{ id: 1, a: { x: 1, y: 2 }, b: { x: 11, y: 6 } }, { id: 2, a: { x: 1, y: 7 }, b: { x: 9, y: 3 } }, { id: 3, a: { x: 3, y: 1 }, b: { x: 6, y: 9 } }];
+  let segs, res, k;
+  const fx = v => Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : v.toFixed(2);
+  const evName = e => e.type === 'L' ? `left ${nm(e.s)}` : e.type === 'R' ? `right ${nm(e.s)}` : `crossing ${pairName(e.s, e.t)}`;
+  function load(S0) { segs = S0; res = G.sweep(segs); k = -1; }
+  function rowText(L) {
+    const e = L.e, tests = L.tested.map(t => `test ${nm(t.s)}, ${nm(t.t)}${t.hit ? (t.isNew ? ' → cross' : ' → already in Q') : ' → no'}`);
+    const act = e.type === 'L' ? `insert ${nm(e.s)}` : e.type === 'R' ? `delete ${nm(e.s)}` : `report; swap ${nm(e.s)}, ${nm(e.t)}`;
+    return { act: [act, ...tests].join('; ') + (tests.length ? '' : (e.type === 'X' ? '' : '; no pair to test')), gains: L.gained.length ? L.gained.map(g => `${pairName(g.s, g.t)} at x ≈ ${g.x.toFixed(2)}`).join(', ') : '—' };
+  }
+  function draw() {
+    svg.textContent = '';
+    for (let u = 0; u <= 12; u++) { S('line', { x1: map({ x: u, y: 0 }).x, x2: map({ x: u, y: 0 }).x, y1: H - oy, y2: H - map({ x: 0, y: 10 }).y, stroke: '#e1e6e3', 'stroke-width': 1 }, svg); S('text', { x: map({ x: u, y: 0 }).x, y: H - oy + 16, 'text-anchor': 'middle', class: 'lbl', 'font-size': 11, fill: C.ink3, text: u }, svg); }
+    for (let v = 0; v <= 10; v += 2) S('text', { x: ox - 8, y: H - map({ x: 0, y: v }).y + 4, 'text-anchor': 'end', class: 'lbl', 'font-size': 11, fill: C.ink3, text: v }, svg);
+    const X = k >= 0 ? res.log[k].e.x : 0;
+    if (k >= 0) {
+      drawSweep(svg, segs, res, X, { k, H, map, er: 4.5, top: H - map({ x: 0, y: 10.6 }).y, bottom: H - oy });
+    } else {
+      for (const s of segs) { const A = map(s.a), B = map(s.b); S('line', { x1: A.x, y1: H - A.y, x2: B.x, y2: H - B.y, stroke: C.ink, 'stroke-width': 2 }, svg); S('circle', { cx: A.x, cy: H - A.y, r: 4.5, fill: C.ink }, svg); S('circle', { cx: B.x, cy: H - B.y, r: 4.5, fill: '#fff', stroke: C.ink, 'stroke-width': 1.6 }, svg); }
+    }
+    for (const s of segs) { const B = map(s.b); label(svg, B.x + 8, H - B.y + 4, nm(s), { anchor: 'start', cls: 'lbl-d', c: C.ink }); }
+    const L = k >= 0 ? res.log[k] : null;
+    if (L) for (const t of L.tested) { const hl = s => { const A = map(s.a), B = map(s.b); S('line', { x1: A.x, y1: H - A.y, x2: B.x, y2: H - B.y, stroke: C.active, 'stroke-width': 7, opacity: .28 }, svg); }; hl(t.s); hl(t.t); }
+    const Qn = (L ? L.Q : res.log.length ? [...segs.flatMap(s => [{ x: s.a.x, y: s.a.y, type: 'L', s }, { x: s.b.x, y: s.b.y, type: 'R', s }])].sort((p, q) => (p.x - q.x) || (p.y - q.y)) : []);
+    $(f, '[data-o=T]').innerHTML = chipsT(L ? L.T : []);
+    $(f, '[data-o=Q]').innerHTML = Qn.length ? Qn.map(e => `<span class="qchip ${e.type === 'X' ? 'x' : ''}">${evName(e)} <i>x = ${fx(e.x)}</i></span>`).join('') : '<span class="k">empty</span>';
+    let rows = '<thead><tr><th>x</th><th>event</th><th>action</th><th>T after (top → bottom)</th><th>Q gains</th></tr></thead><tbody>';
+    for (let i = 0; i <= k; i++) { const R = res.log[i], tx = rowText(R); rows += `<tr class="${i === k ? 'cur' : ''}"><td>${fx(R.e.x)}</td><td>${evName(R.e)}</td><td>${tx.act}</td><td>${R.T.map(nm).join(', ') || '—'}</td><td>${tx.gains}</td></tr>`; }
+    $(f, '[data-o=table]').innerHTML = rows + '</tbody>';
+    cap.textContent = k < 0 ? `Q starts with all ${segs.length * 2} endpoints, sorted by x then y. T is empty.`
+      : `Event ${k + 1} of ${res.log.length}: ${evName(L.e)} at (${fx(L.e.x)}, ${fx(L.e.y)}). ${rowText(L).act}.` + (k === res.log.length - 1 ? ` Done: K = ${res.found.length} crossing${res.found.length === 1 ? "" : "s"} reported in ${res.log.length} events.` : '');
+    $(f, '[data-a=back]').disabled = k < 0; $(f, '[data-a=next]').disabled = k >= res.log.length - 1;
+  }
+  const next = () => { if (k >= res.log.length - 1) return false; k++; draw(); return k < res.log.length - 1; };
+  $(f, '[data-a=next]').onclick = next;
+  $(f, '[data-a=back]').onclick = () => { if (k >= 0) { k--; draw(); } };
+  const stop = player($(f, '[data-a=play]'), next, 1300);
+  $(f, '[data-a=reset]').onclick = () => { stop(); k = -1; draw(); };
+  $(f, '[data-a=lect]').onclick = () => { stop(); load(LECT.map(s => ({ ...s }))); draw(); };
+  $(f, '[data-a=rand]').onclick = () => { stop(); const S0 = genSegs(5, 0.3, 11.7, 0.5, 9.5, 3, 9, 0.12); if (S0) { S0.forEach(s => { for (const p of [s.a, s.b]) { p.x = Math.round(p.x * 100) / 100; p.y = Math.round(p.y * 100) / 100; } }); load(S0); draw(); } };
+  load(LECT.map(s => ({ ...s }))); draw();
+})();
+
+/* ===== 12 Degeneracies ===== */
+(function () {
+  const f = document.getElementById('f-degen'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]');
+  let c = 'bundle';
+  const mk = (ax, ay, bx, by) => ({ a: { x: ax, y: ay }, b: { x: bx, y: by } });
+  function lineL(x, txt) { S('line', { x1: x, x2: x, y1: 10, y2: H - 10, stroke: C.delta, 'stroke-width': 2, 'stroke-dasharray': '6 4' }, svg); if (txt) label(svg, x, H - 2, txt, { c: C.delta }); }
+  function stack(x, y, title, items, hot) { label(svg, x, y, title, { c: C.ink2, cls: 'lbl-d', anchor: 'start' }); items.forEach((t, i) => { S('rect', { x, y: y + 10 + i * 30, width: 54, height: 24, rx: 12, fill: hot ? C.delta : '#fff', stroke: C.delta, 'stroke-width': 1.5 }, svg); S('text', { x: x + 27, y: y + 27 + i * 30, 'text-anchor': 'middle', class: 'lbl', fill: hot ? '#fff' : C.delta, text: t }, svg); }); }
+  function draw() {
+    svg.textContent = '';
+    if (c === 'bundle') {
+      const P = { x: 330, y: 150 }, segsB = [mk(120, 270, 540, 30), mk(110, 150, 550, 150), mk(120, 30, 540, 270)], nmz = ['a', 'b', 'c'];
+      segsB.forEach((s, i) => { seg(svg, s.a, s.b, H, { c: C.ink, w: 2.4 }); label(svg, s.a.x - 10, H - s.a.y + 4, nmz[i], { anchor: 'end', cls: 'lbl-d' }); });
+      S('circle', { cx: P.x, cy: H - P.y, r: 8, fill: C.best }, svg);
+      lineL(270, 'just before p'); lineL(390, 'just after p');
+      stack(640, 40, 'T before', ['a', 'b', 'c'], false); stack(760, 40, 'T after', ['c', 'b', 'a'], true);
+      cap.textContent = 'Three segments, one point. Handle the whole bundle U ∪ L ∪ C as a single event: report p once with all three, then delete and re-insert them so their order reverses together (a, b, c becomes c, b, a). Swapping one pair at a time risks testing the wrong neighbours.';
+    } else if (c === 'vert') {
+      const v = mk(450, 50, 450, 250), o = [mk(150, 80, 760, 200), mk(200, 230, 720, 120)];
+      o.forEach(s => seg(svg, s.a, s.b, H, { c: C.ink3, w: 2 }));
+      seg(svg, v.a, v.b, H, { c: C.ink, w: 3 });
+      S('circle', { cx: 450, cy: H - 50, r: 6.5, fill: C.ink }, svg); S('circle', { cx: 450, cy: H - 250, r: 6.5, fill: '#fff', stroke: C.ink, 'stroke-width': 2 }, svg);
+      label(svg, 462, H - 50 + 4, 'lower endpoint: treated as "left", processed first', { anchor: 'start', c: C.ink });
+      label(svg, 462, H - 250 + 4, 'upper endpoint: treated as "right"', { anchor: 'start', c: C.ink });
+      cap.textContent = 'A vertical segment has both endpoints at the same x. Break the tie by y: the smaller y counts as the left endpoint and is processed first. This is exactly the "by x, then by y" order of Q.';
+    } else if (c === 'touch') {
+      const e1 = mk(120, 60, 300, 230), e2 = mk(300, 230, 480, 80), t1 = mk(560, 150, 860, 150), t2 = mk(700, 150, 760, 270);
+      [e1, e2].forEach(s => seg(svg, s.a, s.b, H, { c: C.ink, w: 2.6 })); [t1, t2].forEach(s => seg(svg, s.a, s.b, H, { c: C.ink, w: 2.6 }));
+      S('circle', { cx: 300, cy: H - 230, r: 8, fill: 'none', stroke: C.active, 'stroke-width': 2.6 }, svg); S('circle', { cx: 700, cy: H - 150, r: 8, fill: 'none', stroke: C.active, 'stroke-width': 2.6 }, svg);
+      label(svg, 300, H - 252, 'two polygon edges share a vertex', { c: C.ink2 }); label(svg, 720, H - 120, 'an endpoint touching a segment', { c: C.ink2 });
+      cap.textContent = 'Shared endpoints and touching: decide once whether touching counts as intersecting, then apply that choice everywhere. Adjacent edges of the same polygon, for example, normally should not be reported.';
+    } else {
+      const s1 = mk(120, 140, 560, 180), s2 = mk(380, 163.6, 800, 201.8);
+      seg(svg, s1.a, s1.b, H, { c: C.ink, w: 3 });
+      S('line', { x1: s2.a.x, y1: H - s2.a.y + 9, x2: s2.b.x, y2: H - s2.b.y + 9, stroke: C.ink2, 'stroke-width': 3, 'stroke-linecap': 'round' }, svg);
+      S('line', { x1: 380, y1: H - 163.6 - 9, x2: 560, y2: H - 180 - 9, stroke: C.best, 'stroke-width': 7, 'stroke-linecap': 'round', opacity: .8 }, svg);
+      label(svg, 470, H - 205, 'overlap, reported as an interval', { c: C.best });
+      label(svg, 200, H - 160, 'segment 1', { c: C.ink }); label(svg, 720, H - 210, 'segment 2 (drawn offset to be visible)', { c: C.ink2 });
+      cap.textContent = 'Overlapping collinear segments: all four orientation calls return 0, so the crossing test can\'t separate them. Compare them as 1D intervals along their shared line instead, and report the overlap as an interval, not a point.';
+    }
+  }
+  $$(f, '[data-c]').forEach(b => b.onclick = () => { c = b.dataset.c; $$(f, '[data-c]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
+  draw();
+})();
+
+/* ===== 13 Cost ===== */
+(function () {
+  const f = document.getElementById('f-cost'), svg = $(f, 'svg'), { W, H } = vb(svg), sn = $(f, '[data-k=n]'), sk = $(f, '[data-k=k]');
+  function draw() {
+    const n = Math.round(10 ** +sn.value), kk = +sk.value, pairs = n * (n - 1) / 2;
+    const K = Math.min(pairs, Math.round(n ** kk));
+    $(f, '[data-o=n]').textContent = fmt(n); $(f, '[data-o=k]').textContent = kk.toFixed(2);
+    const brute = pairs, swp = (2 * n + K) * lg(n);
+    svg.textContent = '';
+    const x0 = 190, x1 = W - 120, Lmax = 13, len = v => (x1 - x0) * Math.max(0, Math.log10(Math.max(v, 1))) / Lmax;
+    [['brute force n(n−1)/2', brute, C.waste, 40], ['sweep (2n + K) lg n', swp, C.best, 90], ['output size K', K, C.ink3, 140]].forEach(([t, v, c, y]) => {
+      S('text', { x: x0 - 10, y: y + 5, 'text-anchor': 'end', class: 'lbl', fill: C.ink2, text: t }, svg);
+      S('rect', { x: x0, y: y - 11, width: Math.max(2, len(v)), height: 22, rx: 3, fill: c }, svg);
+      label(svg, x0 + len(v) + 8, y + 5, fmt(v), { anchor: 'start', c });
+    });
+    for (let e = 0; e <= Lmax; e += 2) { const x = x0 + (x1 - x0) * e / Lmax; S('line', { x1: x, x2: x, y1: 20, y2: 158, stroke: C.rule, 'stroke-width': 1, 'stroke-dasharray': '2 4' }, svg); }
+    const win = swp < brute;
+    $(f, '[data-o=cost]').innerHTML = `<span><span class="k">K</span> <span class="v">${fmt(K)}</span> <span class="k">of ${fmt(pairs)} possible pairs</span></span>` +
+      `<span class="v" style="color:${win ? 'var(--best)' : 'var(--waste)'}">${win ? `the sweep does ${fmt(brute / swp, 1)}× less work` : `brute force does ${fmt(swp / brute, 1)}× less work`}</span>` +
+      `<span><span class="k">break-even near K ≈ n²/(2 lg n) =</span> <span class="v">${fmt(n * n / (2 * lg(n)))}</span></span>`;
+  }
+  sn.addEventListener('input', draw); sk.addEventListener('input', draw); draw();
+})();
+
+/* ===== wires drawing shared by 14 and 17 ===== */
+function drawWires(svg, pi, o = {}) {
+  const { W, H } = vb(svg), n = pi.length, lx = 70, rx = 350, y = k => 34 + k * (H - 68) / (n - 1);
+  S('line', { x1: lx, x2: lx, y1: 14, y2: H - 14, stroke: C.ink, 'stroke-width': 2 }, svg);
+  S('line', { x1: rx, x2: rx, y1: 14, y2: H - 14, stroke: C.ink, 'stroke-width': 2 }, svg);
+  label(svg, lx, 11, 'x = 0', { c: C.ink2, halo: false }); label(svg, rx, 11, 'x = 1', { c: C.ink2, halo: false });
+  const inv = [];
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) if (pi[i] > pi[j]) inv.push([i, j]);
+  for (let i = 0; i < n; i++) {
+    const cur = o.cur === i, later = o.cur != null && i > o.cur;
+    S('line', { x1: lx, y1: y(i), x2: rx, y2: y(pi[i]), stroke: cur ? C.active : C.ink, 'stroke-width': cur ? 3.4 : 2, opacity: later ? .25 : 1 }, svg);
+    label(svg, lx - 10, y(i) + 4, 'w' + subN(i), { anchor: 'end', c: later ? C.ink3 : C.ink });
+  }
+  for (const [i, j] of inv) {
+    if (o.cur != null && j > o.cur) continue;
+    const p = G.point({ x: lx, y: y(i) }, { x: rx, y: y(pi[i]) }, { x: lx, y: y(j) }, { x: rx, y: y(pi[j]) });
+    const fresh = o.cur != null && j === o.cur;
+    S('circle', { cx: p.x, cy: p.y, r: fresh ? 7 : 5.5, fill: C.best, opacity: o.cur != null && !fresh ? .45 : 1 }, svg);
+  }
+  return { inv, y, lx, rx };
+}
+
+/* ===== 14 Wires & inversions ===== */
+(function () {
+  const f = document.getElementById('f-wires'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  let pi = [1, 3, 0, 4, 2], sel = null;
+  function draw() {
+    svg.textContent = '';
+    const r = drawWires(svg, pi), n = pi.length;
+    for (let k = 0; k < n; k++) {
+      const i = pi.indexOf(k);
+      const g = S('g', { class: 'pt drag', tabindex: 0, role: 'button', 'data-slot': k, 'aria-label': `Right slot ${k}, wire w${i}. Press Enter to select, then select another slot to swap.` }, svg);
+      S('circle', { cx: r.rx, cy: r.y(k), r: 16, fill: 'transparent' }, g);
+      S('circle', { class: 'vis', cx: r.rx, cy: r.y(k), r: 7, fill: sel === k ? C.active : '#fff', stroke: sel === k ? C.active : C.ink, 'stroke-width': 2.2 }, g);
+      label(svg, r.rx + 14, r.y(k) + 4, `rank ${k}`, { anchor: 'start', c: C.ink2 });
+    }
+    for (let i = 0; i < n; i++) S('circle', { cx: r.lx, cy: r.y(i), r: 5.5, fill: C.ink }, svg);
+    $(f, '[data-o=pi]').innerHTML = `π = [${pi.join(', ')}] <span class="k">→</span> <b style="color:var(--best)">${r.inv.length} inversion${r.inv.length === 1 ? '' : 's'} = ${r.inv.length} crossing${r.inv.length === 1 ? '' : 's'}</b>`;
+    let rows = '<thead><tr><th>(i, j)</th><th>π(i)</th><th>π(j)</th><th>(aᵢ − aⱼ)(bᵢ − bⱼ)</th><th>cross?</th></tr></thead><tbody>';
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const prod = (i - j) * (pi[i] - pi[j]), x = prod < 0; rows += `<tr class="${x ? 'win' : ''}"><td>(${i}, ${j})</td><td>${pi[i]}</td><td>${pi[j]}</td><td>(${i - j})(${pi[i] - pi[j]}) = ${prod}</td><td>${x ? 'yes, inversion' : 'no'}</td></tr>`; }
+    $(f, '[data-o=pairs]').innerHTML = rows + '</tbody>';
+  }
+  const pick = k => {
+    if (sel == null) sel = k;
+    else if (sel === k) sel = null;
+    else { const i = pi.indexOf(sel), j = pi.indexOf(k); pi[i] = k; pi[j] = sel; sel = null; }
+    draw(); const n = svg.querySelector(`[data-slot="${k}"]`); if (n) n.focus();
+  };
+  svg.addEventListener('click', e => { const t = e.target.closest('[data-slot]'); if (t) pick(+t.dataset.slot); });
+  svg.addEventListener('keydown', e => { const t = e.target.closest('[data-slot]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pick(+t.dataset.slot); } });
+  $(f, '[data-a=lect]').onclick = () => { pi = [1, 3, 0, 4, 2]; sel = null; draw(); };
+  $(f, '[data-a=shuf]').onclick = () => { for (let i = pi.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pi[i], pi[j]] = [pi[j], pi[i]]; } sel = null; draw(); };
+  $(f, '[data-a=id]').onclick = () => { pi = [0, 1, 2, 3, 4]; sel = null; draw(); };
+  $(f, '[data-a=rev]').onclick = () => { pi = [4, 3, 2, 1, 0]; sel = null; draw(); };
+  draw();
+})();
+
+/* ===== 15 Cumulative sums ===== */
+(function () {
+  const f = document.getElementById('f-cum'), box = $(f, '[data-o=cum]'), sk = $(f, '[data-k=k]');
+  const n = 8; let A = [0, 0, 1, 0, 0, 1, 0, 1, 0]; // 1-indexed: values 1,4,6 inserted -> positions 2,5,7
+  let mode = 'one', last = null;
+  const lb = G.lowbit;
+  function draw() {
+    const k = +sk.value; $(f, '[data-o=k]').textContent = k;
+    const S1 = [0]; for (let i = 1; i <= n; i++) S1[i] = S1[i - 1] + A[i];
+    const SL = [0], SR = [0]; for (let i = 1; i <= 4; i++) SL[i] = SL[i - 1] + A[i]; for (let i = 1; i <= 4; i++) SR[i] = SR[i - 1] + A[i + 4];
+    const BIT = [0]; for (let i = 1; i <= n; i++) { let s = 0; for (let j = i - lb(i) + 1; j <= i; j++) s += A[j]; BIT[i] = s; }
+    // touched by last update and read by query
+    let upd = [], rd = [], val = 0;
+    if (mode === 'one') { if (last) for (let i = last; i <= n; i++) upd.push('s' + i); rd = ['s' + k]; val = S1[k]; }
+    else if (mode === 'half') { if (last) { const end = last <= 4 ? 4 : 8; for (let i = last; i <= end; i++) upd.push((i <= 4 ? 'l' : 'r') + i); } rd = k <= 4 ? ['l' + k] : ['l4', 'r' + k]; val = k <= 4 ? SL[k] : SL[4] + SR[k - 4]; }
+    else { if (last) { let p = last; while (p <= n) { upd.push('b' + p); p += lb(p); } } let p = k; while (p > 0) { rd.push('b' + p); val += BIT[p]; p -= lb(p); } }
+    const cell = (id, v, extra = '') => `<div class="cc ${upd.includes(id) ? 'upd' : ''} ${rd.includes(id) ? 'rd' : ''}">${v}${extra}</div>`;
+    let h = '<div class="crow"><span class="ms-label">k</span>' + Array.from({ length: n }, (_, i) => `<div class="cc head">${i + 1}</div>`).join('') + '</div>';
+    h += '<div class="crow"><span class="ms-label">A[k]</span>' + Array.from({ length: n }, (_, i) => `<button class="cc btn ${A[i + 1] ? 'on' : ''}" data-i="${i + 1}" aria-pressed="${!!A[i + 1]}" aria-label="A[${i + 1}] = ${A[i + 1]}: value ${i} ${A[i + 1] ? 'inserted' : 'not inserted'}">${A[i + 1]}</button>`).join('') + '</div>';
+    if (mode === 'one') h += '<div class="crow"><span class="ms-label">S[k]</span>' + Array.from({ length: n }, (_, i) => cell('s' + (i + 1), S1[i + 1])).join('') + '</div>';
+    else if (mode === 'half') {
+      h += '<div class="crow"><span class="ms-label">S<sub>L</sub></span>' + Array.from({ length: n }, (_, i) => i < 4 ? cell('l' + (i + 1), SL[i + 1]) : '<div class="cc blank"></div>').join('') + '</div>';
+      h += '<div class="crow"><span class="ms-label">S<sub>R</sub></span>' + Array.from({ length: n }, (_, i) => i >= 4 ? cell('r' + (i + 1), SR[i - 3]) : '<div class="cc blank"></div>').join('') + '</div>';
+    } else h += '<div class="crow"><span class="ms-label">BIT[k]</span>' + Array.from({ length: n }, (_, i) => cell('b' + (i + 1), BIT[i + 1], `<small>[${i + 2 - lb(i + 1)},${i + 1}]</small>`)).join('') + '</div>';
+    box.innerHTML = h;
+    $$(box, '[data-i]').forEach(b => b.onclick = () => { const i = +b.dataset.i; A[i] = 1 - A[i]; last = i; draw(); box.querySelector(`[data-i="${i}"]`).focus(); });
+    $(f, '[data-o=cumr]').innerHTML = `<span><span class="k">last update</span> <span class="v" style="color:var(--waste)">${last ? `A[${last}] changed ${upd.length} stored entr${upd.length === 1 ? 'y' : 'ies'}` : 'none yet: click a cell of A'}</span></span>` +
+      `<span><span class="k">query S(${k}) read</span> <span class="v" style="color:var(--active)">${rd.length} entr${rd.length === 1 ? 'y' : 'ies'}</span> <span class="k">=</span> <span class="v">${val}</span></span>`;
+  }
+  $$(f, '[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; $$(f, '[data-m]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
+  sk.addEventListener('input', draw); draw();
+})();
+
+/* ===== 16 Fenwick explorer ===== */
+(function () {
+  const f = document.getElementById('f-bit'), svg = $(f, 'svg'), { W, H } = vb(svg), sp = $(f, '[data-k=pos]');
+  let n = 8, mode = 'q';
+  const lb = G.lowbit;
+  function draw() {
+    sp.max = n; if (+sp.value > n) sp.value = n;
+    const pos = +sp.value; $(f, '[data-o=pos]').textContent = pos;
+    const A = new Array(n + 1).fill(0); A[2] = A[5] = A[7] = 1;
+    const BIT = [0]; for (let i = 1; i <= n; i++) { let s = 0; for (let j = i - lb(i) + 1; j <= i; j++) s += A[j]; BIT[i] = s; }
+    const path = []; if (mode === 'q') { let p = pos; while (p > 0) { path.push(p); p -= lb(p); } } else { let p = pos; while (p <= n) { path.push(p); p += lb(p); } }
+    const on = new Set(path);
+    svg.textContent = '';
+    const x0 = 110, x1 = W - 30, cw = (x1 - x0) / n, cx = i => x0 + (i - .5) * cw;
+    const top = 26, rowH = Math.min(22, 200 / n);
+    if (mode === 'q') S('rect', { x: x0 + 2, y: top - 18, width: pos * cw - 4, height: 12, rx: 3, fill: 'none', stroke: C.active, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, svg);
+    if (mode === 'q') label(svg, x0 - 10, top - 8, `target [1, ${pos}]`, { anchor: 'end', c: C.active, halo: false });
+    for (let i = 1; i <= n; i++) {
+      const y = top + (i - 1) * rowH, lo = i - lb(i) + 1, hot = on.has(i);
+      S('rect', { x: x0 + (lo - 1) * cw + 3, y: y + 2, width: lb(i) * cw - 6, height: rowH - 5, rx: 4, fill: hot ? C.active : C.deltaT, stroke: hot ? C.active : C.delta, 'stroke-width': 1.2 }, svg);
+      S('text', { x: x0 - 10, y: y + rowH * .68, 'text-anchor': 'end', class: 'lbl', 'font-size': n > 8 ? 10 : 12, fill: hot ? C.active : C.ink2, text: `BIT[${i}] = ${BIT[i]}` }, svg);
+    }
+    const axY = top + n * rowH + 8;
+    for (let i = 1; i <= n; i++) S('text', { x: cx(i), y: axY + 6, 'text-anchor': 'middle', class: 'lbl', 'font-size': 11, fill: C.ink3, text: i }, svg);
+    // tree
+    const tz = i => Math.log2(lb(i)), maxL = Math.log2(n), base = H - 22, lev = Math.min(40, (base - axY - 40) / Math.max(1, maxL));
+    const ny = i => base - tz(i) * lev;
+    for (let i = 1; i <= n; i++) { const p = i + lb(i); if (p <= n) { const hot = on.has(i) && on.has(p) && mode === 'u'; S('line', { x1: cx(i), y1: ny(i), x2: cx(p), y2: ny(p), stroke: hot ? C.active : C.ink3, 'stroke-width': hot ? 3 : 1.2 }, svg); } }
+    for (let i = 1; i <= n; i++) { const hot = on.has(i); S('circle', { cx: cx(i), cy: ny(i), r: n > 8 ? 11 : 14, fill: hot ? C.active : '#fff', stroke: hot ? C.active : C.ink, 'stroke-width': 1.5 }, svg); S('text', { x: cx(i), y: ny(i) + 4.5, 'text-anchor': 'middle', class: 'lbl', 'font-size': n > 8 ? 11 : 13, fill: hot ? '#fff' : C.ink, text: i }, svg); }
+    label(svg, 16, base - maxL * lev + 4, 'tree: parent(i) = i + lowbit(i)', { anchor: 'start', c: C.ink2, halo: false });
+    // lowbit readout
+    const bits = n > 8 ? 5 : 4, bin = v => ((v + (1 << bits)) % (1 << bits)).toString(2).padStart(bits, '0');
+    $(f, '[data-o=lowbit]').innerHTML = `<span><span class="k">pos</span> <span class="v">${pos} = ${bin(pos)}₂</span></span><span><span class="k">−pos (two's complement)</span> <span class="v">${bin(-pos)}₂</span></span>` +
+      `<span><span class="k">pos &amp; −pos</span> <span class="v" style="color:var(--active)">${bin(lb(pos))}₂ = ${lb(pos)}</span></span><span><span class="k">BIT[${pos}] covers</span> <span class="v">[${pos - lb(pos) + 1}, ${pos}]</span></span>`;
+    let rows, run = 0;
+    if (mode === 'q') {
+      rows = '<thead><tr><th>step</th><th>pos</th><th>binary</th><th>lowbit</th><th>BIT[pos]</th><th>running total</th></tr></thead><tbody>' +
+        path.map((p, i) => { run += BIT[p]; return `<tr><td>${i + 1}</td><td>${p}</td><td>${bin(p)}</td><td>${lb(p)}</td><td>${BIT[p]}</td><td>${run}</td></tr>`; }).join('') +
+        `<tr><td>—</td><td>0</td><td>—</td><td>—</td><td>—</td><td>stop: query(${pos}) = ${run}</td></tr></tbody>`;
+    } else {
+      rows = '<thead><tr><th>step</th><th>pos</th><th>binary</th><th>lowbit</th><th>touches</th></tr></thead><tbody>' +
+        path.map((p, i) => `<tr><td>${i + 1}</td><td>${p}</td><td>${bin(p)}</td><td>${lb(p)}</td><td>BIT[${p}] += 1, range [${p - lb(p) + 1}, ${p}]</td></tr>`).join('') +
+        `<tr><td>—</td><td>${path[path.length - 1] + lb(path[path.length - 1])}</td><td>—</td><td>—</td><td>&gt; n, stop</td></tr></tbody>`;
+    }
+    $(f, '[data-o=steps]').innerHTML = rows;
+  }
+  $$(f, '[data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; $$(f, '[data-m]').forEach(x => x.setAttribute('aria-pressed', x === b)); if (mode === 'u' && sp.value === '7') sp.value = 3; draw(); });
+  $$(f, '[data-n]').forEach(b => b.onclick = () => { n = +b.dataset.n; $$(f, '[data-n]').forEach(x => x.setAttribute('aria-pressed', x === b)); draw(); });
+  sp.addEventListener('input', draw); draw();
+})();
+
+/* ===== 17 Inversions with a Fenwick tree ===== */
+(function () {
+  const f = document.getElementById('f-inv'), svg = $(f, 'svg'), cap = $(f, '[data-o=cap]');
+  let pi, res, k;
+  function load(p) { pi = p; res = G.inversionsBIT(pi); k = -1; }
+  function draw() {
+    svg.textContent = '';
+    drawWires(svg, pi, { cur: k < 0 ? -1 : k });
+    const n = pi.length, R = k >= 0 ? res.rows[k] : null, bit = R ? R.bit : new Array(n + 1).fill(0);
+    $(f, '[data-o=bit]').innerHTML = Array.from({ length: n }, (_, i) => { const p = i + 1, q = R && R.qpath.includes(p), u = R && R.upath.includes(p); return `<div class="cc ${q ? 'rd' : ''} ${u ? 'up' : ''}"><small>${p}</small>${bit[p]}</div>`; }).join('');
+    let rows = '<thead><tr><th>i</th><th>π[i]</th><th>pos</th><th>query(pos)</th><th>i − query</th><th>total</th></tr></thead><tbody>';
+    for (let i = 0; i <= k; i++) { const r = res.rows[i]; rows += `<tr class="${i === k ? 'cur' : ''}"><td>${r.i}</td><td>${r.v}</td><td>${r.pos}</td><td>${r.q}</td><td>${r.add}</td><td>${r.total}</td></tr>`; }
+    $(f, '[data-o=rows]').innerHTML = rows + '</tbody>';
+    cap.textContent = k < 0 ? `π = [${pi.join(', ')}]. The tree starts empty. Step through the wires top to bottom.`
+      : `i = ${R.i}: π[${R.i}] = ${R.v}, so pos = ${R.pos}. query(${R.pos}) reads BIT[${R.qpath.join('], BIT[') || '—'}] = ${R.q}, meaning ${R.q} earlier value${R.q === 1 ? ' is' : 's are'} ≤ ${R.v}. New crossings: ${R.i} − ${R.q} = ${R.add}. Then update(${R.pos}) touches BIT[${R.upath.join('], BIT[')}]. Running total: ${R.total}.` +
+        (k === pi.length - 1 ? ` Done: ${R.total} inversions, which matches the double loop's ${G.inversionsBrute(pi).length}.` : '');
+    $(f, '[data-a=back]').disabled = k < 0; $(f, '[data-a=next]').disabled = k >= pi.length - 1;
+  }
+  const next = () => { if (k >= pi.length - 1) return false; k++; draw(); return k < pi.length - 1; };
+  $(f, '[data-a=next]').onclick = next;
+  $(f, '[data-a=back]').onclick = () => { if (k >= 0) { k--; draw(); } };
+  const stop = player($(f, '[data-a=play]'), next, 1200);
+  $(f, '[data-a=reset]').onclick = () => { stop(); k = -1; draw(); };
+  $(f, '[data-a=lect]').onclick = () => { stop(); load([1, 3, 0, 4, 2]); draw(); };
+  $(f, '[data-a=rand]').onclick = () => { stop(); const p = [0, 1, 2, 3, 4, 5, 6, 7]; for (let i = 7; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; } load(p); draw(); };
+  load([1, 3, 0, 4, 2]); draw();
+})();
+
+</script>
+</body>
+</html>

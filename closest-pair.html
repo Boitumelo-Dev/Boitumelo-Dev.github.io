@@ -1,0 +1,1584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Closest Pair of Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Jost:wght@300;400;500;600&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#e8edea; --sheet:#f4f7f5; --ink:#17212b; --ink2:#4a5662; --ink3:#7c8892;
+  --rule:#c3cdc8; --dot:#b4c2bb;
+  --delta:#2a46c8; --delta-t:rgba(42,70,200,.13); --delta-tt:rgba(42,70,200,.06);
+  --best:#0b7f53; --best-t:rgba(11,127,83,.12);
+  --active:#b07400; --active-t:rgba(176,116,0,.14);
+  --waste:#c0263a; --waste-t:rgba(192,38,58,.10);
+  --display:'Jost',system-ui,sans-serif; --body:'Literata',Georgia,serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  --prose:42rem; --wide:64rem;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:1.0625rem;line-height:1.68;}
+::selection{background:var(--delta-t)}
+a{color:var(--delta)}
+:focus-visible{outline:2.5px solid var(--delta);outline-offset:3px;border-radius:3px}
+svg :focus-visible{outline:none}
+svg .pt:focus-visible{stroke:var(--active);stroke-width:4}
+
+/* ---------- layout ---------- */
+.wrap{max-width:var(--wide);margin:0 auto;padding:0 1.25rem}
+.prose{max-width:var(--prose)}
+main section{padding:3.5rem 0 1rem}
+p{margin:0 0 1.05rem}
+em{font-style:italic}
+strong{font-weight:600}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.m{font-style:italic;font-family:var(--body);white-space:nowrap}
+sub{font-size:.72em}
+
+/* ---------- hero ---------- */
+header.hero{padding:2.2rem 0 1rem}
+.course{font-family:var(--display);font-weight:400;color:var(--ink2);font-size:1rem;margin:0 0 1.6rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center}
+.course .chip{border:1.5px solid var(--rule);border-radius:999px;padding:.12rem .7rem;font-size:.9rem}
+h1{font-family:var(--display);font-weight:300;font-size:clamp(3rem,10vw,7.4rem);line-height:.9;letter-spacing:-.035em;margin:0 0 1.1rem}
+h1 .row2{display:block;font-weight:600;letter-spacing:-.045em}
+.thesis{font-size:clamp(1.1rem,2.1vw,1.32rem);max-width:38rem;color:var(--ink);margin:0 0 1.6rem;line-height:1.5}
+
+/* ---------- section heading with dimension-line signature ---------- */
+h2{font-family:var(--display);font-weight:500;font-size:clamp(1.75rem,3.6vw,2.5rem);line-height:1.1;letter-spacing:-.02em;margin:0 0 1.2rem;display:flex;flex-direction:column;gap:.55rem}
+.dim{display:inline-flex;align-items:center;height:15px;border-left:1.5px solid var(--delta);border-right:1.5px solid var(--delta);color:var(--delta);font-family:var(--mono);font-size:.8rem;font-weight:600;letter-spacing:0;align-self:flex-start}
+.dim i{display:block;width:26px;border-top:1.5px solid var(--delta);position:relative}
+.dim i:first-child::before,.dim i:last-child::after{content:"";position:absolute;top:-4.5px;border:3.5px solid transparent}
+.dim i:first-child::before{left:0;border-right:6px solid var(--delta);border-left:0}
+.dim i:last-child::after{right:0;border-left:6px solid var(--delta);border-right:0}
+.dim b{padding:0 .45rem;font-weight:600}
+h3{font-family:var(--display);font-weight:500;font-size:1.3rem;letter-spacing:-.01em;margin:2.2rem 0 .6rem}
+
+/* ---------- figures ---------- */
+.fig{margin:1.6rem 0 2.2rem;background:var(--sheet);border-radius:14px;padding:.9rem;box-shadow:0 1px 0 var(--rule),0 0 0 1px rgba(23,33,43,.05)}
+.fig.wide{max-width:var(--wide)}
+.fig.narrow{max-width:var(--prose)}
+.plane{display:block;width:100%;height:auto;border-radius:9px;touch-action:none;user-select:none;-webkit-user-select:none;
+  background-color:#fbfcfb;background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.2px);background-size:22px 22px;background-position:11px 11px}
+.plane.noTouchLock{touch-action:pan-y}
+.stack{position:relative}
+.stack canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:9px}
+.stack svg{position:relative;background:transparent!important}
+.stack{background-color:#fbfcfb;background-image:radial-gradient(circle,var(--dot) 1px,transparent 1.2px);background-size:22px 22px;border-radius:9px}
+.controls{display:flex;flex-wrap:wrap;gap:.55rem .7rem;align-items:center;margin:.8rem .1rem .2rem;font-family:var(--display);font-size:.95rem}
+.controls label{display:flex;align-items:center;gap:.5rem;color:var(--ink2)}
+.controls output{font-family:var(--mono);font-size:.85rem;color:var(--ink);min-width:3ch}
+button{font-family:var(--display);font-size:.95rem;font-weight:500;color:var(--ink);background:#fff;border:1.5px solid var(--rule);border-radius:999px;padding:.38rem .95rem;cursor:pointer;line-height:1.2}
+button:hover{border-color:var(--ink3)}
+button:active{transform:translateY(1px)}
+button.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+button[aria-pressed="true"]{background:var(--delta);border-color:var(--delta);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+.seg{display:inline-flex;gap:0;border:1.5px solid var(--rule);border-radius:999px;overflow:hidden;background:#fff}
+.seg button{border:0;border-radius:0;padding:.38rem .85rem}
+.seg button+button{border-left:1.5px solid var(--rule)}
+input[type=range]{accent-color:var(--delta);width:min(220px,50vw)}
+.readout{font-family:var(--mono);font-size:.84rem;line-height:1.6;color:var(--ink);margin:.6rem .1rem 0;display:flex;flex-wrap:wrap;gap:.35rem 1.4rem}
+.readout .k{color:var(--ink2)}
+.readout .v{font-weight:600}
+.caption{font-family:var(--display);font-size:1.02rem;line-height:1.45;margin:.7rem .1rem 0;min-height:3em;color:var(--ink)}
+.notice{margin:.9rem .1rem 0;padding-top:.75rem;border-top:1px solid var(--rule);font-size:.96rem;color:var(--ink2);line-height:1.55}
+.notice b{font-family:var(--display);font-weight:600;color:var(--ink);margin-right:.35rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem}
+.grid2 .fig{margin:0}
+@media (max-width:760px){.grid2{grid-template-columns:1fr}}
+.subhead{font-family:var(--display);font-weight:600;font-size:1.05rem;margin:.1rem .1rem .55rem}
+
+/* colour key */
+.key{display:flex;flex-wrap:wrap;gap:.5rem 1.2rem;font-family:var(--display);font-size:.93rem;color:var(--ink2);margin:.2rem 0 0}
+.key span{display:inline-flex;align-items:center;gap:.45rem}
+.sw{width:22px;height:10px;border-radius:3px;display:inline-block}
+.sw.delta{background:var(--delta-t);border:1.5px solid var(--delta)}
+.sw.best{background:var(--best)}
+.sw.active{background:var(--active)}
+.sw.waste{background:var(--waste)}
+.sw.fill{width:11px;height:11px;border-radius:50%;background:var(--ink)}
+.sw.ring{width:11px;height:11px;border-radius:50%;border:2px solid var(--ink);background:#fff}
+
+/* callouts */
+.call{border-radius:12px;padding:1rem 1.15rem;margin:1.4rem 0;max-width:var(--prose)}
+.call>b:first-child{display:block;font-family:var(--display);font-weight:600;font-size:1rem;margin-bottom:.25rem}
+.call p:last-child{margin-bottom:0}
+.call.def{background:var(--delta-tt);box-shadow:inset 0 0 0 1.5px rgba(42,70,200,.25)}
+.call.def>b:first-child{color:var(--delta)}
+.call.gotcha{background:var(--waste-t);box-shadow:inset 0 0 0 1.5px rgba(192,38,58,.25)}
+.call.gotcha>b:first-child{color:var(--waste)}
+.call.aha{background:var(--best-t);box-shadow:inset 0 0 0 1.5px rgba(11,127,83,.25)}
+.call.aha>b:first-child{color:var(--best)}
+
+/* equations */
+.eq{font-family:var(--body);font-style:italic;font-size:1.12rem;background:#fff;border-radius:10px;padding:.8rem 1rem;margin:1rem 0 1.3rem;max-width:var(--prose);overflow-x:auto;line-height:1.9}
+.eq .n{font-style:normal}
+.eq .note{font-family:var(--display);font-style:normal;font-size:.86rem;color:var(--ink2);margin-left:.6rem}
+.eq .t-red{color:var(--waste)} .eq .t-green{color:var(--best)} .eq .t-amber{color:var(--active)}
+
+/* merge-sort stepper */
+.ms{background:#fbfcfb;border-radius:9px;padding:1rem .8rem;min-height:230px;overflow-x:auto}
+.ms-row{display:flex;gap:1.1rem;flex-wrap:nowrap;align-items:flex-start;margin-bottom:1.4rem;min-height:66px}
+.ms-list{display:flex;flex-direction:column;align-items:flex-start;gap:.25rem}
+.ms-cells{display:flex}
+.ms-cell{width:42px;height:38px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:.95rem;background:var(--ink);color:#fff;border-right:1px solid #3a4652}
+.ms-cell:last-child{border-right:0}
+.ms-cell.used{background:#d3dad6;color:var(--ink3)}
+.ms-cell.ptr{background:var(--active);color:#fff}
+.ms-cell.out{background:var(--best)}
+.ms-cell.empty{background:transparent;border:1.5px dashed var(--rule);color:transparent}
+.ms-ptr{font-family:var(--mono);font-size:.8rem;color:var(--active);height:1.1em;display:flex}
+.ms-ptr span{width:42px;text-align:center}
+.ms-label{font-family:var(--display);font-size:.85rem;color:var(--ink2)}
+
+/* pseudocode */
+.codepair{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media (max-width:760px){.codepair{grid-template-columns:1fr}}
+pre.code{margin:0;background:#fbfcfb;border-radius:9px;padding:.9rem 0;font-family:var(--mono);font-size:.8rem;line-height:1.65;overflow-x:auto}
+pre.code span{display:block;padding:0 1rem;white-space:pre}
+pre.code .kw{display:inline;padding:0;color:var(--delta);font-weight:600}
+.diff pre.code span.minus{background:var(--waste-t);box-shadow:inset 3px 0 0 var(--waste)}
+.diff pre.code span.plus{background:var(--best-t);box-shadow:inset 3px 0 0 var(--best)}
+
+/* dna */
+.dna{font-family:var(--mono);font-size:.86rem;display:flex;flex-direction:column;gap:.3rem;background:#fbfcfb;border-radius:9px;padding:.8rem;overflow-x:auto}
+.dna button{display:flex;align-items:center;gap:.9rem;border-radius:8px;padding:.3rem .6rem;font-family:var(--mono);font-size:.86rem;font-weight:400;text-align:left;width:max-content;min-width:100%}
+.dna button .nm{font-family:var(--display);font-weight:600;width:1.2rem}
+.dna button .hd{margin-left:auto;color:var(--ink2);min-width:6.5rem;text-align:right}
+.dna .x{color:#fff;background:var(--waste);border-radius:2px}
+.dna button.sel{border-color:var(--active);box-shadow:0 0 0 1.5px var(--active)}
+.dna button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+.dna .tag{color:var(--best);font-family:var(--display);font-weight:600;min-width:7.5rem;text-align:right}
+
+/* tables */
+table.t{border-collapse:collapse;font-family:var(--mono);font-size:.84rem;margin:.6rem 0 0;width:100%;max-width:34rem}
+table.t th{font-family:var(--display);font-weight:500;text-align:left;color:var(--ink2);padding:.3rem .5rem;border-bottom:1.5px solid var(--rule)}
+table.t td{padding:.3rem .5rem;border-bottom:1px solid var(--rule)}
+table.t td.win{color:var(--best);font-weight:600}
+.guide{width:100%;max-width:var(--prose);border-collapse:collapse;margin:1rem 0 1.5rem;font-size:.98rem}
+.guide th,.guide td{text-align:left;vertical-align:top;padding:.7rem .6rem;border-bottom:1px solid var(--rule)}
+.guide th{font-family:var(--display);font-weight:500;color:var(--ink2);font-size:.92rem}
+.guide td:first-child{font-family:var(--display);font-weight:500;width:38%}
+
+/* takeaways + quiz */
+ol.take{max-width:var(--prose);padding-left:1.3rem}
+ol.take li{margin-bottom:.6rem}
+details.q{max-width:var(--prose);background:var(--sheet);border-radius:10px;padding:.75rem 1rem;margin:.55rem 0}
+details.q summary{cursor:pointer;font-family:var(--display);font-weight:500;font-size:1.02rem}
+details.q[open] summary{margin-bottom:.4rem}
+footer{padding:3rem 0 4rem;color:var(--ink2);font-family:var(--display);font-size:.92rem}
+
+/* svg styling */
+.lbl{font-family:var(--mono);font-size:13px;fill:var(--ink)}
+.lbl-d{font-family:var(--display);font-size:15px;fill:var(--ink2)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+@media (max-width:560px){body{font-size:1rem}.fig{padding:.6rem;border-radius:12px}.readout{font-size:.78rem;gap:.25rem 1rem}}
+</style>
+</head>
+<body>
+<header class="hero wrap">
+  <p class="course"><span class="chip">COMS3005A</span><span>Advanced Analysis of Algorithms, lecture 7: classic algorithms in computational geometry</span></p>
+  <h1>Closest pair<span class="row2">of points</span></h1>
+  <p class="thesis">Given <span class="m">n</span> points, which two are nearest? You could measure every pair. The trick in this lecture is that geometry lets you prove most pairs can't win, so you never have to measure them.</p>
+
+  <figure class="fig wide" id="f-hero">
+    <svg class="plane" viewBox="0 0 960 430" role="img" aria-label="Interactive point field showing the closest pair, the dividing line and the strip"></svg>
+    <div class="controls">
+      <label>Points <input type="range" min="8" max="400" value="60" step="1" data-k="n"><output data-o="n">60</output></label>
+      <button data-a="scatter">Scatter new</button>
+      <button data-a="clear">Clear</button>
+    </div>
+    <div class="readout" data-o="stats"></div>
+    <p class="notice"><b>What to notice</b>Click the empty plane to add a point, or drag one. The green link is the closest pair. The blue band is the strip around the first dividing line. The counters compare checking every pair with divide and conquer, which only measures pairs that could possibly win. Push the slider to 400 and the gap grows enormous.</p>
+  </figure>
+  <div class="key" aria-label="Colour key used in every figure">
+    <span><i class="sw delta"></i>δ, the strip, the δ-box</span>
+    <span><i class="sw best"></i>best or correct answer</span>
+    <span><i class="sw active"></i>being compared right now</span>
+    <span><i class="sw waste"></i>wasted work or contradiction</span>
+    <span><i class="sw fill"></i>point in the left half, <span class="m">P<sub>L</sub></span></span>
+    <span><i class="sw ring"></i>point in the right half, <span class="m">P<sub>R</sub></span></span>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- 1 -->
+<section id="s1">
+  <h2><span class="dim"><i></i><b>01</b><i></i></span>Geometry as a toolbox</h2>
+  <div class="prose">
+    <p>Computational geometry is the study of algorithms for problems stated in terms of basic geometric objects: points, line segments, polygons and polyhedra. You get a set of objects and ask questions about them. Do these lines intersect, and where? Given a fixed amount of material, how much of a certain shape can we make?</p>
+    <p>The main idea that runs through all of it: <strong>use what we know about geometry</strong>, things like the triangle inequality, Pythagoras or convexity, to throw away most of the search space before doing any work. Here are four famous problems, each with that idea at its core.</p>
+  </div>
+
+  <div class="grid2">
+    <figure class="fig" id="f-lp">
+      <p class="subhead">Linear programming</p>
+      <svg class="plane" viewBox="0 0 520 340" role="img" aria-label="Feasible region of a linear program with a rotating objective"></svg>
+      <div class="controls"><label>Objective direction <input type="range" min="0" max="359" value="40" data-k="th"><output data-o="th">40°</output></label></div>
+      <div class="readout" data-o="lp"></div>
+      <p class="notice"><b>What to notice</b>Each constraint is a half-plane, and the feasible region (blue) is where they all overlap. Rotate the objective arrow: the best point (green) always sits on a corner and jumps from corner to corner. That's why an algorithm only needs to visit vertices, not the whole region.</p>
+    </figure>
+    <figure class="fig" id="f-hull">
+      <p class="subhead">Convex hull</p>
+      <svg class="plane" viewBox="0 0 520 340" role="img" aria-label="Draggable points with their convex hull"></svg>
+      <div class="controls"><button data-a="shuffle">Shuffle</button><button data-a="clear">Clear</button></div>
+      <div class="readout" data-o="hull"></div>
+      <p class="notice"><b>What to notice</b>The hull is the smallest convex polygon containing every point, like a rubber band snapped around them. Click to add points and drag them around. An inside point changes nothing until it crosses the band, and then it becomes a corner.</p>
+    </figure>
+    <figure class="fig" id="f-empty">
+      <p class="subhead">Largest empty circle</p>
+      <div class="stack"><canvas width="520" height="340"></canvas>
+      <svg class="plane" viewBox="0 0 520 340" role="img" aria-label="Largest empty circle among obstacles"></svg></div>
+      <div class="readout" data-o="empty"></div>
+      <p class="notice"><b>What to notice</b>Hover anywhere inside the hull. The blue circle is the biggest one centred there that touches no point. Darker shading means more room. The winner (green) always touches at least three points, or two points plus the hull boundary. In 3D the same question becomes the largest empty sphere. Drag the points to see the winner move.</p>
+    </figure>
+    <figure class="fig" id="f-ray">
+      <p class="subhead">Ray tracing</p>
+      <svg class="plane" viewBox="0 0 520 340" role="img" aria-label="A ray from a light source hitting circles"></svg>
+      <div class="controls"><label>Aim <input type="range" min="-40" max="40" value="0" step="0.5" data-k="a"><output data-o="a">0°</output></label></div>
+      <div class="readout" data-o="ray"></div>
+      <p class="notice"><b>What to notice</b>Which object does the light hit first? Each circle gives a quadratic in the distance <span class="m">t</span> along the ray. The first hit is simply the smallest positive root (green), and anything behind it is hidden (red). Drag across the plane to aim.</p>
+    </figure>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <h2><span class="dim"><i></i><b>02</b><i></i></span>The closest pair problem</h2>
+  <div class="prose">
+    <p>The rest of the lecture is about one classic problem. Given a set of <span class="m">n</span> points, find the distance, according to some metric, between the closest pair. It turns up everywhere: which two aircraft on a radar map are dangerously near each other, or which two DNA sequences in a database are most alike.</p>
+    <div class="call def"><b>Definition</b><p>For a set <span class="m">P</span> of <span class="m">n ≥ 2</span> points and a distance <span class="m">d</span>, the closest pair is the pair <span class="m">p ≠ q</span> in <span class="m">P</span> with the smallest <span class="m">d(p, q)</span>. Unless stated otherwise, <span class="m">d</span> is Euclidean: <span class="m">√((x₁−x₂)² + (y₁−y₂)²)</span>.</p></div>
+    <p>"According to some metric" matters. The same points can have different closest pairs under different metrics, because each metric has its own shape of "equally far".</p>
+  </div>
+  <figure class="fig narrow" id="f-metric">
+    <svg class="plane" viewBox="0 0 400 260" role="img" aria-label="Closest pair under three metrics"></svg>
+    <div class="controls"><div class="seg" role="group" aria-label="Metric">
+      <button data-m="euclid" aria-pressed="true">Euclidean</button><button data-m="manhattan" aria-pressed="false">Manhattan</button><button data-m="cheb" aria-pressed="false">Chebyshev</button></div></div>
+    <table class="t" data-o="mt"></table>
+    <p class="notice"><b>What to notice</b>The blue shape is every spot exactly <span class="m">d</span> away from one point of the winning pair. Euclidean gives a circle, Manhattan a diamond and Chebyshev a square. Pair A is diagonal, so Manhattan punishes it and Chebyshev rewards it. Pair B is axis-aligned, so all three metrics agree on its length. Three metrics, three different winners.</p>
+  </figure>
+  <div class="prose"><p>The metric doesn't even have to be geometric. For DNA, a natural distance is the <em>Hamming distance</em>: the number of positions where two equal-length sequences differ.</p></div>
+  <figure class="fig narrow" id="f-dna">
+    <div class="dna" data-o="dna"></div>
+    <p class="notice"><b>What to notice</b>Pick a sequence. Each other row shows the letters that differ (red) and its Hamming distance. The pair with the smallest distance overall is the closest pair (green). It's the same problem, just a different <span class="m">d</span>. From here on we use Euclidean distance in the plane.</p>
+  </figure>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <h2><span class="dim"><i></i><b>03</b><i></i></span>Brute force: measure everything</h2>
+  <div class="prose">
+    <p>The obvious algorithm compares every point with every other one and keeps the smallest distance. The first point is compared with <span class="m">n − 1</span> others, the second with <span class="m">n − 2</span> new ones (its pair with the first is already done), and the <span class="m">i</span>-th with <span class="m">n − i</span>.</p>
+  </div>
+  <figure class="fig narrow" id="f-brute">
+    <svg class="plane" viewBox="0 0 420 250" role="img" aria-label="Brute force comparisons stepping through all pairs"></svg>
+    <div class="controls"><button class="primary" data-a="step">Next comparison</button><button data-a="play">Play</button><button data-a="reset">Reset</button></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>The amber line is the pair being measured, grey lines are pairs already measured, and green is the best so far. Watch the row of terms: point 1 makes 5 new comparisons, point 2 makes 4, and so on down to 1. With 6 points that's 15 comparisons, which is 6·5/2.</p>
+  </figure>
+  <div class="eq">(n−1) + (n−2) + (n−3) + … + 1 = n(n−1)/2 ⇒ <span class="t-red">O(n²)</span></div>
+  <figure class="fig narrow" id="f-scale">
+    <div class="controls"><label>n = <input type="range" min="1" max="7" step="0.05" value="4" data-k="e"><output data-o="e">10,000</output></label></div>
+    <div class="readout" data-o="scale"></div>
+    <p class="notice"><b>What to notice</b>Pretend each distance takes one microsecond. At a million points brute force needs almost 6 days, while an <span class="m">n lg n</span> algorithm takes about 20 seconds. Quadratic growth is the enemy, and the rest of the lecture is about beating it.</p>
+  </figure>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <h2><span class="dim"><i></i><b>04</b><i></i></span>Divide: sort once, then split the plane</h2>
+  <div class="prose">
+    <p>Divide and conquer has the familiar shape:</p>
+    <ol>
+      <li><strong>Sort the points by <span class="m">x</span></strong> as preprocessing, breaking ties by <span class="m">y</span>. This is a one-off cost of <span class="m">O(n lg n)</span>, using merge sort for example. We sort once and reuse the sorted list.</li>
+      <li><strong>Split</strong> the plane in half with a vertical line, so half the points are in <span class="m">P<sub>L</sub></span> and half in <span class="m">P<sub>R</sub></span>.</li>
+      <li><strong>Recursively solve</strong> each half. In the base case, when 2 or 3 points remain, compute the answer directly. For 2 points the answer is obviously the two points themselves.</li>
+      <li><strong>Check across the divide</strong> for a pair with one point in each half that is shorter than both halves' answers.</li>
+      <li><strong>Return</strong> the minimum of these values.</li>
+    </ol>
+    <p>Step through it on 15 points. Each split is just "cut the x-sorted list at the middle index", which is why the presort pays off: no split ever has to sort again.</p>
+  </div>
+  <figure class="fig wide" id="f-rec">
+    <svg class="plane" viewBox="0 0 900 380" role="img" aria-label="Step-through of the divide and conquer recursion"></svg>
+    <div class="controls"><button data-a="back">Back</button><button class="primary" data-a="next">Next step</button><button data-a="play">Play</button><button data-a="reset">Reset</button><button data-a="rand">New points</button><span class="mono" data-o="ctr" style="color:var(--ink2)"></span></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Split lines get thinner and lighter the deeper the recursion goes. Blue links are the best pairs found <em>inside</em> each half, while amber links are the cross-boundary checks of a merge. Keep stepping on the original points: near the end, the best pair overall straddles the very first line, so neither half could ever see it. The merge step is what catches it.</p>
+  </figure>
+
+  <h3>Why the base case is "2 or 3"</h3>
+  <div class="prose"><p>A single point has no pair, so the recursion must never produce one. Splitting <span class="m">n</span> points into <span class="m">⌊n/2⌋</span> and <span class="m">⌈n/2⌉</span> and stopping as soon as <span class="m">n ≤ 3</span> guarantees that: any <span class="m">n ≥ 4</span> splits into halves of at least 2.</p></div>
+  <figure class="fig wide" id="f-tree">
+    <svg class="plane noTouchLock" viewBox="0 0 900 230" role="img" aria-label="Recursion tree of subproblem sizes"></svg>
+    <div class="controls"><label>n <input type="range" min="2" max="48" value="15" data-k="n"><output data-o="n">15</output></label></div>
+    <div class="readout" data-o="tree"></div>
+    <p class="notice"><b>What to notice</b>Every leaf (green) is a 2 or a 3, never a 1. The depth is about <span class="m">lg n</span>, because each level halves the size. Try 4, 5, 6 and 7 to watch where the 3s come from.</p>
+  </figure>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <h2><span class="dim"><i></i><b>05</b><i></i></span>Conquer across the divide: the strip</h2>
+  <div class="prose">
+    <p>Recursion hands back <span class="m">d₁</span>, the closest distance inside the left half, and <span class="m">d₂</span>, the same for the right. Now we must check whether a shorter pair exists with one point on each side of the dividing line. We don't need to check all such pairs, though, only the ones near the line.</p>
+    <div class="call def"><b>Definition</b><p>Let <span class="m">δ = min(d₁, d₂)</span>. The <em>strip</em> is the band of width <span class="m">2δ</span> centred on the dividing line: every point whose <span class="m">x</span> is less than <span class="m">δ</span> from the line.</p></div>
+    <p>Why can we ignore everything outside it? A point farther than <span class="m">δ</span> from the line is more than <span class="m">δ</span> horizontally from <em>every</em> point on the other side, so its distance to them is more than <span class="m">δ</span> too. It can't beat what we already have. And a short pair entirely on one side would already have been found by the recursion, because those are exactly <span class="m">d₁</span> and <span class="m">d₂</span>.</p>
+  </div>
+  <figure class="fig wide" id="f-strip">
+    <svg class="plane" viewBox="0 0 900 360" role="img" aria-label="Dividing line with strip of width two delta"></svg>
+    <div class="controls"><button data-a="rand">New points</button><button data-a="cross">Plant a cross pair</button></div>
+    <div class="readout" data-o="strip"></div>
+    <p class="notice"><b>What to notice</b>Drag points around. Faded points sit outside the strip and are never examined. If the best cross pair beats <span class="m">δ</span> it turns green, and both its endpoints are always inside the strip. They have to be. Try "Plant a cross pair", then drag a point of that pair away from the line until the pair stops winning.</p>
+  </figure>
+  <div class="prose">
+    <p>The merge returns the minimum over three things: the best pair on the left, the best pair on the right, and the best pair crossing the boundary within the strip.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <h2><span class="dim"><i></i><b>06</b><i></i></span>The worst case: everything in the strip</h2>
+  <div class="prose">
+    <p>The strip usually holds only a few points. But nothing stops <em>all</em> of them from landing there. If we then compare every strip point with every other, the merge costs <span class="m">n²</span> and we've gained nothing.</p>
+    <p>When does this happen? When the minimum distance on each side (which is mostly vertical spacing, in this layout) is larger than how far the points spread horizontally from the line. Remember, the width of the strip is set by <span class="m">δ</span>, the minimum distance between points, not by how far points are from the line.</p>
+  </div>
+  <figure class="fig wide" id="f-worst">
+    <svg class="plane" viewBox="0 0 900 360" role="img" aria-label="Points squeezed toward the dividing line"></svg>
+    <div class="controls"><label>Horizontal spread <input type="range" min="0" max="100" value="100" data-k="s"><output data-o="s">100%</output></label></div>
+    <div class="readout" data-o="worst"></div>
+    <p class="notice"><b>What to notice</b>Squeeze the spread. <span class="m">δ</span> stays in the same range, because the vertical gaps set it, but the strip swallows more and more points until it holds all 12. Comparing all pairs in the strip (red) grows quadratically. Hold that thought, because the next section's window (green) grows linearly.</p>
+  </figure>
+  <div class="eq">T(n) = 2T(n/2) + <span class="t-red">O(n²)</span> = <span class="t-red">O(n²)</span><span class="note">all-pairs check in the strip</span></div>
+  <div class="call gotcha"><b>Gotcha</b><p>Divide and conquer isn't automatically fast. If the combine step is quadratic, the recurrence is dominated by the root, and you're back to brute force with extra overhead.</p></div>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <h2><span class="dim"><i></i><b>07</b><i></i></span>Only check the next seven</h2>
+  <div class="prose">
+    <p>Can we avoid checking all strip points pairwise in the worst case? Yes. Take the points in the strip and <strong>sort them by <span class="m">y</span></strong>. Then for each point, compute the distance to the <strong>next 7 points only</strong>. If any is less than <span class="m">δ</span>, update <span class="m">δ</span> to that value.</p>
+    <p>We only look forward, because any pair with an earlier point was already checked when we were standing on that earlier point. And a partner closer than <span class="m">δ</span> must be less than <span class="m">δ</span> above us. That confines it to a <span class="m">δ</span>-tall, <span class="m">2δ</span>-wide box sitting on top of the current point.</p>
+  </div>
+  <figure class="fig wide" id="f-win">
+    <svg class="plane" viewBox="0 0 900 380" role="img" aria-label="Strip points in y order with the forward box"></svg>
+    <div class="controls"><button data-a="back">Back</button><button class="primary" data-a="next">Next point</button><button data-a="play">Play</button><button data-a="rand">New strip</button></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <div class="readout" data-o="win"></div>
+    <p class="notice"><b>What to notice</b>Points are numbered in <span class="m">y</span>-order. The blue box is the only place a winning partner could be, and it never holds more than 8 points including the current one. So 7 forward checks (amber) always cover it. Most of those 7 are outside the box, so the bound is generous, but it's a constant, and that's what matters.</p>
+  </figure>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <h2><span class="dim"><i></i><b>08</b><i></i></span>Why seven? A packing argument</h2>
+  <div class="prose">
+    <p>Suppose the closest pair is actually <span class="m">p<sub>l</sub> ∈ P<sub>L</sub></span> and <span class="m">p<sub>r</sub> ∈ P<sub>R</sub></span>, with distance <span class="m">δ′ &lt; δ</span>. First fact: both must be less than <span class="m">δ</span> from the dividing line, <em>and</em> less than <span class="m">δ</span> from each other vertically. That's Pythagoras.</p>
+  </div>
+  <figure class="fig narrow" id="f-pyth">
+    <svg class="plane" viewBox="0 0 420 300" role="img" aria-label="Right triangle showing the hypotenuse is at least each leg"></svg>
+    <div class="readout" data-o="pyth"></div>
+    <p class="notice"><b>What to notice</b>Drag <span class="m">q</span>. The hypotenuse <span class="m">δ′</span> is never shorter than either leg, because <span class="m">δ′² = x² + y² ≥ x²</span>, so <span class="m">δ′ ≥ x</span>, and likewise <span class="m">δ′ ≥ y</span>. Equality happens only when the points line up vertically or horizontally. That's why the argument uses the most conservative square, one that catches even perfectly aligned points.</p>
+  </figure>
+  <div class="eq">δ′ = √(x² + y²) &nbsp;⇒&nbsp; δ′² ≥ x² ⇒ δ′ ≥ |x| &nbsp;and&nbsp; δ′² ≥ y² ⇒ δ′ ≥ |y|</div>
+  <div class="prose">
+    <p>So if <span class="m">δ′ &lt; δ</span>, both points lie within <span class="m">δ</span> of the line horizontally and within <span class="m">δ</span> of each other vertically. Both fall in a <span class="m">δ × 2δ</span> rectangle centred on the dividing line. Now the real question: <strong>how many points can fit in that rectangle</strong> without contradicting the minimum distances we found on each side?</p>
+    <p>Look at the left <span class="m">δ × δ</span> square on its own. Every point in it belongs to <span class="m">P<sub>L</sub></span>, and all left points are at least <span class="m">d₁ ≥ δ</span> apart. Try to pack as many as you can.</p>
+  </div>
+  <figure class="fig narrow" id="f-pack">
+    <svg class="plane" viewBox="0 0 520 310" role="img" aria-label="Packing points into a delta by delta square"></svg>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Region"><button data-mode="sq" aria-pressed="true">Left square</button><button data-mode="rect" aria-pressed="false">Whole rectangle</button></div>
+      <button data-a="add">Add a point</button><button data-a="reset">Reset</button><button data-a="pig" aria-pressed="false">Show pigeonholes</button>
+    </div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Same-side points closer than <span class="m">δ</span> get a red link, because that would contradict <span class="m">δ</span> being the minimum on that side. Four fit exactly, at the corners. Add a fifth and there's always a red link: with pigeonholes on, the square splits into four quarters whose diagonal is only <span class="m">δ/√2 ≈ 0.71δ</span>, so two points sharing a quarter are too close. In the whole rectangle, the line can carry coincident points, one from each side, so 4 + 4 = 8.</p>
+  </figure>
+  <div class="prose">
+    <p>So at most <strong>eight</strong> points can sit in the <span class="m">δ × 2δ</span> rectangle. Here's what that construction did:</p>
+    <ul>
+      <li>It built the worst case for the <span class="m">x</span>-distance: the candidate partner is as far from the line as possible. That's one point just on the line and the other <span class="m">δ</span> to its left or right, which gives the <span class="m">2δ</span> width.</li>
+      <li>Since the strip is ordered by <span class="m">y</span>, we only look forward. Earlier points already checked us. So the box only needs to be <span class="m">δ</span> tall, not <span class="m">2δ</span>.</li>
+      <li>The box can hold 8 points only if the four left points are mutually <span class="m">δ</span> apart at the corners and the four right points are too.</li>
+    </ul>
+    <p>The current point is one of those 8, so the partner is among the <strong>next 7</strong> in <span class="m">y</span>-order. Every point between them in the order is also in the box, since it's in the strip and its <span class="m">y</span> lies in between.</p>
+    <div class="call aha"><b>Aha</b><p>The number 7 doesn't depend on <span class="m">n</span>. A geometric fact (you can't pack points that are <span class="m">δ</span> apart densely) turns a quadratic merge into a linear one: at most <span class="m">7n</span> distance checks per level.</p></div>
+    <div class="call gotcha"><b>Gotcha</b><p>If your intuition says 7 is wasteful, you're right. The square-packing argument is generous, and the lecture notes that a more careful argument brings it down to 5. The exact constant doesn't change the <span class="m">O(n)</span> cost of the merge, so any correct constant works.</p></div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <h2><span class="dim"><i></i><b>09</b><i></i></span>A first solution, and what it costs</h2>
+  <div class="prose">
+    <p>Put it together: recurse on each half, sort the strip by <span class="m">y</span>, and check 7 next points for each. Call this version <code>closest1</code>. In the worst case the strip holds all <span class="m">n</span> points, so the sort costs <span class="m">O(n lg n)</span> at every merge.</p>
+  </div>
+  <div class="eq">
+    T(n) = <span class="t-green">2T(n/2)</span> + <span class="t-amber">O(n lg n)</span> + 7n<span class="note">recursion, sort by y, check 7 next points</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="t-green">4T(n/4)</span> + O(2·(n/2) lg(n/2)) + <span class="t-amber">O(n lg n)</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 4T(n/4) + O(2n lg n)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 8T(n/8) + O(3n lg n)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;≈ 2<sup>k−1</sup> T(n/2<sup>k−1</sup>) + O((k−1) n lg n)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⇒ T(n) = <span class="t-red">O(n lg² n)</span><span class="note">k = lg n levels, each paying up to n lg n</span>
+  </div>
+  <div class="prose">
+    <p>Splitting in half gives <span class="m">lg n</span> levels. Assuming <span class="m">n = 2ᵏ</span>, it takes <span class="m">k − 1</span> splits to reach the limiting case of 2 points, where <span class="m">T(n/2ᵏ⁻¹) = O(1)</span>. In other words, <span class="m">lg n</span> sorts of <span class="m">n lg n</span> each. The initial sort by <span class="m">x</span> is <span class="m">O(n lg n)</span> and doesn't change that.</p>
+    <p>The recursion tree makes the shape visible. Each row is one level of recursion; the bar is the total work done by all calls on that row.</p>
+  </div>
+  <figure class="fig wide" id="f-cost">
+    <svg class="plane noTouchLock" viewBox="0 0 900 400" role="img" aria-label="Recursion tree cost per level for closest1 and closest2"></svg>
+    <div class="controls"><label>k, where n = 2<sup>k</sup> <input type="range" min="3" max="20" value="10" data-k="k"><output data-o="k">10</output></label></div>
+    <div class="readout" data-o="cost"></div>
+    <p class="notice"><b>What to notice</b>On the left (<code>closest1</code>), the red sorting part of each level shrinks by one unit of <span class="m">n</span> per level. The bars form a triangle, and its area is about <span class="m">½ n lg² n</span>. On the right (<code>closest2</code>, coming next), the green merging part is the same small width on every level. That's a rectangle, <span class="m">n lg n</span>. The grey <span class="m">7n</span> strip checks are identical in both. Slide <span class="m">k</span> up and watch the totals pull apart.</p>
+  </figure>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <h2><span class="dim"><i></i><b>10</b><i></i></span>Can we do better? Merge, don't sort</h2>
+  <div class="prose">
+    <p>Sorting by <span class="m">y</span> at every level is the expensive part. Can we avoid it? Borrow the idea from merge sort: <strong>merging two sorted lists takes only <span class="m">O(n)</span></strong>.</p>
+    <p>So let each recursive call return its points sorted by <span class="m">y</span> along with its answer. In the base case, sort the 2 or 3 points by <span class="m">y</span> directly (constant time) and return them. At every level above, the two halves hand back sorted sublists, and we merge them. Here's the mechanism on the lecture's example, where the numbers play the role of <span class="m">y</span>-coordinates.</p>
+  </div>
+  <figure class="fig wide" id="f-ms">
+    <div class="ms" data-o="ms"></div>
+    <div class="controls"><button data-a="back">Back</button><button class="primary" data-a="next">Next step</button><button data-a="play">Play</button><button data-a="reset">Reset</button></div>
+    <div class="caption" data-o="cap" aria-live="polite"></div>
+    <p class="notice"><b>What to notice</b>Pointers <span class="m">i</span> and <span class="m">j</span> (amber) look only at the front of each list. Each step moves the smaller front value to the output (green), and nothing is ever compared twice. Merging lists of length <span class="m">a</span> and <span class="m">b</span> takes at most <span class="m">a + b − 1</span> comparisons, so the whole level is linear.</p>
+  </figure>
+  <div class="eq">
+    T(n) = <span class="t-green">2T(n/2)</span> + <span class="t-green">O(n)</span> + 7n ⇒ <span class="t-green">T(n) = O(n lg n)</span><span class="note">recursion, merge, check 7 next points</span>
+  </div>
+  <div class="prose"><p>Add the initial sort by <span class="m">x</span>, and the total is still <span class="m">O(n lg n)</span>. To see what that buys you, here are the three growth rates on one chart.</p></div>
+  <figure class="fig wide" id="f-growth">
+    <svg class="plane noTouchLock" viewBox="0 0 900 330" role="img" aria-label="Growth of n squared, n lg squared n and n lg n"></svg>
+    <div class="controls"><label>n = <input type="range" min="1" max="6" step="0.05" value="3" data-k="e"><output data-o="e">1,000</output></label></div>
+    <div class="readout" data-o="growth"></div>
+    <p class="notice"><b>What to notice</b>Both axes are logarithmic, so a steeper line means a higher power of <span class="m">n</span>. The two divide-and-conquer curves look close here, but their ratio is <span class="m">lg n</span>, which is 20 at a million points. Brute force sits on a much steeper slope.</p>
+  </figure>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <h2><span class="dim"><i></i><b>11</b><i></i></span>Side by side: closest1 and closest2</h2>
+  <div class="prose"><p>The two algorithms are nearly identical. The whole improvement is moving the <span class="m">y</span>-sort out of the merge: it goes into the base case (on 3 points or fewer) and is replaced by a merge of the returned lists.</p></div>
+  <figure class="fig wide diff" id="f-code">
+    <div class="codepair">
+      <div><p class="subhead">closest1, O(n lg² n)</p><pre class="code"><span><b class="kw">def</b> closest1(P):</span><span>  <b class="kw">if</b> n_points &lt;= 3:</span><span>    compute d directly</span><span>    <b class="kw">return</b> d</span><span>  <b class="kw">else</b>:</span><span>    d1 = closest1(left plane)</span><span>    d2 = closest1(right plane)</span><span>    d = min(d1, d2)</span><span class="minus">    Y = sort points in strip by y coord</span><span>    <b class="kw">for</b> each point in Y in the strip:</span><span>      compute distance to next 7 points</span><span>      update d if &lt; distance found</span><span class="minus">    <b class="kw">return</b> d</span></pre></div>
+      <div><p class="subhead">closest2, O(n lg n)</p><pre class="code"><span><b class="kw">def</b> closest2(P):</span><span>  <b class="kw">if</b> n_points &lt;= 3:</span><span>    compute d directly</span><span class="plus">    sort points by y</span><span class="plus">    <b class="kw">return</b> d, sorted points</span><span>  <b class="kw">else</b>:</span><span class="plus">    d1, Y1 = closest2(left plane)</span><span class="plus">    d2, Y2 = closest2(right plane)</span><span>    d = min(d1, d2)</span><span class="plus">    merge Y1 and Y2 into Y</span><span>    <b class="kw">for</b> each point in Y in the strip:</span><span>      compute distance to next 7 points</span><span>      update d if &lt; distance found</span><span class="plus">    <b class="kw">return</b> d, Y</span></pre></div>
+    </div>
+    <div class="controls"><button data-a="diff" aria-pressed="true">Highlight differences</button></div>
+    <p class="notice"><b>What to notice</b>Red lines are what <code>closest1</code> does that <code>closest2</code> doesn't. Green lines are the replacement. <code>closest2</code> merges <em>all</em> the points into <span class="m">Y</span>, not just the strip, because its caller needs the complete sorted list. The strip is then read off <span class="m">Y</span> in one pass, which keeps the <span class="m">y</span>-order for free.</p>
+  </figure>
+  <div class="call gotcha"><b>Gotcha</b><p><code>closest1</code> only sorts the points that are <em>in the strip</em>. On random data the strip is usually tiny, so it often runs fast in practice. The <span class="m">O(n lg n)</span> per level in its recurrence is the worst case from section 6, when every point crowds into the strip. <code>closest2</code> is <span class="m">O(n lg n)</span> no matter how the points are arranged.</p></div>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <h2><span class="dim"><i></i><b>12</b><i></i></span>Takeaways</h2>
+  <ol class="take">
+    <li>Computational geometry turns up in design, optimisation and graphics. Linear programming, convex hulls, largest empty spheres and ray tracing are classic examples.</li>
+    <li>Brute-force closest pair is <span class="m">n(n−1)/2 = O(n²)</span> comparisons.</li>
+    <li>Divide and conquer: presort by <span class="m">x</span> once, split at the median, solve each half, then check across the divide.</li>
+    <li>Only points within <span class="m">δ = min(d₁, d₂)</span> of the line can form a better cross pair. That's the strip.</li>
+    <li>The strip can hold every point, so the cross check must avoid all-pairs. Otherwise you get <span class="m">T(n) = 2T(n/2) + O(n²) = O(n²)</span>.</li>
+    <li>Sort the strip by <span class="m">y</span> and compare each point with the next 7. Packing proves at most 8 points fit in the <span class="m">δ × 2δ</span> box.</li>
+    <li>Re-sorting by <span class="m">y</span> at every level gives <span class="m">O(n lg² n)</span>. Returning <span class="m">y</span>-sorted lists and merging them gives <span class="m">O(n lg n)</span>.</li>
+    <li>The real lesson: knowledge of Euclidean properties narrows down the solution space.</li>
+  </ol>
+
+  <h3>Decision guide</h3>
+  <table class="guide">
+    <thead><tr><th>If…</th><th>Then…</th></tr></thead>
+    <tbody>
+      <tr><td>n is tiny (say, a few dozen)</td><td>Brute force. It's simple, has no overhead, and it's exactly what the base case does anyway.</td></tr>
+      <tr><td>You need a guaranteed bound for any input</td><td><code>closest2</code>: presort by <span class="m">x</span>, return <span class="m">y</span>-sorted lists, merge, check the next 7. <span class="m">O(n lg n)</span>.</td></tr>
+      <tr><td>You already have <code>closest1</code></td><td>Make one change: return the sorted points from each call and merge instead of sorting the strip.</td></tr>
+      <tr><td>The combine step of a D&amp;C looks quadratic</td><td>Look for a geometric or ordering fact (like packing) that caps the work per element at a constant.</td></tr>
+      <tr><td>The metric isn't Euclidean</td><td>Brute force still works for any metric. The strip and packing argument rely on Euclidean geometry, so re-derive the constant before reusing them.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Check yourself</h3>
+  <details class="q"><summary>Why do we stop the recursion at 2 or 3 points, not 1?</summary><p>One point has no pair, so its "closest distance" is undefined (∞). Splitting <span class="m">n ≥ 4</span> into <span class="m">⌊n/2⌋, ⌈n/2⌉</span> always leaves at least 2 per half, so stopping at <span class="m">n ≤ 3</span> never creates a lonely point.</p></details>
+  <details class="q"><summary>A point is 1.2δ to the left of the dividing line. Can it be part of a better cross pair?</summary><p>No. Any point on the right is at least 1.2δ away horizontally, so its distance is at least 1.2δ &gt; δ by the Pythagoras bound. That's why it sits outside the strip.</p></details>
+  <details class="q"><summary>Why is the forward box δ tall and not 2δ?</summary><p>We process the strip in <span class="m">y</span>-order and only look ahead. A partner below the current point was already checked when we stood on that partner. So we only need the δ above.</p></details>
+  <details class="q"><summary>What is T(n) if the strip is sorted from scratch at every level?</summary><p><span class="m">T(n) = 2T(n/2) + O(n lg n) = O(n lg² n)</span>. There are <span class="m">lg n</span> levels, each paying up to <span class="m">n lg n</span> for sorting.</p></details>
+  <details class="q"><summary>In closest2, why merge all points into Y and not just the strip points?</summary><p>The caller needs the whole <span class="m">y</span>-sorted list of its subproblem to do its own merge. If you merged only strip points, the next level up would be missing points and would have to sort again.</p></details>
+</section>
+</main>
+<footer class="wrap">Based on Devon Jarvis's COMS3005A lecture slides, which build on the course notes by Dr. Steven James. Every figure on this page runs the algorithm it shows.</footer>
+
+<script>
+/* ===== Core geometry + closest-pair algorithms (instrumented) ===== */
+const CP = (() => {
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const byX = (a, b) => (a.x - b.x) || (a.y - b.y);
+  const byY = (a, b) => (a.y - b.y) || (a.x - b.x);
+
+  function brute(P) {
+    let best = { d: Infinity, pair: null }, comps = 0;
+    for (let i = 0; i < P.length; i++)
+      for (let j = i + 1; j < P.length; j++) {
+        comps++;
+        const d = dist(P[i], P[j]);
+        if (d < best.d) best = { d, pair: [P[i], P[j]] };
+      }
+    return { ...best, comps };
+  }
+
+  /* closest2: merge-based, O(n lg n). Logs events for the explorer.
+     Each point should carry an id. */
+  function closest2(points, log) {
+    const Px = points.slice().sort(byX);
+    const stats = { base: 0, strip: 0 };
+    const events = [];
+    function rec(Px, lo, hi, path) {
+      const n = Px.length;
+      if (n <= 3) {
+        const b = brute(Px);
+        stats.base += b.comps;
+        const Y = Px.slice().sort(byY);
+        if (log) events.push({ type: 'base', path, lo, hi, pts: Px, d: b.d, pair: b.pair, comps: b.comps });
+        return { d: b.d, pair: b.pair, Y };
+      }
+      const mid = n >> 1;
+      const L = (Px[mid - 1].x + Px[mid].x) / 2;
+      if (log) events.push({ type: 'split', path, lo, hi, L, n, pts: Px });
+      const left = rec(Px.slice(0, mid), lo, L, path + 'L');
+      const right = rec(Px.slice(mid), L, hi, path + 'R');
+      let best = left.d <= right.d ? { d: left.d, pair: left.pair } : { d: right.d, pair: right.pair };
+      const delta = best.d;
+      // merge the two y-sorted lists: O(n)
+      const Y = [];
+      let i = 0, j = 0;
+      while (i < left.Y.length && j < right.Y.length) Y.push(byY(left.Y[i], right.Y[j]) <= 0 ? left.Y[i++] : right.Y[j++]);
+      while (i < left.Y.length) Y.push(left.Y[i++]);
+      while (j < right.Y.length) Y.push(right.Y[j++]);
+      const S = Y.filter(p => Math.abs(p.x - L) < delta);
+      const checks = [];
+      let cross = null;
+      for (let a = 0; a < S.length; a++)
+        for (let b = a + 1; b < S.length && b <= a + 7; b++) {
+          stats.strip++;
+          const d = dist(S[a], S[b]);
+          checks.push([S[a], S[b], d]);
+          if (d < best.d) { best = { d, pair: [S[a], S[b]] }; cross = best; }
+        }
+      if (log) events.push({ type: 'merge', path, lo, hi, L, n, d1: left.d, d2: right.d, p1: left.pair, p2: right.pair,
+        delta, strip: S, checks, cross, d: best.d, pair: best.pair, pts: Px });
+      return { d: best.d, pair: best.pair, Y };
+    }
+    if (points.length < 2) return { d: Infinity, pair: null, stats, events };
+    const r = rec(Px, -Infinity, Infinity, '');
+    return { d: r.d, pair: r.pair, stats, events, comps: stats.base + stats.strip };
+  }
+
+  /* One level of the merge, used by the strip / worst-case figures */
+  function oneLevel(points) {
+    const Px = points.slice().sort(byX);
+    const mid = Px.length >> 1;
+    const leftP = Px.slice(0, mid), rightP = Px.slice(mid);
+    const L = (Px[mid - 1].x + Px[mid].x) / 2;
+    const bl = brute(leftP), br = brute(rightP);
+    const delta = Math.min(bl.d, br.d);
+    const S = Px.filter(p => Math.abs(p.x - L) < delta).sort(byY);
+    let cross = { d: Infinity, pair: null };
+    for (const p of leftP) for (const q of rightP) {
+      const d = dist(p, q);
+      if (d < cross.d) cross = { d, pair: [p, q] };
+    }
+    return { leftP, rightP, L, d1: bl.d, p1: bl.pair, d2: br.d, p2: br.pair, delta, S, cross };
+  }
+
+  /* Geometry helpers */
+  function hull(P) {
+    const pts = P.slice().sort(byX);
+    if (pts.length < 3) return pts;
+    const cr = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const lower = [], upper = [];
+    for (const p of pts) { while (lower.length >= 2 && cr(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+    for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cr(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+    upper.pop(); lower.pop();
+    return lower.concat(upper); // counter-clockwise
+  }
+  function inConvex(poly, p) {
+    if (poly.length < 3) return false;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i], b = poly[(i + 1) % poly.length];
+      if ((b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x) < 0) return false;
+    }
+    return true;
+  }
+  // clip polygon by half-plane a*x + b*y <= c
+  function clip(poly, a, b, c) {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const P = poly[i], Q = poly[(i + 1) % poly.length];
+      const fp = a * P.x + b * P.y - c, fq = a * Q.x + b * Q.y - c;
+      if (fp <= 0) out.push(P);
+      if ((fp < 0 && fq > 0) || (fp > 0 && fq < 0)) {
+        const t = fp / (fp - fq);
+        out.push({ x: P.x + t * (Q.x - P.x), y: P.y + t * (Q.y - P.y) });
+      }
+    }
+    return out;
+  }
+  const metrics = {
+    euclid: (a, b) => Math.hypot(a.x - b.x, a.y - b.y),
+    manhattan: (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y),
+    cheb: (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)),
+  };
+  function closestBy(P, m) {
+    let best = { d: Infinity, pair: null };
+    for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) {
+      const d = m(P[i], P[j]); if (d < best.d) best = { d, pair: [P[i], P[j]] };
+    }
+    return best;
+  }
+  return { dist, byX, byY, brute, closest2, oneLevel, hull, inConvex, clip, metrics, closestBy };
+})();
+
+
+</script>
+<script>
+/* ===== Shared helpers ===== */
+const NS = 'http://www.w3.org/2000/svg';
+const RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const C = { ink: '#17212b', ink2: '#4a5662', ink3: '#7c8892', rule: '#c3cdc8', paper: '#fbfcfb',
+  delta: '#2a46c8', deltaT: 'rgba(42,70,200,.13)', deltaTT: 'rgba(42,70,200,.06)',
+  best: '#0b7f53', bestT: 'rgba(11,127,83,.12)', active: '#b07400', activeT: 'rgba(176,116,0,.12)',
+  waste: '#c0263a', wasteT: 'rgba(192,38,58,.12)' };
+function S(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) { if (k === 'text') e.textContent = attrs[k]; else if (attrs[k] != null) e.setAttribute(k, attrs[k]); }
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const $ = (root, sel) => root.querySelector(sel);
+const $$ = (root, sel) => Array.from(root.querySelectorAll(sel));
+const f1 = v => (Math.round(v * 10) / 10).toFixed(1);
+const fmt = (n, d = 0) => Number(n).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+function rng(s) { return () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function vb(svg) { const v = svg.viewBox.baseVal; return { W: v.width, H: v.height }; }
+function toData(svg, e) {
+  const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
+  const q = p.matrixTransform(svg.getScreenCTM().inverse());
+  return { x: q.x, y: vb(svg).H - q.y };
+}
+/* A point drawn in y-up data coords. Returns the group. */
+function dot(parent, p, i, H, o = {}) {
+  const g = S('g', { 'data-idx': i, class: 'pt' + (o.drag ? ' drag' : '') }, parent);
+  if (o.drag) {
+    g.setAttribute('tabindex', '0'); g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', (o.label || 'Point ' + (i + 1)) + '. Arrow keys move it.');
+    S('circle', { cx: p.x, cy: H - p.y, r: o.hit || 15, fill: 'transparent' }, g);
+  } else if (o.hit) S('circle', { cx: p.x, cy: H - p.y, r: o.hit, fill: 'transparent' }, g);
+  S('circle', { class: 'vis', cx: p.x, cy: H - p.y, r: o.r || 5.5, fill: o.ring ? '#fff' : (o.fill || C.ink),
+    stroke: o.stroke || C.ink, 'stroke-width': o.ring ? (o.sw || 2) : (o.sw || 0), opacity: o.op ?? 1 }, g);
+  return g;
+}
+/* Drag + keyboard behaviour for point sets */
+function draggable(svg, o) {
+  let drag = null;
+  svg.addEventListener('pointerdown', e => {
+    const t = e.target.closest('[data-idx]');
+    if (t && +t.dataset.idx >= 0 && (!o.can || o.can(+t.dataset.idx))) { drag = +t.dataset.idx; svg.setPointerCapture(e.pointerId); e.preventDefault(); return; }
+    if (o.onEmpty) o.onEmpty(toData(svg, e), e);
+  });
+  svg.addEventListener('pointermove', e => {
+    if (drag == null) { if (o.onHover) o.onHover(toData(svg, e)); return; }
+    const p = toData(svg, e), q = o.pts()[drag];
+    q.x = p.x; q.y = p.y; if (o.clamp) o.clamp(q, drag); o.draw();
+  });
+  const up = () => { drag = null; };
+  svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+  svg.addEventListener('pointerleave', () => { if (drag == null && o.onLeave) o.onLeave(); });
+  svg.addEventListener('keydown', e => {
+    const t = e.target.closest('[data-idx]'); if (!t || +t.dataset.idx < 0) return;
+    const k = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (!k) return;
+    e.preventDefault();
+    const i = +t.dataset.idx, q = o.pts()[i], s = (o.step || 4) * (e.shiftKey ? 5 : 1);
+    q.x += k[0] * s; q.y += k[1] * s; if (o.clamp) o.clamp(q, i); o.draw();
+    const n = svg.querySelector(`[data-idx="${i}"]`); if (n) n.focus();
+  });
+}
+const clampBox = (x0, y0, x1, y1) => q => { q.x = Math.max(x0, Math.min(x1, q.x)); q.y = Math.max(y0, Math.min(y1, q.y)); };
+/* Dimension lines — the page's signature mark. Screen coords. */
+function arrowHead(g, x, y, dir, col) { // dir: 'l','r','u','d'
+  const s = 6, w = 3.5;
+  const pts = { l: [[x, y], [x + s, y - w], [x + s, y + w]], r: [[x, y], [x - s, y - w], [x - s, y + w]],
+    u: [[x, y], [x - w, y + s], [x + w, y + s]], d: [[x, y], [x - w, y - s], [x + w, y - s]] }[dir];
+  S('polygon', { points: pts.map(p => p.join(',')).join(' '), fill: col }, g);
+}
+function dimH(g, x1, x2, y, label, col = C.delta, above = true) {
+  if (x2 < x1) [x1, x2] = [x2, x1];
+  S('line', { x1, x2, y1: y, y2: y, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1, x2: x1, y1: y - 6, y2: y + 6, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1: x2, x2, y1: y - 6, y2: y + 6, stroke: col, 'stroke-width': 1.4 }, g);
+  if (x2 - x1 > 16) { arrowHead(g, x1, y, 'l', col); arrowHead(g, x2, y, 'r', col); }
+  if (label) S('text', { x: (x1 + x2) / 2, y: above ? y - 8 : y + 18, 'text-anchor': 'middle', class: 'lbl', fill: col, text: label }, g);
+}
+function dimV(g, x, y1, y2, label, col = C.delta, left = true) {
+  if (y2 < y1) [y1, y2] = [y2, y1];
+  S('line', { x1: x, x2: x, y1, y2, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1: x - 6, x2: x + 6, y1, y2: y1, stroke: col, 'stroke-width': 1.4 }, g);
+  S('line', { x1: x - 6, x2: x + 6, y1: y2, y2, stroke: col, 'stroke-width': 1.4 }, g);
+  if (y2 - y1 > 16) { arrowHead(g, x, y1, 'u', col); arrowHead(g, x, y2, 'd', col); }
+  if (label) S('text', { x: left ? x - 9 : x + 9, y: (y1 + y2) / 2 + 4, 'text-anchor': left ? 'end' : 'start', class: 'lbl', fill: col, text: label }, g);
+}
+function seg(g, a, b, H, o = {}) {
+  return S('line', { x1: a.x, y1: H - a.y, x2: b.x, y2: H - b.y, stroke: o.c || C.ink, 'stroke-width': o.w || 2,
+    'stroke-dasharray': o.dash || null, opacity: o.op ?? 1, 'stroke-linecap': 'round' }, g);
+}
+function label(g, x, y, text, o = {}) {
+  const t = S('text', { x, y, 'text-anchor': o.anchor || 'middle', class: o.cls || 'lbl', fill: o.c || C.ink, text }, g);
+  if (o.halo !== false) { t.setAttribute('paint-order', 'stroke'); t.setAttribute('stroke', '#fbfcfb'); t.setAttribute('stroke-width', '4'); t.setAttribute('stroke-linejoin', 'round'); }
+  return t;
+}
+function subText(g, x, y, main, sub, rest = '', o = {}) {
+  const t = S('text', { x, y, 'text-anchor': o.anchor || 'middle', class: o.cls || 'lbl-d', fill: o.c || C.ink2 }, g);
+  t.appendChild(document.createTextNode(main)); S('tspan', { 'baseline-shift': 'sub', 'font-size': '11', text: sub }, t);
+  if (rest) t.appendChild(document.createTextNode(rest)); return t;
+}
+function player(btn, stepFn, ms = 650) {
+  let id = null;
+  const stop = () => { if (id) { clearInterval(id); id = null; btn.textContent = 'Play'; } };
+  btn.addEventListener('click', () => {
+    if (id) return stop();
+    btn.textContent = 'Pause';
+    id = setInterval(() => { if (!stepFn()) stop(); }, RM ? Math.max(ms, 900) : ms);
+  });
+  return stop;
+}
+function randomPoints(n, W, H, m, minD, r = Math.random) {
+  const P = []; let tries = 0;
+  while (P.length < n && tries < 20000) {
+    tries++;
+    const p = { id: P.length, x: m + r() * (W - 2 * m), y: m + r() * (H - 2 * m) };
+    if (P.every(q => CP.dist(p, q) > minD)) P.push(p);
+  }
+  return P;
+}
+const lg = x => Math.log2(x);
+function human(us) {
+  const s = us / 1e6;
+  if (s < 1e-3) return fmt(us, 0) + ' µs';
+  if (s < 1) return fmt(s * 1e3, 1) + ' ms';
+  if (s < 120) return fmt(s, 1) + ' s';
+  if (s < 7200) return fmt(s / 60, 1) + ' min';
+  if (s < 172800) return fmt(s / 3600, 1) + ' hours';
+  if (s < 3.15e7 * 2) return fmt(s / 86400, 1) + ' days';
+  return fmt(s / 3.156e7, 1) + ' years';
+}
+
+/* ===== Hero ===== */
+(function () {
+  const f = document.getElementById('f-hero'), svg = $(f, 'svg');
+  const narrow = svg.getBoundingClientRect().width < 600;
+  if (narrow) svg.setAttribute('viewBox', '0 0 480 560');
+  const { W, H } = vb(svg);
+  let pts = [];
+  const slider = $(f, '[data-k=n]'), out = $(f, '[data-o=n]'), stats = $(f, '[data-o=stats]');
+  function scatter(n) { pts = []; for (let i = 0; i < n; i++) pts.push({ id: i, x: 16 + Math.random() * (W - 32), y: 16 + Math.random() * (H - 32) }); }
+  function draw() {
+    svg.textContent = '';
+    const n = pts.length;
+    let res = null, root = null;
+    if (n >= 2) { res = CP.closest2(pts, true); const last = res.events[res.events.length - 1]; if (last && last.type === 'merge') root = last; }
+    if (root) {
+      const x0 = Math.max(0, root.L - root.delta), x1 = Math.min(W, root.L + root.delta);
+      S('rect', { x: x0, y: 0, width: x1 - x0, height: H, fill: C.deltaT }, svg);
+      S('line', { x1: root.L, x2: root.L, y1: 0, y2: H, stroke: C.ink, 'stroke-width': 1.5, 'stroke-dasharray': '6 5', opacity: .8 }, svg);
+      if (root.delta > 14 && root.L + root.delta < W) dimH(svg, root.L, root.L + root.delta, 22, 'δ = ' + f1(root.delta));
+    }
+    const rad = n > 200 ? 2.6 : n > 80 ? 3.2 : 4.2;
+    pts.forEach((p, i) => dot(svg, p, i, H, { r: rad, ring: root && p.x > root.L, sw: 1.5, hit: n < 120 ? 10 : null }));
+    $$(svg, '.pt').forEach(g => g.classList.add('drag'));
+    if (res && res.pair) {
+      const [a, b] = res.pair;
+      seg(svg, a, b, H, { c: C.best, w: 3.2 });
+      for (const p of [a, b]) S('circle', { cx: p.x, cy: H - p.y, r: rad + 4.5, fill: 'none', stroke: C.best, 'stroke-width': 2 }, svg);
+      const mx = (a.x + b.x) / 2, my = H - (a.y + b.y) / 2;
+      label(svg, Math.min(W - 40, Math.max(40, mx)), my - 12, f1(res.d), { c: C.best });
+    }
+    const brute = n * (n - 1) / 2, dc = res ? res.comps : 0;
+    stats.innerHTML = `<span><span class="k">points</span> <span class="v">${n}</span></span>` +
+      `<span><span class="k">every pair</span> <span class="v" style="color:var(--waste)">${fmt(brute)}</span></span>` +
+      `<span><span class="k">divide &amp; conquer measured</span> <span class="v" style="color:var(--best)">${fmt(dc)}</span></span>` +
+      (n > 3 ? `<span><span class="k">pairs never measured</span> <span class="v">${fmt(100 * (1 - dc / brute), 1)}%</span></span>` : '');
+    out.textContent = n;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: clampBox(4, 4, W - 4, H - 4),
+    onEmpty: p => { if (pts.length < 600) { pts.push({ id: pts.length, x: p.x, y: p.y }); slider.value = Math.min(400, pts.length); draw(); } } });
+  slider.addEventListener('input', () => {
+    const n = +slider.value;
+    if (n > pts.length) { while (pts.length < n) pts.push({ id: pts.length, x: 16 + Math.random() * (W - 32), y: 16 + Math.random() * (H - 32) }); }
+    else pts.length = n;
+    draw();
+  });
+  $(f, '[data-a=scatter]').onclick = () => { scatter(+slider.value); draw(); };
+  $(f, '[data-a=clear]').onclick = () => { pts = []; draw(); };
+  const n0 = narrow ? 40 : 60; slider.value = n0; scatter(n0); draw();
+})();
+
+/* ===== 1a Linear programming ===== */
+(function () {
+  const f = document.getElementById('f-lp'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const s = 40, ox = 46, oy = 34; // data units -> px
+  const X = x => ox + x * s, Yp = y => H - oy - y * s;
+  const cons = [ // a x + b y <= c
+    { a: -1, b: 1, c: 4, t: 'y ≤ x + 4' }, { a: 0.25, b: 1, c: 6, t: 'y ≤ −x/4 + 6' },
+    { a: -0.5, b: -1, c: -3, t: 'y ≥ −x/2 + 3' }, { a: 2, b: -1, c: 8, t: 'y ≥ 2x − 8' }, { a: -1, b: 0, c: 0, t: 'x ≥ 0' } ];
+  let poly = [{ x: 0, y: 0 }, { x: 11, y: 0 }, { x: 11, y: 7 }, { x: 0, y: 7 }];
+  for (const k of cons) poly = CP.clip(poly, k.a, k.b, k.c);
+  const sl = $(f, '[data-k=th]'), o = $(f, '[data-o=th]'), ro = $(f, '[data-o=lp]');
+  function draw() {
+    svg.textContent = '';
+    const th = +sl.value * Math.PI / 180, c = { x: Math.cos(th), y: Math.sin(th) };
+    o.textContent = sl.value + '°';
+    // axes
+    S('line', { x1: X(0), x2: X(11.2), y1: Yp(0), y2: Yp(0), stroke: C.ink3, 'stroke-width': 1.2 }, svg);
+    S('line', { x1: X(0), x2: X(0), y1: Yp(0), y2: Yp(7.3), stroke: C.ink3, 'stroke-width': 1.2 }, svg);
+    for (let i = 0; i <= 10; i += 2) label(svg, X(i), Yp(0) + 16, i, { cls: 'lbl', c: C.ink3, halo: false });
+    for (let j = 2; j <= 6; j += 2) label(svg, X(0) - 12, Yp(j) + 4, j, { c: C.ink3, halo: false });
+    // feasible region
+    S('polygon', { points: poly.map(p => X(p.x) + ',' + Yp(p.y)).join(' '), fill: C.deltaT, stroke: C.delta, 'stroke-width': 2 }, svg);
+    // constraint lines, clipped to the plot
+    const defs = S('defs', {}, svg), cpth = S('clipPath', { id: 'lpclip' }, defs);
+    S('rect', { x: X(0), y: Yp(7.3), width: X(11.2) - X(0), height: Yp(0) - Yp(7.3) }, cpth);
+    const lab = [[3.05, 6.9, 'start', 4], [9.2, 3.7, 'middle', -9], [0.35, 1.3, 'start', 4], [7.55, 6.8, 'start', 4]];
+    cons.slice(0, 4).forEach((k, idx) => {
+      const ys = x => (k.c - k.a * x) / k.b;
+      S('line', { x1: X(-1), y1: Yp(ys(-1)), x2: X(12), y2: Yp(ys(12)), stroke: C.ink3, 'stroke-width': 1, 'stroke-dasharray': '4 4', 'clip-path': 'url(#lpclip)' }, svg);
+      const [lx, ly, an, dy] = lab[idx];
+      label(svg, X(lx), Yp(ly) + dy, k.t, { c: C.ink2, anchor: an, cls: 'lbl' });
+    });
+    // optimum
+    const vals = poly.map(p => c.x * p.x + c.y * p.y);
+    const mx = Math.max(...vals);
+    const best = poly.filter((p, i) => mx - vals[i] < 1e-6);
+    const b = best[0];
+    // iso line through optimum (perpendicular to c)
+    const L = 14;
+    S('line', { x1: X(b.x - c.y * L), y1: Yp(b.y + c.x * L), x2: X(b.x + c.y * L), y2: Yp(b.y - c.x * L), stroke: C.best, 'stroke-width': 1.5, 'stroke-dasharray': '6 5', 'clip-path': 'url(#lpclip)' }, svg);
+    if (best.length > 1) S('line', { x1: X(best[0].x), y1: Yp(best[0].y), x2: X(best[1].x), y2: Yp(best[1].y), stroke: C.best, 'stroke-width': 5, 'stroke-linecap': 'round' }, svg);
+    poly.forEach(p => S('circle', { cx: X(p.x), cy: Yp(p.y), r: 4, fill: '#fff', stroke: C.delta, 'stroke-width': 2 }, svg));
+    best.forEach(p => S('circle', { cx: X(p.x), cy: Yp(p.y), r: 7, fill: C.best }, svg));
+    // objective arrow from centroid
+    const cx = poly.reduce((a, p) => a + p.x, 0) / poly.length, cy = poly.reduce((a, p) => a + p.y, 0) / poly.length;
+    const ax = X(cx), ay = Yp(cy), bx = ax + c.x * 56, by = ay - c.y * 56;
+    S('line', { x1: ax, y1: ay, x2: bx, y2: by, stroke: C.ink, 'stroke-width': 2.4 }, svg);
+    const ang = Math.atan2(by - ay, bx - ax), hs = 9;
+    S('polygon', { points: [[bx, by], [bx - hs * Math.cos(ang - .4), by - hs * Math.sin(ang - .4)], [bx - hs * Math.cos(ang + .4), by - hs * Math.sin(ang + .4)]].map(p => p.join(',')).join(' '), fill: C.ink }, svg);
+    S('circle', { cx: ax, cy: ay, r: 3, fill: C.ink }, svg);
+    const sgn = v => (v < 0 ? '− ' : '+ ') + Math.abs(v).toFixed(2);
+    ro.innerHTML = `<span><span class="k">maximise</span> <span class="v">${c.x.toFixed(2)}x ${sgn(c.y)}y</span></span>` +
+      (best.length > 1 ? `<span><span class="k">tie along an edge between</span> <span class="v" style="color:var(--best)">(${f1(best[0].x)}, ${f1(best[0].y)}) and (${f1(best[1].x)}, ${f1(best[1].y)})</span></span>`
+        : `<span><span class="k">best corner</span> <span class="v" style="color:var(--best)">(${b.x.toFixed(2)}, ${b.y.toFixed(2)})</span></span><span><span class="k">value</span> <span class="v">${mx.toFixed(2)}</span></span>`);
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 1b Convex hull ===== */
+(function () {
+  const f = document.getElementById('f-hull'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  let pts = [];
+  const shuffle = () => { pts = randomPoints(10, W, H, 40, 30); };
+  function draw() {
+    svg.textContent = '';
+    const h = CP.hull(pts);
+    if (h.length >= 3) S('polygon', { points: h.map(p => p.x + ',' + (H - p.y)).join(' '), fill: C.bestT, stroke: C.best, 'stroke-width': 2.4, 'stroke-linejoin': 'round' }, svg);
+    else if (h.length === 2) seg(svg, h[0], h[1], H, { c: C.best, w: 2.4 });
+    const hs = new Set(h);
+    pts.forEach((p, i) => {
+      dot(svg, p, i, H, { drag: true, r: 6 });
+      if (hs.has(p)) S('circle', { cx: p.x, cy: H - p.y, r: 10, fill: 'none', stroke: C.best, 'stroke-width': 2, 'pointer-events': 'none' }, svg);
+    });
+    if (!pts.length) label(svg, W / 2, H / 2, 'Click to add points', { cls: 'lbl-d', c: C.ink2 });
+    $(f, '[data-o=hull]').innerHTML = `<span><span class="k">points</span> <span class="v">${pts.length}</span></span><span><span class="k">hull corners</span> <span class="v" style="color:var(--best)">${h.length}</span></span><span><span class="k">interior (irrelevant)</span> <span class="v">${pts.length - h.length}</span></span>`;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: clampBox(8, 8, W - 8, H - 8), onEmpty: p => { if (pts.length < 40) { pts.push({ x: p.x, y: p.y }); draw(); } } });
+  $(f, '[data-a=shuffle]').onclick = () => { shuffle(); draw(); };
+  $(f, '[data-a=clear]').onclick = () => { pts = []; draw(); };
+  shuffle(); draw();
+})();
+
+/* ===== 1c Largest empty circle ===== */
+(function () {
+  const f = document.getElementById('f-empty'), svg = $(f, 'svg'), cv = $(f, 'canvas'), ctx = cv.getContext('2d'), { W, H } = vb(svg);
+  let pts = [{ x: 70, y: 70 }, { x: 160, y: 280 }, { x: 300, y: 250 }, { x: 450, y: 290 }, { x: 460, y: 60 }, { x: 250, y: 120 }, { x: 360, y: 150 }];
+  let probe = null;
+  const near = (x, y) => { let m = Infinity; for (const p of pts) m = Math.min(m, Math.hypot(p.x - x, p.y - y)); return m; };
+  function solve() {
+    const h = CP.hull(pts);
+    let best = { r: -1, x: 0, y: 0 }, maxR = 1;
+    const step = 5, cells = [];
+    for (let x = step / 2; x < W; x += step) for (let y = step / 2; y < H; y += step) {
+      if (!CP.inConvex(h, { x, y })) continue;
+      const r = near(x, y); cells.push([x, y, r]); if (r > maxR) maxR = r;
+      if (r > best.r) best = { r, x, y };
+    }
+    // refine in two passes
+    for (const [span, st] of [[6, 0.5], [0.6, 0.05]]) {
+      const b0 = { ...best };
+      for (let x = b0.x - span; x <= b0.x + span; x += st) for (let y = b0.y - span; y <= b0.y + span; y += st) {
+        if (!CP.inConvex(h, { x, y })) continue; const r = near(x, y); if (r > best.r) best = { r, x, y };
+      }
+    }
+    return { h, best, cells, maxR, step };
+  }
+  let sol;
+  function draw(recompute = true) {
+    if (recompute || !sol) sol = solve();
+    ctx.clearRect(0, 0, W, H);
+    for (const [x, y, r] of sol.cells) { ctx.fillStyle = `rgba(42,70,200,${(0.03 + 0.42 * (r / sol.maxR) ** 1.4).toFixed(3)})`; ctx.fillRect(x - sol.step / 2, H - y - sol.step / 2, sol.step, sol.step); }
+    svg.textContent = '';
+    if (sol.h.length >= 3) S('polygon', { points: sol.h.map(p => p.x + ',' + (H - p.y)).join(' '), fill: 'none', stroke: C.ink3, 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, svg);
+    const b = sol.best;
+    if (b.r > 0) {
+      S('circle', { cx: b.x, cy: H - b.y, r: b.r, fill: 'none', stroke: C.best, 'stroke-width': 2.4 }, svg);
+      S('circle', { cx: b.x, cy: H - b.y, r: 3.5, fill: C.best }, svg);
+    }
+    if (probe && CP.inConvex(sol.h, probe)) {
+      const r = near(probe.x, probe.y);
+      S('circle', { cx: probe.x, cy: H - probe.y, r, fill: C.deltaTT, stroke: C.delta, 'stroke-width': 1.8 }, svg);
+      S('circle', { cx: probe.x, cy: H - probe.y, r: 3, fill: C.delta }, svg);
+    }
+    pts.forEach((p, i) => dot(svg, p, i, H, { drag: true, r: 6 }));
+    const pr = probe && CP.inConvex(sol.h, probe) ? `<span><span class="k">radius here</span> <span class="v" style="color:var(--delta)">${f1(near(probe.x, probe.y))}</span></span>` : '<span class="k">hover inside the dashed hull</span>';
+    $(f, '[data-o=empty]').innerHTML = `<span><span class="k">largest empty radius</span> <span class="v" style="color:var(--best)">${f1(b.r)}</span></span>` + pr;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: clampBox(8, 8, W - 8, H - 8),
+    onHover: p => { probe = p; draw(false); }, onLeave: () => { probe = null; draw(false); } });
+  draw();
+})();
+
+/* ===== 1d Ray tracing ===== */
+(function () {
+  const f = document.getElementById('f-ray'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const O = { x: 34, y: 170 };
+  const circles = [{ x: 190, y: 225, r: 30, n: 'A' }, { x: 300, y: 160, r: 42, n: 'B' }, { x: 440, y: 200, r: 44, n: 'C' }, { x: 420, y: 70, r: 32, n: 'D' }, { x: 180, y: 95, r: 24, n: 'E' }];
+  const sl = $(f, '[data-k=a]'), o = $(f, '[data-o=a]');
+  function hits(d) {
+    return circles.map(c => {
+      const ox = O.x - c.x, oy = O.y - c.y, b = d.x * ox + d.y * oy, cc = ox * ox + oy * oy - c.r * c.r, disc = b * b - cc;
+      if (disc < 0) return { c, t: null };
+      const s = Math.sqrt(disc), t1 = -b - s, t2 = -b + s, t = t1 > 1e-9 ? t1 : (t2 > 1e-9 ? t2 : null);
+      return { c, t };
+    });
+  }
+  function draw() {
+    svg.textContent = '';
+    const a = +sl.value * Math.PI / 180, d = { x: Math.cos(a), y: Math.sin(a) };
+    o.textContent = sl.value + '°';
+    const hs = hits(d), hitList = hs.filter(h => h.t != null).sort((p, q) => p.t - q.t), first = hitList[0];
+    // ray beyond to edge
+    const tEdge = 900;
+    const end = first ? first.t : tEdge;
+    for (const h of hs) {
+      const isFirst = first && h === first, hidden = h.t != null && !isFirst;
+      S('circle', { cx: h.c.x, cy: H - h.c.y, r: h.c.r, fill: isFirst ? C.bestT : '#fff', stroke: isFirst ? C.best : hidden ? C.waste : C.ink3, 'stroke-width': isFirst ? 2.4 : 1.6, 'stroke-dasharray': hidden ? '5 4' : null }, svg);
+      label(svg, h.c.x, H - h.c.y + 5, h.c.n, { cls: 'lbl-d', c: isFirst ? C.best : C.ink2, halo: false });
+    }
+    if (first) S('line', { x1: O.x + d.x * first.t, y1: H - (O.y + d.y * first.t), x2: O.x + d.x * tEdge, y2: H - (O.y + d.y * tEdge), stroke: C.active, 'stroke-width': 1.2, 'stroke-dasharray': '3 6', opacity: .6 }, svg);
+    S('line', { x1: O.x, y1: H - O.y, x2: O.x + d.x * end, y2: H - (O.y + d.y * end), stroke: C.active, 'stroke-width': 2.6 }, svg);
+    hitList.slice(1).forEach(h => { const x = O.x + d.x * h.t, y = H - (O.y + d.y * h.t); S('path', { d: `M${x - 5},${y - 5}L${x + 5},${y + 5}M${x - 5},${y + 5}L${x + 5},${y - 5}`, stroke: C.waste, 'stroke-width': 2.2 }, svg); });
+    if (first) S('circle', { cx: O.x + d.x * first.t, cy: H - (O.y + d.y * first.t), r: 6, fill: C.best }, svg);
+    // light source
+    for (let k = 0; k < 8; k++) { const t = k * Math.PI / 4; S('line', { x1: O.x + 10 * Math.cos(t), y1: H - O.y + 10 * Math.sin(t), x2: O.x + 15 * Math.cos(t), y2: H - O.y + 15 * Math.sin(t), stroke: C.active, 'stroke-width': 1.6 }, svg); }
+    S('circle', { cx: O.x, cy: H - O.y, r: 7, fill: C.active }, svg);
+    $(f, '[data-o=ray]').innerHTML = hs.map(h => `<span><span class="k">${h.c.n}</span> <span class="v" style="color:${first && h === first ? 'var(--best)' : h.t != null ? 'var(--waste)' : 'var(--ink3)'}">${h.t == null ? 'miss' : 't = ' + f1(h.t)}</span></span>`).join('');
+  }
+  let aiming = false;
+  const aim = e => { const p = toData(svg, e); const ang = Math.atan2(p.y - O.y, p.x - O.x) * 180 / Math.PI; sl.value = Math.max(-40, Math.min(40, Math.round(ang * 2) / 2)); draw(); };
+  svg.addEventListener('pointerdown', e => { aiming = true; svg.setPointerCapture(e.pointerId); aim(e); });
+  svg.addEventListener('pointermove', e => { if (aiming) aim(e); });
+  svg.addEventListener('pointerup', () => aiming = false);
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 2a Metrics ===== */
+(function () {
+  const f = document.getElementById('f-metric'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const P = [{ x: 60, y: 60 }, { x: 90, y: 90 }, { x: 250, y: 70 }, { x: 294, y: 70 }, { x: 150, y: 210 }, { x: 191, y: 216 }, { x: 340, y: 200 }, { x: 40, y: 200 }];
+  const pairs = [['A', 0, 1], ['B', 2, 3], ['C', 4, 5]];
+  const names = { euclid: 'Euclidean', manhattan: 'Manhattan', cheb: 'Chebyshev' };
+  let m = 'euclid';
+  function draw() {
+    svg.textContent = '';
+    const r = CP.closestBy(P, CP.metrics[m]);
+    const [a, b] = r.pair, d = r.d, cx = a.x, cy = H - a.y;
+    let shape;
+    if (m === 'euclid') shape = S('circle', { cx, cy, r: d }, svg);
+    else if (m === 'manhattan') shape = S('polygon', { points: `${cx},${cy - d} ${cx + d},${cy} ${cx},${cy + d} ${cx - d},${cy}` }, svg);
+    else shape = S('rect', { x: cx - d, y: cy - d, width: 2 * d, height: 2 * d }, svg);
+    shape.setAttribute('fill', C.deltaTT); shape.setAttribute('stroke', C.delta); shape.setAttribute('stroke-width', 1.6); shape.setAttribute('stroke-dasharray', '5 4');
+    for (const [n, i, j] of pairs) {
+      const win = (P[i] === a && P[j] === b) || (P[i] === b && P[j] === a);
+      seg(svg, P[i], P[j], H, { c: win ? C.best : C.ink3, w: win ? 3 : 1.4, dash: win ? null : '3 4' });
+      label(svg, (P[i].x + P[j].x) / 2 + (n === 'A' ? -14 : 0), H - Math.max(P[i].y, P[j].y) - 12, n, { cls: 'lbl-d', c: win ? C.best : C.ink2 });
+    }
+    P.forEach((p, i) => dot(svg, p, i, H, { r: 5.5 }));
+    const tab = $(f, '[data-o=mt]');
+    const cols = ['euclid', 'manhattan', 'cheb'];
+    const mins = cols.map(k => Math.min(...pairs.map(([, i, j]) => CP.metrics[k](P[i], P[j]))));
+    tab.innerHTML = `<thead><tr><th>pair</th>${cols.map(k => `<th${k === m ? ' style="color:var(--delta)"' : ''}>${names[k]}</th>`).join('')}</tr></thead><tbody>` +
+      pairs.map(([n, i, j]) => `<tr><td>${n}  (Δx ${Math.abs(P[i].x - P[j].x)}, Δy ${Math.abs(P[i].y - P[j].y)})</td>${cols.map((k, ci) => { const v = CP.metrics[k](P[i], P[j]); return `<td class="${Math.abs(v - mins[ci]) < 1e-9 ? 'win' : ''}">${f1(v)}</td>`; }).join('')}</tr>`).join('') + '</tbody>';
+  }
+  $$(f, '[data-m]').forEach(bt => bt.addEventListener('click', () => { m = bt.dataset.m; $$(f, '[data-m]').forEach(x => x.setAttribute('aria-pressed', x === bt)); draw(); }));
+  draw();
+})();
+
+/* ===== 2b DNA / Hamming ===== */
+(function () {
+  const f = document.getElementById('f-dna'), box = $(f, '[data-o=dna]');
+  const seqs = [['A', 'ATTGCAATAGCGATCGA'], ['B', 'ATTGCAATAGCGGTCGA'], ['C', 'ATTGGAATAGCGATTGA'], ['D', 'TTTGCAATCGCGATCGA'], ['E', 'ATTGCAATAGTGATCTA'], ['F', 'ATCGCAATAGCGATCGT']];
+  const ham = (a, b) => { let d = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) d++; return d; };
+  let best = { d: Infinity, i: -1, j: -1 };
+  for (let i = 0; i < seqs.length; i++) for (let j = i + 1; j < seqs.length; j++) { const d = ham(seqs[i][1], seqs[j][1]); if (d < best.d) best = { d, i, j }; }
+  let sel = 0;
+  function draw() {
+    box.innerHTML = '';
+    seqs.forEach(([n, s], k) => {
+      const b = document.createElement('button');
+      const ref = seqs[sel][1];
+      const win = k === best.i || k === best.j;
+      b.className = (k === sel ? 'sel ' : '') + (win ? 'win' : '');
+      b.setAttribute('aria-pressed', k === sel);
+      const letters = s.split('').map((ch, i) => k !== sel && ch !== ref[i] ? `<span class="x">${ch}</span>` : ch).join('');
+      const hd = k === sel ? 'selected' : `d = ${ham(s, ref)} from ${seqs[sel][0]}`;
+      b.innerHTML = `<span class="nm">${n}</span><span>${letters}</span><span class="hd">${hd}</span><span class="tag">${win ? 'in closest pair' : ''}</span>`;
+      b.onclick = () => { sel = k; draw(); box.querySelectorAll('button')[k].focus(); };
+      box.appendChild(b);
+    });
+  }
+  draw();
+})();
+
+/* ===== 3a Brute-force stepper ===== */
+(function () {
+  const f = document.getElementById('f-brute'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]');
+  const P = [{ x: 60, y: 80 }, { x: 125, y: 195 }, { x: 205, y: 110 }, { x: 290, y: 205 }, { x: 360, y: 75 }, { x: 248, y: 40 }];
+  const pairs = []; for (let i = 0; i < P.length; i++) for (let j = i + 1; j < P.length; j++) pairs.push([i, j]);
+  let k = 0;
+  function draw() {
+    svg.textContent = '';
+    let best = null;
+    for (let t = 0; t < k; t++) {
+      const [i, j] = pairs[t], d = CP.dist(P[i], P[j]);
+      if (!best || d < best.d) best = { d, i, j };
+      if (t < k - 1) seg(svg, P[i], P[j], H, { c: C.ink3, w: 1, op: .45 });
+    }
+    if (best) seg(svg, P[best.i], P[best.j], H, { c: C.best, w: 4.5, op: .9 });
+    if (k > 0) { const [i, j] = pairs[k - 1]; seg(svg, P[i], P[j], H, { c: C.active, w: 2.4 }); const d = CP.dist(P[i], P[j]); label(svg, (P[i].x + P[j].x) / 2, H - (P[i].y + P[j].y) / 2 - 8, f1(d), { c: C.active }); }
+    P.forEach((p, i) => { dot(svg, p, i, H, { r: 7 }); label(svg, p.x, H - p.y + 4.5, i + 1, { c: '#fff', halo: false }); });
+    const terms = [5, 4, 3, 2, 1];
+    const cur = k === 0 ? -1 : pairs[k - 1][0];
+    const row = terms.map((t, i) => `<span style="color:${i < cur ? 'var(--ink)' : i === cur ? 'var(--active)' : 'var(--ink3)'};font-weight:${i <= cur ? 600 : 400}">${t}</span>`).join(' + ');
+    let txt;
+    if (k === 0) txt = 'Press "Next comparison" to start measuring every pair.';
+    else { const [i, j] = pairs[k - 1]; txt = `Point ${i + 1} against point ${j + 1}. Comparison ${k} of 15. Best so far: ${f1(best.d)} (points ${best.i + 1} and ${best.j + 1}).`; }
+    cap.innerHTML = `${txt}<br><span class="mono">${row} = 15</span>`;
+  }
+  const step = () => { if (k >= pairs.length) return false; k++; draw(); return k < pairs.length; };
+  $(f, '[data-a=step]').onclick = step;
+  const stop = player($(f, '[data-a=play]'), step, 500);
+  $(f, '[data-a=reset]').onclick = () => { stop(); k = 0; draw(); };
+  draw();
+})();
+
+/* ===== 3b How bad is n² ===== */
+(function () {
+  const f = document.getElementById('f-scale'), sl = $(f, '[data-k=e]'), o = $(f, '[data-o=e]'), ro = $(f, '[data-o=scale]');
+  function draw() {
+    const n = Math.round(10 ** +sl.value); o.textContent = fmt(n);
+    const b = n * (n - 1) / 2, d = n * lg(Math.max(n, 2));
+    ro.innerHTML = `<span><span class="k">n(n−1)/2 pairs</span> <span class="v" style="color:var(--waste)">${fmt(b)}</span> <span class="k">≈ ${human(b)}</span></span>` +
+      `<span><span class="k">n lg n</span> <span class="v" style="color:var(--best)">${fmt(d)}</span> <span class="k">≈ ${human(d)}</span></span>`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 4a Recursion explorer ===== */
+(function () {
+  const f = document.getElementById('f-rec'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]'), ctr = $(f, '[data-o=ctr]');
+  const BASE = [[623, 140], [786, 280], [296, 144], [68, 324], [394, 90], [657, 32], [174, 130], [677, 303], [244, 98], [603, 300], [479, 66], [861, 63], [521, 276], [461, 96], [275, 31]];
+  let P, events, e = 0, ranks;
+  function load(points) {
+    P = points.map((p, i) => ({ id: i, x: p.x, y: p.y }));
+    const r = CP.closest2(P, true);
+    events = [{ type: 'presort' }].concat(r.events);
+    ranks = new Map(P.slice().sort(CP.byX).map((p, i) => [p, i + 1]));
+    e = 0;
+  }
+  const crumbs = path => path === '' ? 'the whole set' : 'whole › ' + path.split('').map(c => c === 'L' ? 'left' : 'right').join(' › ');
+  function draw() {
+    svg.textContent = '';
+    const cur = events[e];
+    const frontier = new Map();
+    for (let t = 0; t < e; t++) {
+      const ev = events[t];
+      if (ev.type === 'base') frontier.set(ev.path, ev);
+      if (ev.type === 'merge') { frontier.delete(ev.path + 'L'); frontier.delete(ev.path + 'R'); frontier.set(ev.path, ev); }
+    }
+    if (cur.type === 'merge') { frontier.delete(cur.path + 'L'); frontier.delete(cur.path + 'R'); }
+    const inCur = cur.pts ? new Set(cur.pts) : null;
+    // dim outside current region
+    if (cur.lo != null) {
+      const lo = Math.max(0, cur.lo), hi = Math.min(W, cur.hi);
+      if (lo > 0) S('rect', { x: 0, y: 0, width: lo, height: H, fill: 'rgba(23,33,43,.05)' }, svg);
+      if (hi < W) S('rect', { x: hi, y: 0, width: W - hi, height: H, fill: 'rgba(23,33,43,.05)' }, svg);
+    }
+    if (cur.type === 'merge') {
+      const lo = Math.max(0, cur.lo, cur.L - cur.delta), hi = Math.min(W, cur.hi, cur.L + cur.delta);
+      S('rect', { x: lo, y: 0, width: hi - lo, height: H, fill: C.deltaT }, svg);
+    }
+    // split lines
+    for (let t = 0; t <= e; t++) {
+      const ev = events[t]; if (ev.type !== 'split') continue;
+      const dep = ev.path.length;
+      S('line', { x1: ev.L, x2: ev.L, y1: 0, y2: H, stroke: C.ink, 'stroke-width': Math.max(.8, 2.6 - dep * .6), opacity: Math.max(.28, 1 - dep * .24), 'stroke-dasharray': dep ? (dep === 1 ? '8 4' : '3 4') : null }, svg);
+    }
+    // frontier results
+    for (const [, ev] of frontier) if (ev.pair) {
+      const isFinal = e === events.length - 1;
+      seg(svg, ev.pair[0], ev.pair[1], H, { c: isFinal ? C.best : C.delta, w: isFinal ? 3.6 : 2.4 });
+      label(svg, (ev.pair[0].x + ev.pair[1].x) / 2, H - (ev.pair[0].y + ev.pair[1].y) / 2 - 9, f1(ev.d), { c: isFinal ? C.best : C.delta });
+    }
+    if (cur.type === 'base' && cur.pair) {
+      for (let i = 0; i < cur.pts.length; i++) for (let j = i + 1; j < cur.pts.length; j++) seg(svg, cur.pts[i], cur.pts[j], H, { c: C.active, w: 1.3, dash: '4 3' });
+      seg(svg, cur.pair[0], cur.pair[1], H, { c: C.delta, w: 2.6 });
+      label(svg, (cur.pair[0].x + cur.pair[1].x) / 2, H - (cur.pair[0].y + cur.pair[1].y) / 2 - 9, f1(cur.d), { c: C.delta });
+    }
+    if (cur.type === 'merge') {
+      for (const pr of [cur.p1, cur.p2]) if (pr) seg(svg, pr[0], pr[1], H, { c: C.delta, w: 2.2, op: .8 });
+      for (const [a, b] of cur.checks) seg(svg, a, b, H, { c: C.active, w: 1.3 });
+      seg(svg, cur.pair[0], cur.pair[1], H, { c: C.best, w: 3.6 });
+      label(svg, Math.max(cur.pair[0].x, cur.pair[1].x) + 10, H - (cur.pair[0].y + cur.pair[1].y) / 2 + 20, (cur.cross ? 'across: ' : '') + f1(cur.d), { c: C.best, anchor: 'start' });
+      const x2 = Math.min(W - 4, cur.L + cur.delta);
+      dimH(svg, cur.L, x2, H - 14, 'δ');
+    }
+    P.forEach((p, i) => {
+      const faded = inCur && !inCur.has(p);
+      const ring = cur.type === 'merge' && inCur.has(p) && p.x > cur.L;
+      dot(svg, p, i, H, { r: 6, ring, op: faded ? .25 : 1 });
+      if (cur.type === 'presort') label(svg, p.x, H - p.y - 12, ranks.get(p), { c: C.ink2 });
+    });
+    // caption
+    let t = '';
+    if (cur.type === 'presort') t = `Sort all ${P.length} points by x once (ties broken by y). The numbers show each point's x-rank. That's O(n lg n), paid once, and every split below just cuts this list in half.`;
+    else if (cur.type === 'split') t = `Split ${crumbs(cur.path)} (${cur.n} points) at x = ${f1(cur.L)}: ${cur.n >> 1} go left, ${cur.n - (cur.n >> 1)} go right.`;
+    else if (cur.type === 'base') t = `Base case in ${crumbs(cur.path)}: ${cur.pts.length} points, so check all ${cur.comps} pair${cur.comps > 1 ? 's' : ''} directly. Closest: ${f1(cur.d)}.`;
+    else {
+      t = `Merge ${crumbs(cur.path)}: d₁ = ${f1(cur.d1)}, d₂ = ${f1(cur.d2)}, so δ = ${f1(cur.delta)}. The strip holds ${cur.strip.length} point${cur.strip.length === 1 ? '' : 's'}, so ${cur.checks.length} forward check${cur.checks.length === 1 ? '' : 's'}. `;
+      t += cur.cross ? `A pair across the divide measures ${f1(cur.cross.d)} < δ. Neither half could have seen it.` : `Nothing across the divide beats δ, so the answer stays ${f1(cur.d)}.`;
+      if (cur.path === '') t += ` That's the final answer: ${f1(cur.d)}.`;
+    }
+    cap.textContent = t;
+    ctr.textContent = `step ${e + 1} / ${events.length}`;
+    $(f, '[data-a=back]').disabled = e === 0;
+    $(f, '[data-a=next]').disabled = e === events.length - 1;
+  }
+  const next = () => { if (e >= events.length - 1) return false; e++; draw(); return e < events.length - 1; };
+  $(f, '[data-a=next]').onclick = next;
+  $(f, '[data-a=back]').onclick = () => { if (e > 0) { e--; draw(); } };
+  const stop = player($(f, '[data-a=play]'), next, 1400);
+  $(f, '[data-a=reset]').onclick = () => { stop(); e = 0; draw(); };
+  $(f, '[data-a=rand]').onclick = () => { stop(); load(randomPoints(15, W, H, 30, 34)); draw(); };
+  load(BASE.map(([x, y]) => ({ x, y }))); draw();
+})();
+
+/* ===== 4b Recursion tree of sizes ===== */
+(function () {
+  const f = document.getElementById('f-tree'), svg = $(f, 'svg'), { W, H } = vb(svg), sl = $(f, '[data-k=n]');
+  function build(n, d) { if (n <= 3) return { n, d, kids: [] }; return { n, d, kids: [build(n >> 1, d + 1), build(n - (n >> 1), d + 1)] }; }
+  function draw() {
+    const n = +sl.value; $(f, '[data-o=n]').textContent = n;
+    svg.textContent = '';
+    const root = build(n, 0), leaves = [];
+    let depth = 0;
+    (function walk(t) { depth = Math.max(depth, t.d); if (!t.kids.length) leaves.push(t); t.kids.forEach(walk); })(root);
+    const gap = (W - 40) / leaves.length;
+    leaves.forEach((t, i) => t.x = 20 + gap * (i + .5));
+    (function place(t) { if (t.kids.length) { t.kids.forEach(place); t.x = (t.kids[0].x + t.kids[1].x) / 2; } })(root);
+    const dy = Math.min(48, (H - 50) / Math.max(1, depth));
+    const yy = d => 26 + d * dy;
+    const r = Math.min(15, gap / 2.4);
+    (function edges(t) { for (const k of t.kids) { S('line', { x1: t.x, y1: yy(t.d), x2: k.x, y2: yy(k.d), stroke: C.ink3, 'stroke-width': 1.3 }, svg); edges(k); } })(root);
+    (function nodes(t) {
+      const leaf = !t.kids.length;
+      S('circle', { cx: t.x, cy: yy(t.d), r, fill: leaf ? C.best : '#fff', stroke: leaf ? C.best : C.ink, 'stroke-width': 1.6 }, svg);
+      S('text', { x: t.x, y: yy(t.d) + 4.5, 'text-anchor': 'middle', class: 'lbl', fill: leaf ? '#fff' : C.ink, 'font-size': r < 11 ? 10 : 13, text: t.n }, svg);
+      t.kids.forEach(nodes);
+    })(root);
+    const twos = leaves.filter(t => t.n === 2).length, threes = leaves.filter(t => t.n === 3).length;
+    $(f, '[data-o=tree]').innerHTML = `<span><span class="k">leaves of size 2</span> <span class="v">${twos}</span></span><span><span class="k">leaves of size 3</span> <span class="v">${threes}</span></span><span><span class="k">leaves of size 1</span> <span class="v" style="color:var(--best)">0</span></span><span><span class="k">depth</span> <span class="v">${depth}</span> <span class="k">(lg n ≈ ${f1(lg(n))})</span></span>`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 5 Strip ===== */
+(function () {
+  const f = document.getElementById('f-strip'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  let pts;
+  const fresh = () => {
+    const r = Math.random, P = [];
+    while (P.length < 14) {
+      const near = P.length % 2 === 0;
+      const p = { x: near ? W / 2 + (r() - .5) * 220 : 30 + r() * (W - 60), y: 34 + r() * (H - 80) };
+      if (P.every(q => CP.dist(p, q) > 50)) P.push(p);
+    }
+    pts = P;
+  };
+  function draw() {
+    svg.textContent = '';
+    const r = CP.oneLevel(pts), inS = new Set(r.S);
+    const x0 = Math.max(0, r.L - r.delta), x1 = Math.min(W, r.L + r.delta);
+    S('rect', { x: x0, y: 0, width: x1 - x0, height: H, fill: C.deltaT }, svg);
+    S('line', { x1: r.L, x2: r.L, y1: 0, y2: H, stroke: C.ink, 'stroke-width': 2 }, svg);
+    dimH(svg, r.L - r.delta, r.L, H - 16, 'δ'); dimH(svg, r.L, r.L + r.delta, H - 16, 'δ');
+    subText(svg, 40, 26, 'P', 'L'); subText(svg, W - 40, 26, 'P', 'R');
+    for (const [pr, d, nm] of [[r.p1, r.d1, 'd₁'], [r.p2, r.d2, 'd₂']]) if (pr) {
+      seg(svg, pr[0], pr[1], H, { c: C.delta, w: 2.6 });
+      label(svg, (pr[0].x + pr[1].x) / 2, H - (pr[0].y + pr[1].y) / 2 - 10, `${nm} = ${f1(d)}`, { c: C.delta });
+    }
+    const beats = r.cross.d < r.delta;
+    if (r.cross.pair) {
+      seg(svg, r.cross.pair[0], r.cross.pair[1], H, beats ? { c: C.best, w: 3.6 } : { c: C.ink3, w: 1.5, dash: '5 4' });
+      label(svg, Math.max(r.cross.pair[0].x, r.cross.pair[1].x) + 12, H - (r.cross.pair[0].y + r.cross.pair[1].y) / 2 + 22, `across: ${f1(r.cross.d)}`, { c: beats ? C.best : C.ink3, anchor: 'start' });
+    }
+    pts.forEach((p, i) => dot(svg, p, i, H, { drag: true, r: 6.5, ring: p.x > r.L, op: inS.has(p) ? 1 : .3 }));
+    $(f, '[data-o=strip]').innerHTML = `<span><span class="k">δ = min(d₁, d₂)</span> <span class="v" style="color:var(--delta)">${f1(r.delta)}</span></span>` +
+      `<span><span class="k">in strip</span> <span class="v">${r.S.length}</span></span><span><span class="k">ignored</span> <span class="v">${pts.length - r.S.length}</span></span>` +
+      `<span><span class="k">best across the divide</span> <span class="v" style="color:${beats ? 'var(--best)' : 'var(--ink2)'}">${f1(r.cross.d)} ${beats ? '< δ, new best' : '≥ δ, no change'}</span></span>`;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: clampBox(8, 8, W - 8, H - 30) });
+  $(f, '[data-a=rand]').onclick = () => { fresh(); draw(); };
+  $(f, '[data-a=cross]').onclick = () => {
+    const r = CP.oneLevel(pts);
+    const lp = r.leftP[r.leftP.length - 1], rp = r.rightP[0];
+    lp.x = r.L - .15 * r.delta; rp.x = r.L + .15 * r.delta; rp.y = Math.min(H - 40, lp.y + .3 * r.delta);
+    draw();
+  };
+  fresh(); draw();
+})();
+
+/* ===== 6 Worst case squeeze ===== */
+(function () {
+  const f = document.getElementById('f-worst'), svg = $(f, 'svg'), { W, H } = vb(svg), sl = $(f, '[data-k=s]');
+  const off = [0.9, 0.35, 0.6, 1.0, 0.3, 0.75, 0.5, 0.95, 0.4, 0.85, 0.65, 0.28];
+  const L0 = 450;
+  function draw() {
+    const s = +sl.value / 100; $(f, '[data-o=s]').textContent = sl.value + '%';
+    const pts = off.map((a, k) => ({ x: k % 2 ? L0 + 3 + s * a * 150 : L0 - 3 - s * a * 150, y: 26 + k * 22 }));
+    svg.textContent = '';
+    const r = CP.oneLevel(pts), inS = new Set(r.S), k = r.S.length;
+    const x0 = Math.max(0, r.L - r.delta), x1 = Math.min(W, r.L + r.delta);
+    S('rect', { x: x0, y: 0, width: x1 - x0, height: H, fill: C.deltaT }, svg);
+    S('line', { x1: r.L, x2: r.L, y1: 0, y2: H, stroke: C.ink, 'stroke-width': 2 }, svg);
+    dimH(svg, r.L, r.L + r.delta, 66, 'δ = ' + f1(r.delta));
+    for (const pr of [r.p1, r.p2]) if (pr) seg(svg, pr[0], pr[1], H, { c: C.delta, w: 2.2 });
+    pts.forEach((p, i) => dot(svg, p, i, H, { r: 6.5, ring: p.x > r.L, op: inS.has(p) ? 1 : .3 }));
+    // bars
+    const all = k * (k - 1) / 2; let win = 0; for (let i = 0; i < k; i++) win += Math.min(7, k - 1 - i);
+    const bx = 20, by = 10, sc = 280 / 66;
+    S('rect', { x: bx, y: by, width: Math.max(1, all * sc), height: 12, fill: C.waste, rx: 2 }, svg);
+    S('rect', { x: bx, y: by + 20, width: Math.max(1, win * sc), height: 12, fill: C.best, rx: 2 }, svg);
+    label(svg, bx + all * sc + 8, by + 11, `all pairs ${all}`, { anchor: 'start', c: C.waste });
+    label(svg, bx + win * sc + 8, by + 31, `next 7 only ${win}`, { anchor: 'start', c: C.best });
+    $(f, '[data-o=worst]').innerHTML = `<span><span class="k">δ</span> <span class="v" style="color:var(--delta)">${f1(r.delta)}</span></span><span><span class="k">points in strip</span> <span class="v">${k} of 12</span></span>` +
+      `<span><span class="k">all-pairs checks k(k−1)/2</span> <span class="v" style="color:var(--waste)">${all}</span></span><span><span class="k">next-7 checks</span> <span class="v" style="color:var(--best)">${win}</span></span>`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 7 Next-seven window ===== */
+(function () {
+  const f = document.getElementById('f-win'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]');
+  const L0 = 450;
+  let r, frames, i = 0;
+  function gen() {
+    const rnd = Math.random, pts = [];
+    const start = rnd() < .5 ? -1 : 1;
+    for (let k = 0; k < 16; k++) {
+      const side = k % 2 ? -start : start; // alternate sides so same-side points stay well apart
+      pts.push({ x: L0 + side * (3 + rnd() * 34), y: 24 + k * 21 + (rnd() - .5) * 6 });
+    }
+    // a few far points that the strip will exclude
+    let tries = 0;
+    while (pts.length < 22 && tries++ < 2000) {
+      const q = { x: pts.length % 2 ? 600 + rnd() * 260 : 40 + rnd() * 260, y: 30 + rnd() * 320 };
+      if (pts.every(p => CP.dist(p, q) > 80)) pts.push(q);
+    }
+    r = CP.oneLevel(pts);
+    // frames with running delta
+    frames = []; let d = r.delta, checks = 0;
+    for (let a = 0; a < r.S.length; a++) {
+      const p = r.S[a], nxt = r.S.slice(a + 1, a + 8);
+      const box = r.S.filter(q => q.y >= p.y && q.y <= p.y + d);
+      const found = [];
+      const dBefore = d;
+      for (const q of nxt) { checks++; const dd = CP.dist(p, q); if (dd < d) { d = dd; found.push([q, dd]); } }
+      frames.push({ a, p, nxt, box, dBefore, dAfter: d, found, checks });
+    }
+    i = 0;
+  }
+  function draw() {
+    svg.textContent = '';
+    const F = frames[i], S0 = r.S, k = S0.length;
+    S('rect', { x: r.L - r.delta, y: 0, width: 2 * r.delta, height: H, fill: C.deltaTT }, svg);
+    S('line', { x1: r.L, x2: r.L, y1: 0, y2: H, stroke: C.ink, 'stroke-width': 1.6 }, svg);
+    if (F) {
+      const bx = r.L - F.dBefore, by = H - (F.p.y + F.dBefore);
+      S('rect', { x: bx, y: by, width: 2 * F.dBefore, height: F.dBefore, fill: C.deltaT, stroke: C.delta, 'stroke-width': 2 }, svg);
+      label(svg, bx + 2 * F.dBefore + 8, by + F.dBefore / 2 + 4, 'δ × 2δ box', { c: C.delta, anchor: 'start' });
+      dimV(svg, bx - 10, by, by + F.dBefore, 'δ');
+      for (const q of F.nxt) seg(svg, F.p, q, H, { c: C.active, w: 1.6 });
+      for (const [q] of F.found) seg(svg, F.p, q, H, { c: C.best, w: 3.4 });
+    }
+    const pos = new Map(S0.map((p, j) => [p, j]));
+    const nset = F ? new Set(F.nxt) : new Set();
+    for (const p of [...r.leftP, ...r.rightP]) {
+      const j = pos.get(p);
+      if (j == null) { dot(svg, p, -1, H, { r: 5, ring: p.x > r.L, op: .22 }); continue; }
+      const isP = F && p === F.p, inN = nset.has(p), after = F && j > F.a + 7, before = F && j < F.a;
+      dot(svg, p, j, H, { r: isP ? 8 : 6, ring: p.x > r.L, fill: isP ? C.active : C.ink, stroke: isP ? C.active : C.ink, op: after ? .3 : before ? .45 : 1 });
+      label(svg, p.x + (p.x > r.L ? 16 : -16), H - p.y + 4, j + 1, { c: isP ? C.active : inN ? C.ink : C.ink3, anchor: p.x > r.L ? 'start' : 'end' });
+    }
+    if (!F) { cap.textContent = 'The strip is empty for these points. Try a new strip.'; return; }
+    const names = F.nxt.map(q => pos.get(q) + 1);
+    let t = `Point ${F.a + 1} of ${k}: compare it with ${names.length ? 'point' + (names.length > 1 ? 's ' : ' ') + names.join(', ') : 'nothing (it is last)'}. The box above it holds ${F.box.length} point${F.box.length === 1 ? '' : 's'} including itself (never more than 8).`;
+    if (F.found.length) { const [q, dd] = F.found[F.found.length - 1]; t += ` Point ${pos.get(q) + 1} is only ${f1(dd)} away, which is less than δ, so δ shrinks to ${f1(dd)}.`; }
+    cap.textContent = t;
+    $(f, '[data-o=win]').innerHTML = `<span><span class="k">δ</span> <span class="v" style="color:var(--delta)">${f1(F.dBefore)}</span></span><span><span class="k">strip points</span> <span class="v">${k}</span></span>` +
+      `<span><span class="k">forward checks so far</span> <span class="v" style="color:var(--best)">${F.checks}</span></span><span><span class="k">all pairs would be</span> <span class="v" style="color:var(--waste)">${k * (k - 1) / 2}</span></span>`;
+    $(f, '[data-a=back]').disabled = i === 0; $(f, '[data-a=next]').disabled = i >= frames.length - 1;
+  }
+  const next = () => { if (i >= frames.length - 1) return false; i++; draw(); return i < frames.length - 1; };
+  $(f, '[data-a=next]').onclick = next;
+  $(f, '[data-a=back]').onclick = () => { if (i > 0) { i--; draw(); } };
+  const stop = player($(f, '[data-a=play]'), next, 900);
+  $(f, '[data-a=rand]').onclick = () => { stop(); do gen(); while (r.S.length < 8); draw(); };
+  do gen(); while (r.S.length < 8);
+  draw();
+})();
+
+/* ===== 8a Pythagoras ===== */
+(function () {
+  const f = document.getElementById('f-pyth'), svg = $(f, 'svg'), { W, H } = vb(svg);
+  const p = { x: 110, y: 80 }; const pts = [{ x: 320, y: 220 }];
+  function draw() {
+    svg.textContent = '';
+    const q = pts[0], dx = q.x - p.x, dy = q.y - p.y, dd = Math.hypot(dx, dy);
+    const c = { x: q.x, y: p.y };
+    seg(svg, p, c, H, { c: C.delta, w: 2.4 }); seg(svg, c, q, H, { c: C.delta, w: 2.4 });
+    if (Math.abs(dx) > 14 && Math.abs(dy) > 14) { const sx = -Math.sign(dx) * 12, sy = Math.sign(dy) * 12; S('path', { d: `M${c.x + sx},${H - c.y} L${c.x + sx},${H - c.y - sy} L${c.x},${H - c.y - sy}`, fill: 'none', stroke: C.delta, 'stroke-width': 1.4 }, svg); }
+    seg(svg, p, q, H, { c: C.ink, w: 3 });
+    label(svg, (p.x + c.x) / 2, H - p.y + (dy >= 0 ? 20 : -10), `|x| = ${f1(Math.abs(dx))}`, { c: C.delta });
+    label(svg, c.x + (dx >= 0 ? 10 : -10), H - (p.y + q.y) / 2 + 4, `|y| = ${f1(Math.abs(dy))}`, { c: C.delta, anchor: dx >= 0 ? 'start' : 'end' });
+    label(svg, (p.x + q.x) / 2 - (dx >= 0 ? 12 : -12), H - (p.y + q.y) / 2 - 8, `δ′ = ${f1(dd)}`, { c: C.ink, anchor: dx >= 0 ? 'end' : 'start' });
+    dot(svg, p, -1, H, { r: 7 }); label(svg, p.x - 12, H - p.y + 5, 'p', { cls: 'lbl-d', anchor: 'end' });
+    dot(svg, q, 0, H, { drag: true, r: 7, fill: C.active, stroke: C.active, label: 'Point q' }); label(svg, q.x + 13, H - q.y - 8, 'q', { cls: 'lbl-d', anchor: 'start' });
+    const mx = Math.max(Math.abs(dx), Math.abs(dy)), eq = Math.min(Math.abs(dx), Math.abs(dy)) < 1.5;
+    $(f, '[data-o=pyth]').innerHTML = `<span><span class="k">δ′ = √(x² + y²)</span> <span class="v">${f1(dd)}</span></span><span><span class="k">max(|x|, |y|)</span> <span class="v" style="color:var(--delta)">${f1(mx)}</span></span>` +
+      `<span class="v" style="color:${eq ? 'var(--best)' : 'var(--ink)'}">${eq ? 'aligned, so δ′ equals one leg' : 'δ′ > both legs'}</span>`;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: clampBox(10, 10, W - 10, H - 10) });
+  draw();
+})();
+
+/* ===== 8b Packing ===== */
+(function () {
+  const f = document.getElementById('f-pack'), svg = $(f, 'svg'), { W, H } = vb(svg), cap = $(f, '[data-o=cap]');
+  const D = 200, x0 = 60, xm = 260, x1 = 460, y0 = 50, y1 = 250;
+  let mode = 'sq', pig = false, pts;
+  const corners = side => side === 'L' ? [[x0, y0], [x0, y1], [xm, y0], [xm, y1]] : [[xm, y0], [xm, y1], [x1, y0], [x1, y1]];
+  function reset() {
+    pts = corners('L').map(([x, y]) => ({ x, y, s: 'L' }));
+    if (mode === 'rect') pts = pts.concat(corners('R').map(([x, y]) => ({ x, y, s: 'R' })));
+  }
+  const clamp = q => { const lo = q.s === 'L' ? x0 : xm, hi = q.s === 'L' ? xm : x1; q.x = Math.max(lo, Math.min(hi, q.x)); q.y = Math.max(y0, Math.min(y1, q.y)); };
+  function draw() {
+    svg.textContent = '';
+    const Y = y => H - y;
+    S('rect', { x: x0, y: Y(y1), width: D, height: D, fill: C.deltaTT, stroke: C.delta, 'stroke-width': 1.6 }, svg);
+    if (mode === 'rect') S('rect', { x: xm, y: Y(y1), width: D, height: D, fill: C.deltaTT, stroke: C.delta, 'stroke-width': 1.6 }, svg);
+    S('line', { x1: xm, x2: xm, y1: 18, y2: H - 18, stroke: C.ink, 'stroke-width': 2 }, svg);
+    label(svg, xm, 14, 'dividing line', { c: C.ink2 });
+    dimH(svg, x0, xm, Y(y1) - 16, 'δ'); if (mode === 'rect') dimH(svg, xm, x1, Y(y1) - 16, 'δ');
+    dimV(svg, x0 - 22, Y(y1), Y(y0), 'δ');
+    subText(svg, (x0 + xm) / 2, Y(y0) + 28, 'only P', 'L', ' points');
+    if (mode === 'rect') subText(svg, (xm + x1) / 2, Y(y0) + 28, 'only P', 'R', ' points');
+    if (pig) {
+      const sqs = mode === 'rect' ? [x0, xm] : [x0];
+      for (const sx of sqs) {
+        S('line', { x1: sx + D / 2, x2: sx + D / 2, y1: Y(y1), y2: Y(y0), stroke: C.delta, 'stroke-width': 1.2, 'stroke-dasharray': '5 4' }, svg);
+        S('line', { x1: sx, x2: sx + D, y1: Y((y0 + y1) / 2), y2: Y((y0 + y1) / 2), stroke: C.delta, 'stroke-width': 1.2, 'stroke-dasharray': '5 4' }, svg);
+        S('line', { x1: sx + 4, y1: Y(y1) + 4, x2: sx + D / 2 - 4, y2: Y((y0 + y1) / 2) - 4, stroke: C.delta, 'stroke-width': 1 }, svg);
+      }
+      label(svg, x0 + D / 4 + 16, Y(y1) + D / 4 - 4, 'δ/√2', { c: C.delta });
+    }
+    // violations (same side only)
+    let v = 0;
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+      if (pts[i].s !== pts[j].s) continue;
+      const d = CP.dist(pts[i], pts[j]);
+      if (d < D - 0.5) { v++; seg(svg, pts[i], pts[j], H, { c: C.waste, w: 2.4 }); label(svg, (pts[i].x + pts[j].x) / 2, H - (pts[i].y + pts[j].y) / 2 - 6, `${(d / D).toFixed(2)}δ`, { c: C.waste }); }
+    }
+    // draw L first then R so coincident R rings sit on top
+    const order = pts.map((p, i) => i).sort((a, b) => (pts[a].s === 'R') - (pts[b].s === 'R'));
+    for (const i of order) dot(svg, pts[i], i, H, { drag: true, r: pts[i].s === 'R' ? 8 : 6.5, ring: pts[i].s === 'R', sw: 2.4, label: (pts[i].s === 'L' ? 'Left' : 'Right') + ' point ' + (i + 1) });
+    const nL = pts.filter(p => p.s === 'L').length, nR = pts.length - nL;
+    let t;
+    if (mode === 'sq') {
+      t = v === 0 ? `${nL} points, all at least δ apart. Legal.${nL === 4 ? ' Four is the most that fit, and only at the corners. Add a fifth.' : ''}`
+        : `${v} pair${v > 1 ? 's are' : ' is'} closer than δ. Impossible: every point here is on the left, and no two left points are closer than d₁ ≥ δ.${nL >= 5 ? ' With 5 or more points this always happens, wherever you drag them.' : ''}`;
+    } else {
+      t = v === 0 ? `${pts.length} points in the δ × 2δ box (${nL} left, ${nR} right), no contradictions.${pts.length === 8 ? ' The two corners on the line each hold coincident points, one from each side. 8 is the maximum, so after the current point, 7 others is enough.' : ''}`
+        : `${v} same-side pair${v > 1 ? 's' : ''} closer than δ. That contradicts the recursion's answers, so this arrangement can't happen. More than 8 points never fit.`;
+    }
+    cap.textContent = t;
+  }
+  draggable(svg, { pts: () => pts, draw, clamp: (q) => clamp(q) });
+  $$(f, '[data-mode]').forEach(b => b.addEventListener('click', () => { mode = b.dataset.mode; $$(f, '[data-mode]').forEach(x => x.setAttribute('aria-pressed', x === b)); $(f, '[data-a=add]').textContent = mode === 'rect' ? 'Add a 9th point' : 'Add a point'; reset(); draw(); }));
+  $(f, '[data-a=add]').onclick = () => { if (pts.length < 14) { pts.push({ x: (x0 + xm) / 2 + (Math.random() - .5) * 60, y: (y0 + y1) / 2 + (Math.random() - .5) * 60, s: 'L' }); draw(); } };
+  $(f, '[data-a=reset]').onclick = () => { reset(); draw(); };
+  const pb = $(f, '[data-a=pig]'); pb.onclick = () => { pig = !pig; pb.setAttribute('aria-pressed', pig); draw(); };
+  reset(); draw();
+})();
+
+/* ===== 9 Cost explorer ===== */
+(function () {
+  const f = document.getElementById('f-cost'), svg = $(f, 'svg'), { W, H } = vb(svg), sl = $(f, '[data-k=k]');
+  function draw() {
+    const k = +sl.value, n = 2 ** k; $(f, '[data-o=k]').textContent = k;
+    svg.textContent = '';
+    const levels = k - 1; // merge levels i = 0..k-2, plus base level
+    const top = 52, rowH = Math.min(26, (H - top - 16) / (levels + 1)), u = 300 / (k + 7);
+    const panels = [{ x: 20, name: 'closest1: sort the strip at every level', main: i => k - i, col: C.waste, tag: 'sort' },
+      { x: 470, name: 'closest2: merge at every level', main: () => 1, col: C.best, tag: 'merge' }];
+    let tot = [k, k]; // presort n·k each (units of n)
+    panels.forEach((pn, pi) => {
+      S('text', { x: pn.x, y: 26, class: 'lbl-d', fill: C.ink, text: pn.name }, svg);
+      for (let i = 0; i <= levels; i++) {
+        const y = top + i * rowH, base = i === levels;
+        const lab = base ? `base, ${fmt(n / 2)} calls` : (2 ** i <= 1e6 ? `${fmt(2 ** i)} × ${fmt(n / 2 ** i)}` : '');
+        if (rowH >= 13) S('text', { x: pn.x + 112, y: y + rowH * .68, 'text-anchor': 'end', class: 'lbl', fill: C.ink2, 'font-size': rowH < 18 ? 10.5 : 12.5, text: lab }, svg);
+        const bx = pn.x + 120, h = rowH * .72;
+        if (base) { S('rect', { x: bx, y, width: .5 * u, height: h, fill: C.ink3, rx: 2 }, svg); tot[pi] += .5; continue; }
+        const mw = pn.main(i) * u;
+        S('rect', { x: bx, y, width: mw, height: h, fill: pn.col, rx: 2 }, svg);
+        S('rect', { x: bx + mw + 1, y, width: 7 * u, height: h, fill: '#c9d1cd', rx: 2 }, svg);
+        tot[pi] += pn.main(i) + 7;
+      }
+    });
+    const units = v => fmt(v * n);
+    const brute = n * (n - 1) / 2;
+    $(f, '[data-o=cost]').innerHTML = `<span><span class="k">n</span> <span class="v">${fmt(n)}</span></span>` +
+      `<span><span class="k">closest1 ≈</span> <span class="v" style="color:var(--waste)">${units(tot[0])}</span></span>` +
+      `<span><span class="k">closest2 ≈</span> <span class="v" style="color:var(--best)">${units(tot[1])}</span></span>` +
+      `<span><span class="k">ratio</span> <span class="v">${f1(tot[0] / tot[1])}×</span></span>` +
+      `<span><span class="k">brute force n(n−1)/2</span> <span class="v">${fmt(brute)}</span></span>` +
+      `<span class="k">Work units per row: red = sort (worst case), green = merge, grey = 7n strip checks. Both include the n lg n presort.</span>`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 10a Merge stepper ===== */
+(function () {
+  const f = document.getElementById('f-ms'), box = $(f, '[data-o=ms]'), cap = $(f, '[data-o=cap]');
+  const frames = [];
+  const stages = [{ inputs: [[1, 3], [2, 19], [4, 21], [7, 11]], pairs: [[0, 1], [2, 3]] }, { inputs: [[1, 2, 3, 19], [4, 7, 11, 21]], pairs: [[0, 1]] }];
+  let comps = 0;
+  stages.forEach((st, si) => {
+    const outs = st.pairs.map(([a, b]) => ({ len: st.inputs[a].length + st.inputs[b].length, vals: [] }));
+    const used = st.inputs.map(l => l.map(() => false));
+    const snap = (ptr, msg) => frames.push({ si, inputs: st.inputs, pairs: st.pairs, used: used.map(u => u.slice()), outs: outs.map(o => ({ len: o.len, vals: o.vals.slice() })), ptr, msg, comps });
+    snap(null, si === 0 ? 'Four sorted lists of length 2. Merge them in pairs.' : 'Two sorted lists of length 4. One more merge finishes the job.');
+    st.pairs.forEach(([a, b], oi) => {
+      const A = st.inputs[a], B = st.inputs[b]; let i = 0, j = 0;
+      snap({ [a]: 0, [b]: 0 }, `Merge [${A.join(', ')}] with [${B.join(', ')}]. Pointers i and j start at the front of each list.`);
+      while (i < A.length && j < B.length) {
+        comps++;
+        let msg;
+        if (A[i] <= B[j]) { msg = `${A[i]} ≤ ${B[j]}, so move ${A[i]} to the output and advance i.`; outs[oi].vals.push(A[i]); used[a][i] = true; i++; }
+        else { msg = `${A[i]} > ${B[j]}, so move ${B[j]} to the output and advance j.`; outs[oi].vals.push(B[j]); used[b][j] = true; j++; }
+        snap({ [a]: i, [b]: j }, msg);
+      }
+      while (i < A.length) { outs[oi].vals.push(A[i]); used[a][i] = true; snap({ [a]: i + 1, [b]: j }, `The other list is empty, so copy ${A[i]} across with no comparison.`); i++; }
+      while (j < B.length) { outs[oi].vals.push(B[j]); used[b][j] = true; snap({ [a]: i, [b]: j + 1 }, `The other list is empty, so copy ${B[j]} across with no comparison.`); j++; }
+    });
+  });
+  frames.push({ ...frames[frames.length - 1], ptr: null, msg: `Sorted: [1, 2, 3, 4, 7, 11, 19, 21] after ${comps} comparisons in total. The last merge used 7 = 4 + 4 − 1.` });
+  let k = 0;
+  function cells(vals, used, ptrIdx, out, len) {
+    let h = '<div class="ms-cells">';
+    for (let c = 0; c < (len ?? vals.length); c++) {
+      if (out) h += c < vals.length ? `<div class="ms-cell out">${vals[c]}</div>` : `<div class="ms-cell empty">0</div>`;
+      else h += `<div class="ms-cell${used[c] ? ' used' : ''}${c === ptrIdx ? ' ptr' : ''}">${vals[c]}</div>`;
+    }
+    return h + '</div>';
+  }
+  function draw() {
+    const F = frames[k];
+    let h = '<div class="ms-row">';
+    F.inputs.forEach((l, li) => {
+      const pi = F.ptr && F.ptr[li] != null ? F.ptr[li] : -1;
+      const nm = F.pairs.some(([a]) => a === li) ? 'i' : 'j';
+      h += `<div class="ms-list"><span class="ms-label">input</span>${cells(l, F.used[li], pi)}<div class="ms-ptr">${l.map((_, c) => `<span>${c === pi ? '↑ ' + nm : ''}</span>`).join('')}</div></div>`;
+    });
+    h += '</div><div class="ms-row">';
+    F.outs.forEach(o => { h += `<div class="ms-list"><span class="ms-label">output</span>${cells(o.vals, null, -1, true, o.len)}</div>`; });
+    h += '</div>';
+    box.innerHTML = h;
+    cap.innerHTML = `${F.msg} <span class="mono" style="color:var(--ink2)">comparisons: ${F.comps}</span>`;
+    $(f, '[data-a=back]').disabled = k === 0; $(f, '[data-a=next]').disabled = k === frames.length - 1;
+  }
+  const next = () => { if (k >= frames.length - 1) return false; k++; draw(); return k < frames.length - 1; };
+  $(f, '[data-a=next]').onclick = next;
+  $(f, '[data-a=back]').onclick = () => { if (k > 0) { k--; draw(); } };
+  const stop = player($(f, '[data-a=play]'), next, 900);
+  $(f, '[data-a=reset]').onclick = () => { stop(); k = 0; draw(); };
+  draw();
+})();
+
+/* ===== 10b Growth chart ===== */
+(function () {
+  const f = document.getElementById('f-growth'), svg = $(f, 'svg'), { W, H } = vb(svg), sl = $(f, '[data-k=e]');
+  const mL = 70, mR = 120, mT = 18, mB = 40, x0 = 1, x1 = 6, y0 = 1, y1 = 12;
+  const X = e => mL + (e - x0) / (x1 - x0) * (W - mL - mR), Y = v => H - mB - (v - y0) / (y1 - y0) * (H - mT - mB);
+  const sup = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  const pow = k => '10' + String(k).split('').map(c => sup[+c]).join('');
+  const fns = [{ n: 'n²', f: n => n * n, c: C.waste }, { n: 'n lg² n', f: n => n * lg(n) ** 2, c: C.active }, { n: 'n lg n', f: n => n * lg(n), c: C.best }];
+  function draw() {
+    const e = +sl.value, n = 10 ** e; $(f, '[data-o=e]').textContent = fmt(Math.round(n));
+    svg.textContent = '';
+    for (let k = x0; k <= x1; k++) { S('line', { x1: X(k), x2: X(k), y1: Y(y0), y2: Y(y1), stroke: C.rule, 'stroke-width': 1 }, svg); label(svg, X(k), H - mB + 20, pow(k), { c: C.ink2, halo: false }); }
+    for (let k = 2; k <= y1; k += 2) { S('line', { x1: X(x0), x2: X(x1), y1: Y(k), y2: Y(k), stroke: C.rule, 'stroke-width': 1 }, svg); label(svg, mL - 10, Y(k) + 4, pow(k), { c: C.ink2, anchor: 'end', halo: false }); }
+    label(svg, (mL + W - mR) / 2, H - 4, 'n (points)', { cls: 'lbl-d', c: C.ink2, halo: false });
+    for (const fn of fns) {
+      let d = '';
+      for (let t = x0; t <= x1 + 1e-9; t += 0.05) d += (d ? 'L' : 'M') + X(t).toFixed(1) + ',' + Y(Math.log10(fn.f(10 ** t))).toFixed(1);
+      S('path', { d, fill: 'none', stroke: fn.c, 'stroke-width': 2.6 }, svg);
+      label(svg, X(x1) + 8, Y(Math.log10(fn.f(10 ** x1))) + 4, fn.n, { c: fn.c, anchor: 'start', halo: false });
+    }
+    S('line', { x1: X(e), x2: X(e), y1: Y(y0), y2: Y(y1), stroke: C.ink, 'stroke-width': 1.2, 'stroke-dasharray': '4 4' }, svg);
+    for (const fn of fns) S('circle', { cx: X(e), cy: Y(Math.log10(fn.f(n))), r: 5, fill: fn.c }, svg);
+    $(f, '[data-o=growth]').innerHTML = fns.map(fn => `<span><span class="k">${fn.n}</span> <span class="v" style="color:${fn.c}">${fmt(fn.f(n))}</span></span>`).join('') +
+      `<span><span class="k">n² ÷ n lg n</span> <span class="v">${fmt(n / lg(n))}×</span></span>`;
+  }
+  sl.addEventListener('input', draw); draw();
+})();
+
+/* ===== 11 Code diff toggle ===== */
+(function () {
+  const f = document.getElementById('f-code'), b = $(f, '[data-a=diff]');
+  b.onclick = () => { const on = !f.classList.contains('diff'); f.classList.toggle('diff', on); b.setAttribute('aria-pressed', on); };
+})();
+
+</script>
+</body>
+</html>
